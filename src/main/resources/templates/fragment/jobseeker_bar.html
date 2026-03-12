@@ -1,0 +1,66 @@
+<!--/* Fragment 코드 */-->
+
+<th:block th:fragment="jobseeker_layout(content)" xmlns:th="http://www.thymeleaf.org">
+
+<link rel="stylesheet" th:href="@{/bootstrap-4.6.2-dist/css/bootstrap.min.css}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<link rel="stylesheet" th:href="@{/css/mainstyle.css}">
+<link rel="stylesheet" th:href="@{/css/jobseeker/jobseeker.css}">
+<script th:src="@{/js/jquery-3.7.1.min.js}"></script>
+<script th:src="@{/bootstrap-4.6.2-dist/js/bootstrap.bundle.min.js}"></script>
+
+<div class="jobseeker-wrapper">
+
+  <div th:insert="~{fragment/header :: main_header}"></div>
+
+  <div class="jobseeker-body">
+
+    <aside class="jobseeker-sidebar">
+      <ul>
+        <li th:classappend="${activeMenu == 'dashboard'} ? ' active' : ''">
+          <a th:href="@{/jobseeker/dashboard}">
+            <i class="fa-solid fa-house"></i><span>마이페이지</span>
+          </a>
+        </li>
+        <li th:classappend="${activeMenu == 'resume'} ? ' active' : ''">
+          <a th:href="@{/jobseeker/resume/list}">
+            <i class="fa-regular fa-file-lines"></i><span>이력서</span>
+          </a>
+        </li>
+        <li th:classappend="${activeMenu == 'application'} ? ' active' : ''">
+          <a th:href="@{/jobseeker/application/list}">
+            <i class="fa-regular fa-file-alt"></i><span>지원내역</span>
+          </a>
+        </li>
+        <li th:classappend="${activeMenu == 'offer'} ? ' active' : ''">
+          <a th:href="@{/jobseeker/offer/list}">
+            <i class="fa-regular fa-envelope"></i><span>받은제안</span>
+          </a>
+        </li>
+        <li th:classappend="${activeMenu == 'scrapped'} ? ' active' : ''">
+          <a th:href="@{/jobseeker/job/scrapped}">
+            <i class="fa-regular fa-star"></i><span>스크랩한 공고</span>
+          </a>
+        </li>
+        <li th:classappend="${activeMenu == 'company'} ? ' active' : ''">
+          <a th:href="@{/jobseeker/company/followcompanylist}">
+            <i class="fa-regular fa-building"></i><span>관심기업</span>
+          </a>
+        </li>
+        <li th:classappend="${activeMenu == 'recent'} ? ' active' : ''">
+          <a th:href="@{/jobseeker/job/recent}">
+            <i class="fa-regular fa-clock"></i><span>최근 본 공고</span>
+          </a>
+        </li>
+      </ul>
+    </aside>
+
+    <div class="jobseeker-content" th:insert="${content}"></div>
+
+  </div>
+
+  <div th:insert="~{fragment/footer :: footer}"></div>
+
+</div>
+
+</th:block>

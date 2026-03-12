@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/layout_admin :: layout(~{::title},~{::link},~{::style},~{::script},~{::section})}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>기업 관리</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans KR', sans-serif; background: #f9fafb; color: #1f2937; }
+        .dash { padding: 24px; width: 100%; box-sizing: border-box; }
+        .content-box { background: white; border-radius: 8px; border: 1px solid #e5e7eb; padding: 24px; }
+        .page-title { font-size: 18px; font-weight: 600; margin-bottom: 20px; }
+        .filters { display: flex; gap: 12px; margin-bottom: 20px; }
+        .search-input {
+            flex: 1; padding: 10px 16px 10px 36px;
+            border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; font-family: inherit;
+            background: #f9fafb url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 12px center; }
+        .search-input:focus { outline: none; border-color: #d1d5db; background-color: white; }
+        .filter-select { padding: 10px 16px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; font-family: inherit; background: white; cursor: pointer; min-width: 120px; }
+        .filter-select:focus { outline: none; }
+        .company-table { width: 100%; border-collapse: collapse; }
+        .company-table thead tr { border-bottom: 2px solid #e5e7eb; }
+        .company-table th { padding: 12px 8px; text-align: left; font-weight: 500; color: #6b7280; font-size: 13px; }
+        .company-table td { padding: 14px 8px; font-size: 14px; color: #374151; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+        .company-table tbody tr:hover { background: #f9fafb; }
+        .company-table tbody tr.suspended { background: rgba(254, 242, 242, 0.4); }
+        .company-table tbody tr.suspended:hover { background: rgba(254, 226, 226, 0.4); }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+        .badge.status-normal    { background: #d1fae5; color: #065f46; }
+        .badge.status-suspended { background: #fef3c7; color: #92400e; }
+        .badge.status-withdrawn { background: #f3f4f6; color: #6b7280; }
+        .badge.approval-done    { background: #d1fae5; color: #065f46; }
+        .badge.approval-pending { background: #dbeafe; color: #1e40af; }
+        .badge.approval-rejected{ background: #fee2e2; color: #991b1b; }
+        .action-buttons { display: flex; gap: 6px; justify-content: flex-end; align-items: center; }
+        .btn-action { padding: 5px 12px; border: none; border-radius: 4px; font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+        .btn-approve   { background: #d1fae5; color: #065f46; }
+        .btn-approve:hover { background: #a7f3d0; }
+        .btn-reject    { background: #fee2e2; color: #991b1b; }
+        .btn-reject:hover { background: #fecaca; }
+        .btn-suspend   { background: #f3f4f6; color: #374151; }
+        .btn-suspend:hover { background: #e5e7eb; }
+        .btn-unsuspend { background: #d1fae5; color: #065f46; }
+        .btn-unsuspend:hover { background: #a7f3d0; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; padding: 28px; border-radius: 12px; width: 90%; max-width: 420px; }
+        .modal-content h2 { font-size: 17px; font-weight: 600; margin-bottom: 16px; }
+        .modal-content p { font-size: 14px; color: #374151; line-height: 1.6; margin-bottom: 8px; }
+        .modal-content .company-name { font-weight: 700; color: #1f2937; }
+        .modal-content .warn-text { font-size: 13px; color: #ef4444; margin-top: 8px; padding: 10px 12px; background: #fef2f2; border-radius: 6px; border-left: 3px solid #ef4444; }
+        .modal-content .info-text { font-size: 13px; color: #374151; margin-top: 8px; padding: 10px 12px; background: #f9fafb; border-radius: 6px; }
+        .form-group { margin-top: 16px; }
+        .form-group label { display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 6px; }
+        .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; font-family: inherit; min-height: 80px; resize: vertical; }
+        .form-group textarea:focus { outline: none; border-color: #06b6d4; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+        .btn-cancel { padding: 10px 20px; background: #f3f4f6; border: none; border-radius: 6px; font-size: 14px; color: #374151; cursor: pointer; }
+        .btn-cancel:hover { background: #e5e7eb; }
+        .btn-confirm-approve  { padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; }
+        .btn-confirm-approve:hover  { background: #059669; }
+        .btn-confirm-reject   { padding: 10px 20px; background: #ef4444; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; }
+        .btn-confirm-reject:hover   { background: #dc2626; }
+        .btn-confirm-suspend  { padding: 10px 20px; background: #f59e0b; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; }
+        .btn-confirm-suspend:hover  { background: #d97706; }
+        .btn-confirm-unsuspend{ padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; }
+        .btn-confirm-unsuspend:hover{ background: #059669; }
+        .toast { position: fixed; bottom: 24px; right: 24px; padding: 14px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; color: white; z-index: 9999; opacity: 0; transform: translateY(10px); transition: all 0.3s ease; pointer-events: none; }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast.success { background: #10b981; }
+        .toast.warning { background: #f59e0b; }
+        .toast.info    { background: #06b6d4; }
+        .detail-modal-content { max-width: 500px; }
+        .detail-row { display: flex; padding: 12px 0; border-bottom: 1px solid #f3f4f6; font-size: 14px; align-items: center; }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-label { width: 120px; color: #6b7280; font-weight: 500; flex-shrink: 0; }
+        .detail-value { color: #1f2937; }
+
+        /* 인라인 편집 입력 */
+        .detail-edit-input {
+            border: 1px solid #06b6d4;
+            border-radius: 4px;
+            padding: 3px 8px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #1f2937;
+            width: 160px;
+        }
+        .detail-edit-input:focus { outline: none; }
+
+        /* 페이지바 */
+        .table-footer { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 16px 0; margin-top: 12px; }
+        .total-count { font-size: 14px; color: #6b7280; }
+        .pagination { display: flex; gap: 4px; }
+        .pagination a { display: inline-block; padding: 8px 14px; border: 1px solid #e5e7eb; background: white; border-radius: 6px; font-size: 13px; color: #374151; text-decoration: none; transition: all 0.15s; }
+        .pagination a:hover { background: #f9fafb; }
+        .pagination a.active { background: #1f2937; color: white; border-color: #1f2937; }
+        .pagination a.disabled { color: #d1d5db; background: #f9fafb; cursor: not-allowed; pointer-events: none; }
+
+        .btn-edit {
+            margin-left: 10px;
+            padding: 3px 8px;
+            font-size: 12px;
+            border: 1px solid #d1d5db;
+            background: #f9fafb;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn-edit:hover { background: #e5e7eb; }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            let targetId   = null;
+            let targetName = null;
+
+            /* ── 승인 ── */
+            window.openApproveModal = function(id, name) {
+                targetId = id; targetName = name;
+                document.getElementById('approveCompanyName').textContent = name;
+                document.getElementById('approveModal').classList.add('active');
+            };
+            window.confirmApprove = function() {
+                const id = targetId; const name = targetName;
+                fetch('/finalProject/admin/companies/' + id + '/approve', { method: 'POST' })
+                    .then(res => {
+                        closeModal('approveModal');
+                        if (res.ok) { showToast(name + ' 승인 완료.', 'success'); setTimeout(() => location.reload(), 1500); }
+                        else showToast('처리 중 오류가 발생했습니다.', 'warning');
+                    });
+            };
+
+            /* ── 거절 ── */
+            window.openRejectModal = function(id, name) {
+                targetId = id; targetName = name;
+                document.getElementById('rejectCompanyName').textContent = name;
+                document.getElementById('rejectReason').value = '';
+                document.getElementById('rejectModal').classList.add('active');
+            };
+            window.confirmReject = function() {
+                const reason = document.getElementById('rejectReason').value.trim();
+                if (!reason) { alert('거절 사유를 입력해주세요.'); return; }
+                const id = targetId; const name = targetName;
+                fetch('/finalProject/admin/companies/' + id + '/reject', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reason })
+                }).then(res => {
+                    closeModal('rejectModal');
+                    if (res.ok) { showToast(name + ' 거절 처리.', 'warning'); setTimeout(() => location.reload(), 1500); }
+                    else showToast('처리 중 오류가 발생했습니다.', 'warning');
+                });
+            };
+
+            /* ── 정지 ── */
+            window.openSuspendModal = function(id, name) {
+                targetId = id; targetName = name;
+                document.getElementById('suspendCompanyName').textContent = name;
+                document.getElementById('suspendModal').classList.add('active');
+            };
+            window.confirmSuspend = function() {
+                const id = targetId; const name = targetName;
+                fetch('/finalProject/admin/companies/' + id + '/suspend', { method: 'POST' })
+                    .then(res => {
+                        closeModal('suspendModal');
+                        if (res.ok) { showToast(name + ' 정지 완료.', 'warning'); setTimeout(() => location.reload(), 1500); }
+                        else showToast('처리 중 오류가 발생했습니다.', 'warning');
+                    });
+            };
+
+            /* ── 정지해제 ── */
+            window.openUnsuspendModal = function(id, name) {
+                targetId = id; targetName = name;
+                document.getElementById('unsuspendCompanyName').textContent = name;
+                document.getElementById('unsuspendModal').classList.add('active');
+            };
+            window.confirmUnsuspend = function() {
+                const id = targetId; const name = targetName;
+                fetch('/finalProject/admin/companies/' + id + '/unsuspend', { method: 'POST' })
+                    .then(res => {
+                        closeModal('unsuspendModal');
+                        if (res.ok) { showToast(name + ' 정지 해제.', 'success'); setTimeout(() => location.reload(), 1500); }
+                        else showToast('처리 중 오류가 발생했습니다.', 'warning');
+                    });
+            };
+
+            /* ── 공통 ── */
+            window.closeModal = function(id) {
+                document.getElementById(id).classList.remove('active');
+                targetId = null; targetName = null;
+            };
+            window.showToast = function(msg, type = 'success') {
+                const toast = document.getElementById('toast');
+                toast.textContent = msg;
+                toast.className = 'toast ' + type;
+                setTimeout(() => toast.classList.add('show'), 10);
+                setTimeout(() => toast.classList.remove('show'), 3000);
+            };
+            window.onclick = function(e) {
+                if (e.target.classList.contains('modal')) {
+                    e.target.classList.remove('active');
+                    targetId = null; targetName = null;
+                }
+            };
+
+            /* ── 필터 ── */
+            window.applyFilters = function() {
+                const search   = document.getElementById('searchInput').value;
+                const status   = document.getElementById('statusFilter').value;
+                const approval = document.getElementById('approvalFilter').value;
+
+                const params = new URLSearchParams();
+                if (search)   params.append('search', search);
+                if (status)   params.append('status', status);
+                if (approval) params.append('approval', approval);
+
+                location.href = '/finalProject/admin/companies?' + params.toString();
+            };
+            document.getElementById('searchInput').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') applyFilters();
+            });
+
+            /* ── 기업 상세 ── */
+            window.openCompanyDetail = function(id) {
+                targetId = id;
+
+                fetch('/finalProject/admin/companies/' + id + '/detail')
+                    .then(res => res.json())
+                    .then(data => {
+                        const statusMap   = { 0: '정지', 1: '활성', 2: '탈퇴' };
+                        const approvalMap = { 'APPROVED': '승인완료', 'PENDING': '승인대기', 'REJECTED': '거절' };
+
+                        document.getElementById('dCompanyId').textContent      = data.memberId;
+                        document.getElementById('dCompanyName').textContent    = data.companyName;
+                        document.getElementById('dBizNo').textContent          = data.bizNo;
+                        document.getElementById('dCeoName').textContent        = data.ceoName || '-';
+                        document.getElementById('dIndustry').textContent       = data.industryCode || '-';
+                        document.getElementById('dAddr').textContent           = data.addr1 ? (data.addr1 + ' ' + (data.addr2 || '')) : '-';
+                        document.getElementById('dCompanyStatus').textContent  = statusMap[data.status] || '-';
+                        document.getElementById('dApproval').textContent       = approvalMap[data.approvedYn] || '-';
+                        document.getElementById('dRejectReason').textContent   = data.rejectReason || '-';
+                        document.getElementById('dPostCount').textContent      = data.postCount + '건';
+                        document.getElementById('dCompanyCreated').textContent = data.createdAt ? data.createdAt.substring(0,10) : '-';
+
+                        /* 거절일 때만 수정/확인 버튼 & 재승인 버튼 표시 */
+                        const isRejected = data.approvedYn === 'REJECTED';
+
+                        document.querySelectorAll('.btn-edit').forEach(btn => {
+                            btn.style.display = isRejected ? 'inline-block' : 'none';
+                        });
+                        /* 확인 버튼은 열릴 때 항상 숨김 (수정 버튼 클릭 시에만 표시) */
+                        ['confirmCompanyName','confirmBizNo','confirmCeoName','confirmIndustry'].forEach(fid => {
+                            document.getElementById(fid).style.display = 'none';
+                        });
+                        document.getElementById('btnReApprove').style.display =
+                            isRejected ? 'inline-block' : 'none';
+
+                        /* 입력 필드 초기화 (다시 열 때 텍스트 표시 상태로 복원) */
+                        ['eCompanyName', 'eBizNo', 'eCeoName', 'eIndustry'].forEach(fid => {
+                            document.getElementById(fid).style.display = 'none';
+                        });
+                        document.getElementById('dCompanyName').style.display = 'inline';
+                        document.getElementById('dBizNo').style.display    = 'inline';
+                        document.getElementById('dCeoName').style.display  = 'inline';
+                        document.getElementById('dIndustry').style.display = 'inline';
+
+                        document.getElementById('companyDetailModal').classList.add('active');
+                    });
+            };
+
+            /* ── 인라인 필드 편집 토글 ── */
+            window.editField = function(type) {
+                if (type === 'companyName') {
+                    document.getElementById('eCompanyName').value = document.getElementById('dCompanyName').textContent;
+                    document.getElementById('dCompanyName').style.display = 'none';
+                    document.getElementById('eCompanyName').style.display = 'inline-block';
+                    document.getElementById('confirmCompanyName').style.display = 'inline-block';
+                }
+                if (type === 'bizNo') {
+                    document.getElementById('eBizNo').value = document.getElementById('dBizNo').textContent;
+                    document.getElementById('dBizNo').style.display = 'none';
+                    document.getElementById('eBizNo').style.display = 'inline-block';
+                    document.getElementById('confirmBizNo').style.display = 'inline-block';
+                }
+                if (type === 'ceoName') {
+                    document.getElementById('eCeoName').value = document.getElementById('dCeoName').textContent;
+                    document.getElementById('dCeoName').style.display = 'none';
+                    document.getElementById('eCeoName').style.display = 'inline-block';
+                    document.getElementById('confirmCeoName').style.display = 'inline-block';
+                }
+                if (type === 'industry') {
+                    document.getElementById('eIndustry').value = document.getElementById('dIndustry').textContent;
+                    document.getElementById('dIndustry').style.display = 'none';
+                    document.getElementById('eIndustry').style.display = 'inline-block';
+                    document.getElementById('confirmIndustry').style.display = 'inline-block';
+                }
+            };
+
+            /* ── 필드별 확인 버튼 - mapper가 세 필드를 한꺼번에 UPDATE하므로 항상 셋 다 전송 ── */
+            window.confirmField = function(type) {
+                const companyName = document.getElementById('eCompanyName').style.display !== 'none'
+                    ? document.getElementById('eCompanyName').value.trim()
+                    : document.getElementById('dCompanyName').textContent.trim();
+                const bizNo    = document.getElementById('eBizNo').style.display !== 'none'
+                    ? document.getElementById('eBizNo').value.trim()
+                    : document.getElementById('dBizNo').textContent.trim();
+                const ceoName  = document.getElementById('eCeoName').style.display !== 'none'
+                    ? document.getElementById('eCeoName').value.trim()
+                    : document.getElementById('dCeoName').textContent.trim();
+                const industry = document.getElementById('eIndustry').style.display !== 'none'
+                    ? document.getElementById('eIndustry').value.trim()
+                    : document.getElementById('dIndustry').textContent.trim();
+
+                if (type === 'companyName' && !companyName){ alert('기업명을 입력해주세요.'); return; }
+                if (type === 'bizNo'       && !bizNo)      { alert('사업자번호를 입력해주세요.'); return; }
+                if (type === 'ceoName'     && !ceoName)    { alert('대표자명을 입력해주세요.'); return; }
+                if (type === 'industry'    && !industry)   { alert('업종을 입력해주세요.'); return; }
+
+                fetch('/finalProject/admin/companies/' + targetId + '/update-info', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ companyName: companyName, bizNo: bizNo, ceoName: ceoName, industryCode: industry })
+                })
+                .then(res => {
+                    if (res.ok) {
+                        showToast('수정 완료', 'success');
+                        if (type === 'companyName') {
+                            document.getElementById('dCompanyName').textContent = companyName;
+                            document.getElementById('dCompanyName').style.display = 'inline';
+                            document.getElementById('eCompanyName').style.display = 'none';
+                            document.getElementById('confirmCompanyName').style.display = 'none';
+                        } else if (type === 'bizNo') {
+                            document.getElementById('dBizNo').textContent = bizNo;
+                            document.getElementById('dBizNo').style.display = 'inline';
+                            document.getElementById('eBizNo').style.display = 'none';
+                            document.getElementById('confirmBizNo').style.display = 'none';
+                        } else if (type === 'ceoName') {
+                            document.getElementById('dCeoName').textContent = ceoName;
+                            document.getElementById('dCeoName').style.display = 'inline';
+                            document.getElementById('eCeoName').style.display = 'none';
+                            document.getElementById('confirmCeoName').style.display = 'none';
+                        } else if (type === 'industry') {
+                            document.getElementById('dIndustry').textContent = industry;
+                            document.getElementById('dIndustry').style.display = 'inline';
+                            document.getElementById('eIndustry').style.display = 'none';
+                            document.getElementById('confirmIndustry').style.display = 'none';
+                        }
+                    } else {
+                        showToast('수정 중 오류가 발생했습니다.', 'warning');
+                    }
+                });
+            };
+
+            /* ★ ── 재승인 (정보 수정 + 승인 한 번에) ── */
+            window.reApproveCompany = function() {
+                const name = document.getElementById('eCompanyName').style.display !== 'none'
+                    ? document.getElementById('eCompanyName').value.trim()
+                    : document.getElementById('dCompanyName').textContent.trim();
+                const bizNo = document.getElementById('eBizNo').style.display !== 'none'
+                    ? document.getElementById('eBizNo').value.trim()
+                    : document.getElementById('dBizNo').textContent.trim();
+                const ceoName = document.getElementById('eCeoName').style.display !== 'none'
+                    ? document.getElementById('eCeoName').value.trim()
+                    : document.getElementById('dCeoName').textContent.trim();
+                const industry = document.getElementById('eIndustry').style.display !== 'none'
+                    ? document.getElementById('eIndustry').value.trim()
+                    : document.getElementById('dIndustry').textContent.trim();
+
+                if (!name)     { alert('기업명을 입력해주세요.'); return; }
+                if (!bizNo)    { alert('사업자번호를 입력해주세요.'); return; }
+                if (!ceoName)  { alert('대표자명을 입력해주세요.'); return; }
+                if (!industry) { alert('업종을 입력해주세요.'); return; }
+
+                if (!confirm(name + ' 기업을 재승인하시겠습니까?')) return;
+
+                fetch('/finalProject/admin/companies/' + targetId + '/reapprove', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ companyName: name, bizNo: bizNo, ceoName: ceoName, industryCode: industry })
+                })
+                .then(res => {
+                    closeModal('companyDetailModal');
+                    if (res.ok) { showToast(name + ' 재승인 완료.', 'success'); setTimeout(() => location.reload(), 1500); }
+                    else showToast('처리 중 오류가 발생했습니다.', 'warning');
+                });
+            };
+
+        });
+    </script>
+</head>
+
+<body>
+<section class="dash">
+    <div class="content-box">
+        <h1 class="page-title">기업 관리</h1>
+
+        <!-- 필터 -->
+        <div class="filters">
+            <input type="text" class="search-input" id="searchInput"
+                   placeholder="기업명 또는 사업자번호 검색..."
+                   th:value="${param.search != null ? param.search[0] : ''}">
+            <select class="filter-select" id="statusFilter" onchange="applyFilters()">
+                <option value="">전체 상태</option>
+                <option value="0" th:selected="${param.status != null and param.status[0] == '0'}">정지</option>
+                <option value="1" th:selected="${param.status != null and param.status[0] == '1'}">활성</option>
+            </select>
+            <select class="filter-select" id="approvalFilter" onchange="applyFilters()">
+                <option value="">전체 승인상태</option>
+                <option value="APPROVED" th:selected="${param.approval != null and param.approval[0] == 'APPROVED'}">승인완료</option>
+                <option value="PENDING"  th:selected="${param.approval != null and param.approval[0] == 'PENDING'}">승인대기</option>
+                <option value="REJECTED" th:selected="${param.approval != null and param.approval[0] == 'REJECTED'}">거절</option>
+            </select>
+        </div>
+
+        <!-- 테이블 -->
+        <table class="company-table">
+            <thead>
+                <tr>
+                    <th style="width:50px;">ID</th>
+                    <th>기업명</th>
+                    <th>사업자번호</th>
+                    <th>업종</th>
+                    <th style="width:70px;">상태</th>
+                    <th style="width:90px;">승인상태</th>
+                    <th style="width:60px;">공고 수</th>
+                    <th style="width:100px;">가입일</th>
+                    <th style="width:200px; text-align:right;">작업</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="company : ${companies}"
+                    th:classappend="${company.status == 0} ? 'suspended' : ''"
+                    th:attr="onclick='openCompanyDetail(\'' + ${company.memberId} + '\')'"
+                    style="cursor:pointer;">
+
+                    <td th:text="${company.memberId}"></td>
+                    <td><strong th:text="${company.companyName}"></strong></td>
+                    <td style="color:#6b7280;" th:text="${company.bizNo}"></td>
+                    <td th:text="${company.industryCode}"></td>
+
+                    <!-- 상태 뱃지 -->
+                    <td>
+                        <span th:switch="${company.status}">
+                            <span th:case="0" class="badge status-suspended">정지</span>
+                            <span th:case="1" class="badge status-normal">활성</span>
+                        </span>
+                    </td>
+
+                    <!-- 승인상태 뱃지 -->
+                    <td>
+                        <span th:switch="${company.approvedYn}">
+                            <span th:case="'APPROVED'" class="badge approval-done">승인완료</span>
+                            <span th:case="'PENDING'"  class="badge approval-pending">승인대기</span>
+                            <span th:case="'REJECTED'" class="badge approval-rejected">거절</span>
+                        </span>
+                    </td>
+
+                    <td th:text="${company.postCount} + '건'"></td>
+                    <td style="color:#6b7280;" th:text="${#temporals.format(company.createdAt, 'yyyy-MM-dd')}"></td>
+
+                    <!-- 작업 버튼 -->
+                    <td>
+                        <div class="action-buttons">
+                            <th:block th:if="${company.status != 2}">
+                                <!-- 승인대기 → 승인 / 거절 -->
+                                <th:block th:if="${company.approvedYn == 'PENDING'}">
+                                    <button class="btn-action btn-approve"
+                                            th:attr="data-id=${company.memberId}, data-name=${company.companyName}"
+                                            onclick="event.stopPropagation(); openApproveModal(this.dataset.id, this.dataset.name)">✓ 승인</button>
+                                    <button class="btn-action btn-reject"
+                                            th:attr="data-id=${company.memberId}, data-name=${company.companyName}"
+                                            onclick="event.stopPropagation(); openRejectModal(this.dataset.id, this.dataset.name)">✕ 거절</button>
+                                </th:block>
+                                <!-- 정지 → 정지해제 -->
+                                <th:block th:if="${company.status == 0}">
+                                    <button class="btn-action btn-unsuspend"
+                                            th:attr="data-id=${company.memberId}, data-name=${company.companyName}"
+                                            onclick="event.stopPropagation(); openUnsuspendModal(this.dataset.id, this.dataset.name)">✓ 정지해제</button>
+                                </th:block>
+                                <!-- 정상 + 승인완료 → 정지 -->
+                                <th:block th:if="${company.status == 1 and company.approvedYn == 'APPROVED'}">
+                                    <button class="btn-action btn-suspend"
+                                            th:attr="data-id=${company.memberId}, data-name=${company.companyName}"
+                                            onclick="event.stopPropagation(); openSuspendModal(this.dataset.id, this.dataset.name)">⊘ 정지</button>
+                                </th:block>
+                            </th:block>
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- 데이터 없을 때 -->
+                <tr th:if="${#lists.isEmpty(companies)}">
+                    <td colspan="9" style="text-align:center; padding:40px; color:#9ca3af;">
+                        검색 결과가 없습니다.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- 페이지바 -->
+        <div class="table-footer">
+            <span class="total-count">
+                총 <span th:text="${totalCount}">0</span>개 기업
+            </span>
+            <div class="pagination">
+                <a th:href="@{/admin/companies(page=1,search=${param.search},status=${param.status},approval=${param.approval})}"
+                   th:classappend="${currentPage == 1} ? 'disabled'">«</a>
+                <a th:href="@{/admin/companies(page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search},status=${param.status},approval=${param.approval})}"
+                   th:classappend="${currentPage == 1} ? 'disabled'">이전</a>
+                <span th:each="i : ${#numbers.sequence(1, totalPages)}">
+                    <a th:href="@{/admin/companies(page=${i},search=${param.search},status=${param.status},approval=${param.approval})}"
+                       th:text="${i}"
+                       th:classappend="${i == currentPage} ? 'active'">
+                    </a>
+                </span>
+                <a th:href="@{/admin/companies(page=${currentPage < totalPages ? currentPage+1 : totalPages},search=${param.search},status=${param.status},approval=${param.approval})}"
+                   th:classappend="${currentPage == totalPages} ? 'disabled'">다음</a>
+                <a th:href="@{/admin/companies(page=${totalPages},search=${param.search},status=${param.status},approval=${param.approval})}"
+                   th:classappend="${currentPage == totalPages} ? 'disabled'">»</a>
+            </div>
+        </div>
+
+    </div><!-- /content-box -->
+
+    <!-- 승인 모달 -->
+    <div class="modal" id="approveModal">
+        <div class="modal-content">
+            <h2>기업 승인</h2>
+            <p><span class="company-name" id="approveCompanyName"></span> 기업을 승인하시겠습니까?</p>
+            <p class="info-text">✅ 승인 시 기업 회원 권한이 부여되며 공고 등록이 가능해집니다.<br>해당 기업에 승인 알림이 발송됩니다.</p>
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeModal('approveModal')">취소</button>
+                <button class="btn-confirm-approve" onclick="confirmApprove()">승인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 거절 모달 -->
+    <div class="modal" id="rejectModal">
+        <div class="modal-content">
+            <h2>기업 승인 거절</h2>
+            <p><span class="company-name" id="rejectCompanyName"></span> 기업을 거절하시겠습니까?</p>
+            <div class="form-group">
+                <label>거절 사유 *</label>
+                <textarea id="rejectReason" placeholder="거절 사유를 입력하세요. 해당 내용이 기업에 알림으로 전달됩니다."></textarea>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeModal('rejectModal')">취소</button>
+                <button class="btn-confirm-reject" onclick="confirmReject()">거절</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 정지 모달 -->
+    <div class="modal" id="suspendModal">
+        <div class="modal-content">
+            <h2>기업 정지</h2>
+            <p><span class="company-name" id="suspendCompanyName"></span> 기업을 정지하시겠습니까?</p>
+            <p class="warn-text">
+                ⚠️ 정지 시 즉시 적용되는 사항<br>
+                - 해당 기업 계정 로그인 차단<br>
+                - 등록된 공고 전체 노출 중단<br>
+                - 해당 기업에 정지 알림 발송
+            </p>
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeModal('suspendModal')">취소</button>
+                <button class="btn-confirm-suspend" onclick="confirmSuspend()">정지</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 정지해제 모달 -->
+    <div class="modal" id="unsuspendModal">
+        <div class="modal-content">
+            <h2>정지 해제</h2>
+            <p><span class="company-name" id="unsuspendCompanyName"></span> 기업의 정지를 해제하시겠습니까?</p>
+            <p class="info-text">
+                ✅ 정지 해제 시 즉시 적용되는 사항<br>
+                - 해당 기업 계정 로그인 허용<br>
+                - 등록된 공고 다시 노출<br>
+                - 해당 기업에 정지해제 알림 발송
+            </p>
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeModal('unsuspendModal')">취소</button>
+                <button class="btn-confirm-unsuspend" onclick="confirmUnsuspend()">정지 해제</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 기업 상세 모달 -->
+    <div class="modal" id="companyDetailModal">
+        <div class="modal-content detail-modal-content">
+            <h2>기업 상세 정보</h2>
+            <div class="detail-row">
+                <span class="detail-label">아이디</span>
+                <span class="detail-value" id="dCompanyId"></span>
+            </div>
+            <!-- 기업명: 거절 시만 수정 버튼 표시 -->
+            <div class="detail-row">
+                <span class="detail-label">기업명</span>
+                <span class="detail-value" id="dCompanyName"></span>
+                <input type="text" id="eCompanyName" class="detail-edit-input" style="display:none;">
+                <button class="btn-edit" onclick="editField('companyName')" style="display:none;">수정</button>
+                <button class="btn-edit" id="confirmCompanyName" onclick="confirmField('companyName')" style="display:none; background:#d1fae5; color:#065f46; border-color:#a7f3d0;">확인</button>
+            </div>
+            <!-- 사업자번호: 거절 시만 수정 버튼 표시 -->
+            <div class="detail-row">
+                <span class="detail-label">사업자번호</span>
+                <span class="detail-value" id="dBizNo"></span>
+                <input type="text" id="eBizNo" class="detail-edit-input" style="display:none;">
+                <button class="btn-edit" onclick="editField('bizNo')" style="display:none;">수정</button>
+                <button class="btn-edit" id="confirmBizNo" onclick="confirmField('bizNo')" style="display:none; background:#d1fae5; color:#065f46; border-color:#a7f3d0;">확인</button>
+            </div>
+            <!-- 대표자명: 거절 시만 수정 버튼 표시 -->
+            <div class="detail-row">
+                <span class="detail-label">대표자명</span>
+                <span class="detail-value" id="dCeoName"></span>
+                <input type="text" id="eCeoName" class="detail-edit-input" style="display:none;">
+                <button class="btn-edit" onclick="editField('ceoName')" style="display:none;">수정</button>
+                <button class="btn-edit" id="confirmCeoName" onclick="confirmField('ceoName')" style="display:none; background:#d1fae5; color:#065f46; border-color:#a7f3d0;">확인</button>
+            </div>
+            <!-- 업종: 거절 시만 수정 버튼 표시 -->
+            <div class="detail-row">
+                <span class="detail-label">업종</span>
+                <span class="detail-value" id="dIndustry"></span>
+                <input type="text" id="eIndustry" class="detail-edit-input" style="display:none;">
+                <button class="btn-edit" onclick="editField('industry')" style="display:none;">수정</button>
+                <button class="btn-edit" id="confirmIndustry" onclick="confirmField('industry')" style="display:none; background:#d1fae5; color:#065f46; border-color:#a7f3d0;">확인</button>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">주소</span>
+                <span class="detail-value" id="dAddr"></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">상태</span>
+                <span class="detail-value" id="dCompanyStatus"></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">승인상태</span>
+                <span class="detail-value" id="dApproval"></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">거절사유</span>
+                <span class="detail-value" id="dRejectReason"></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">공고 수</span>
+                <span class="detail-value" id="dPostCount"></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">가입일</span>
+                <span class="detail-value" id="dCompanyCreated"></span>
+            </div>
+            <div class="modal-buttons">
+                <!-- ★ 재승인 버튼: 거절 상태일 때만 표시, /approve 엔드포인트 재사용 -->
+                <button class="btn-confirm-approve" id="btnReApprove"
+                        style="display:none;" onclick="reApproveCompany()">재승인</button>
+                <button class="btn-cancel" onclick="closeModal('companyDetailModal')">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 토스트 -->
+    <div class="toast" id="toast"></div>
+
+</section>
+</body>
+</html>

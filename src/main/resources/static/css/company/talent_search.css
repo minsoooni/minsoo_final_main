@@ -1,0 +1,197 @@
+@charset "UTF-8";
+
+
+.ta-head{
+  display:flex; align-items:flex-start; justify-content:space-between;
+  margin-bottom:14px;
+  /* border: solid 2px red; */
+}
+.ta-title{ font-size:18px; font-weight:900; margin:0; }
+.ta-desc{ color:#6b7280; font-size:13px; margin-top:6px; }
+
+/* ===== 검색 박스 ===== */
+.talent-searchbox{ padding:18px; }
+.talent-searchrow{ display:flex; gap:12px; align-items:center; }
+.talent-searchinput{
+  flex:1;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  background:#f5f6f8;
+  border:1px solid #eee;
+  border-radius:12px;
+  padding:10px 12px;
+}
+.talent-searchinput i{ color:#777; }
+.talent-searchinput .form-control{
+  border:0;
+  background:transparent;
+  box-shadow:none;
+  padding:0;
+  height:22px;
+}
+.talent-chips{ margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; }
+.chip{
+  border:1px solid #e6e8ee;
+  background:#fff;
+  color:#222;
+  border-radius:999px;
+  padding:6px 12px;
+  font-size:12px;
+}
+.chip:hover{ background:#111; color:#fff; border-color:#111; }
+
+/* ===== 2열 레이아웃 ===== */
+.talent-grid{
+  display:grid;
+  grid-template-columns: 300px 1fr;
+  gap:18px;
+  margin-top:16px;
+}
+
+/* ===== 필터 ===== */
+.filter-card{ padding:16px; height: fit-content; }
+.filter-head{
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:10px;
+}
+.filter-title{ font-weight:800; }
+.filter-reset{ color:#0b77ff; text-decoration:none; }
+
+.filter-section{ margin-top:14px; }
+.filter-label{ font-size:12px; color:#666; margin-bottom:8px; font-weight:700; }
+.filter-scroll{
+  border:1px solid #eee;
+  border-radius:12px;
+  padding:10px;
+  max-height:160px;
+  overflow:auto;
+  background:#fff;
+}
+.check{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  font-size:13px;
+  margin:8px 0;
+  color:#222;
+}
+.check input{ transform: translateY(1px); }
+
+.range-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.range-row span{ color:#777; font-size:12px; }
+
+/* ===== 결과 헤더 ===== */
+.results-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-top:15px;
+}
+.results-title{ font-weight:800; }
+.results-sort{
+  width:170px;
+  border-radius:10px;
+}
+
+/* ===== 이력서 카드 ===== */
+.resume-card{ padding:16px; }
+.resume-top{
+  display:flex;
+  gap:14px;
+  position:relative;
+}
+/* 페이지(인재검색) 전용 아바타 */
+.resume-avatar{
+  width:56px;height:56px;
+  border-radius:999px;
+  background:#e9eaee;
+  display:flex;align-items:center;justify-content:center;
+  color:#111;
+  flex:0 0 auto;
+}
+.resume-main{ flex:1; min-width:0; }
+.resume-name{ font-weight:900; display:flex; align-items:center; gap:8px; }
+.resume-sub{ color:#666; font-size:13px; margin-top:4px; }
+
+.resume-meta{
+  display:flex; flex-wrap:wrap; gap:14px;
+  margin-top:10px;
+  color:#777;
+  font-size:12px;
+}
+.resume-meta i{ margin-right:6px; }
+
+.resume-rows{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:10px;
+  flex-wrap:wrap;
+}
+.row-label{
+  width:72px;
+  font-size:12px;
+  color:#666;
+  font-weight:700;
+}
+/* 인재검색(이력서 카드) 전용 pill */
+.resume-pill{
+  border:1px solid #e6e8ee;
+  border-radius:999px;
+  padding:5px 10px;
+  font-size:12px;
+  background:#fff;
+}
+.tag{
+  display:inline-block;
+  background:#f4f6fa;
+  color:#444;
+  padding:5px 10px;
+  border-radius:999px;
+  font-size:12px;
+}
+.tag-more{ background:#eceff5; font-weight:700; }
+
+.resume-bottom{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-top:12px;
+  padding-top:12px;
+  border-top:1px solid #f0f0f0;
+}
+.salary{ font-size:12px; color:#444; }
+.bottom-actions{ display:flex; gap:8px; }
+.bottom-actions .btn{ border-radius:10px; }
+
+.bookmark{
+  position:absolute;
+  right:0;
+  top:0;
+  border:0;
+  background:transparent;
+  color:#666;
+}
+.bookmark:hover{ color:#111; }
+
+
+
+.filter-subtitle{
+  margin-top:10px;
+  margin-bottom:6px;
+  font-size:12px;
+  font-weight:800;
+  color:#111;
+}
+
+.skill-group + .skill-group{
+  margin-top:12px;
+  padding-top:10px;
+  border-top:1px solid #f1f1f1;
+}

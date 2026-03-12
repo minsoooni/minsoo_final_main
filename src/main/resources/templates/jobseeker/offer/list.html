@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      lang="ko"
+      th:replace="~{fragment/jobseeker_bar :: jobseeker_layout(~{::div#offerListContent})}">
+
+<head>
+  <title>받은 제안 | 구인구직</title>
+</head>
+
+<body>
+<div id="offerListContent">
+
+<style>
+  /* ══════════════════════════════════════════
+     받은 제안 페이지
+     ══════════════════════════════════════════ */
+
+  /* ── 상단 요약 카드 ── */
+  .os-card {
+    border-radius: 12px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid #e9ecef;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transition: box-shadow 0.2s;
+  }
+  .os-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.10); }
+  .os-card .os-label { font-size: 0.8rem; color: #6c757d; margin-bottom: 4px; }
+  .os-card .os-num   { font-size: 1.6rem; font-weight: 700; line-height: 1; }
+  .os-card .os-icon-circle {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+  }
+  .os-icon-blue   { background: #DBEAFE; color: #2563EB; }
+  .os-icon-yellow { background: #FEF3C7; color: #D97706; }
+  .os-icon-green  { background: #D1FAE5; color: #059669; }
+  .os-icon-gray   { background: #F3F4F6; color: #6B7280; }
+
+  .os-num-default { color: #1a1a1a; }
+  .os-num-yellow  { color: #D97706; }
+  .os-num-green   { color: #059669; }
+  .os-num-gray    { color: #6B7280; }
+
+  /* ── 탭 ── */
+  .of-tabs { border-bottom: 2px solid #e9ecef; margin-bottom: 20px; }
+  .of-tabs .nav-link {
+    color: #6c757d;
+    font-size: 0.9rem;
+    padding: 10px 16px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    cursor: pointer;
+  }
+  .of-tabs .nav-link.active {
+    color: #4A90E2;
+    font-weight: 600;
+    border-bottom: 2px solid #4A90E2;
+    background: transparent;
+  }
+  .of-tabs .nav-link .cnt {
+    font-size: 0.78rem;
+    margin-left: 2px;
+  }
+
+  /* ── 검색바 ── */
+  .of-search {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 12px 18px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .of-search .form-control {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    flex: 1;
+  }
+  .of-search .form-control:focus {
+    border-color: #4A90E2;
+    box-shadow: 0 0 0 3px rgba(74,144,226,0.1);
+  }
+  .of-search select {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    padding: 6px 12px;
+    color: #495057;
+    background: #fff;
+    width: auto;
+  }
+
+  /* ── 제안 카드 (공통 값에 맞춤) ── */
+  .of-card {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+  }
+  .of-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
+  .of-card-body { padding: 22px 24px; }
+
+  /* 기업 로고 (공통 56x56) */
+  .of-logo {
+    width: 56px; height: 56px;
+    border-radius: 10px;
+    border: 1px solid #e9ecef;
+    background: #f8f9fa;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.65rem; color: #adb5bd; text-align: center;
+    flex-shrink: 0; overflow: hidden;
+    position: relative;
+  }
+  .of-logo img { width: 100%; height: 100%; object-fit: contain; }
+
+  /* 미열람 카드 강조 */
+  .of-card.is-unread {
+    border-left: 4px solid #2563EB;
+    background: linear-gradient(90deg, #f7faff 0%, #fff 5%);
+  }
+  .unread-dot {
+    width: 10px; height: 10px;
+    background: #2563EB;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+    margin-right: 4px;
+  }
+
+  /* 기업명 + 타입 */
+  .of-company-name {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 0;
+  }
+  .of-company-type {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-left: 6px;
+    font-weight: 400;
+  }
+
+  /* 공고 제목 */
+  .of-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #2563EB;
+    margin: 4px 0 2px;
+  }
+
+  /* 태그 뱃지 (공통 스타일) */
+  .of-tag {
+    display: inline-block;
+    font-size: 0.78rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: #f1f3f5;
+    color: #495057;
+    margin-right: 4px;
+    margin-bottom: 4px;
+  }
+  .of-tag.salary { background: #EBF4FF; color: #2563EB; font-weight: 600; }
+
+  /* 메시지 프리뷰 */
+  .of-msg-preview {
+    background: #EFF6FF;
+    border-left: 3px solid #93C5FD;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    font-size: 0.85rem;
+    color: #374151;
+    line-height: 1.6;
+    max-height: 60px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  /* 날짜 */
+  .of-dates {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-top: 10px;
+  }
+  .of-dates .deadline { color: #E74C3C; font-weight: 600; }
+
+  /* 상태 뱃지 (우측상단) */
+  .of-status {
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 5px 14px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+  }
+  .of-status.st-unread   { background: #DBEAFE; color: #1D4ED8; }
+  .of-status.st-pending  { background: #FEF3C7; color: #92400E; }
+  .of-status.st-accepted { background: #D1FAE5; color: #065F46; }
+  .of-status.st-rejected { background: #F3F4F6; color: #6B7280; }
+
+  /* ── 카드 하단 버튼 영역 (공통 패딩) ── */
+  .of-card-footer {
+    padding: 14px 24px;
+    border-top: 1px solid #f1f3f5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fafbfc;
+  }
+  .of-card-footer .btn-sm {
+    font-size: 0.82rem;
+    padding: 6px 16px;
+    border-radius: 8px;
+  }
+  .of-card-footer .btn-view {
+    color: #2563EB;
+    border-color: #2563EB;
+  }
+  .of-card-footer .btn-view:hover {
+    background: #EFF6FF;
+  }
+  .of-card-footer .btn-accept {
+    background: #059669;
+    border-color: #059669;
+    color: #fff;
+    font-weight: 600;
+  }
+  .of-card-footer .btn-accept:hover {
+    background: #047857;
+  }
+  .of-card-footer .btn-deny {
+    background: #E74C3C;
+    border-color: #E74C3C;
+    color: #fff;
+    font-weight: 600;
+  }
+  .of-card-footer .btn-deny:hover {
+    background: #c0392b;
+  }
+  .of-card-footer .result-msg {
+    font-size: 0.82rem;
+    color: #6c757d;
+  }
+
+  /* ── 상세보기 패널 (기본 숨김) ── */
+  .of-detail-panel {
+    display: none;
+    border-top: 1px solid #e9ecef;
+    padding: 16px 24px;
+    background: #fafbfc;
+  }
+
+  /* 제안 메시지 (상세) */
+  .detail-section-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .detail-msg-box {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.84rem;
+    color: #374151;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+
+  /* 제안 수락 안내 */
+  .accept-info-box {
+    background: #EFF6FF;
+    border: 1px solid #BFDBFE;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 12px;
+  }
+  .accept-info-box .info-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .accept-info-box ul {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 0.82rem;
+    color: #374151;
+  }
+  .accept-info-box ul li { margin-bottom: 2px; }
+
+  /* ── 빈 상태 ── */
+  .of-empty {
+    text-align: center;
+    padding: 60px 0;
+    color: #adb5bd;
+  }
+
+  /* ── 거절 모달 ── */
+  .reject-modal .modal-content {
+    border-radius: 14px;
+    border: none;
+  }
+</style>
+
+  <!-- ══════════ 헤더 ══════════ -->
+  <div class="container-fluid px-4 py-4">
+
+  <div class="js-page-header">
+    <h1 class="js-page-title">받은 제안</h1>
+    <p class="js-page-subtitle">기업이 귀하에게 보낸 입사 제안입니다.</p>
+  </div>
+
+  <!-- ══════════ 요약 카드 ══════════ -->
+  <div class="row mb-4">
+    <div class="col-6 col-md-3 mb-2">
+      <div class="os-card">
+        <div>
+          <div class="os-label">전체 제안</div>
+          <div class="os-num os-num-default" id="count-total" th:text="${#lists.size(offers)}">0</div>
+        </div>
+        <div class="os-icon-circle os-icon-blue"><i class="fas fa-envelope"></i></div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3 mb-2">
+      <div class="os-card">
+        <div>
+          <div class="os-label">검토중</div>
+          <div class="os-num os-num-yellow" id="count-pending" th:text="${pendingCount}">0</div>
+        </div>
+        <div class="os-icon-circle os-icon-yellow"><i class="fas fa-clock"></i></div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3 mb-2">
+      <div class="os-card">
+        <div>
+          <div class="os-label">수락</div>
+          <div class="os-num os-num-green" id="count-accepted" th:text="${acceptedCount}">0</div>
+        </div>
+        <div class="os-icon-circle os-icon-green"><i class="fas fa-check-circle"></i></div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3 mb-2">
+      <div class="os-card">
+        <div>
+          <div class="os-label">거절</div>
+          <div class="os-num os-num-gray" id="count-rejected" th:text="${rejectedCount}">0</div>
+        </div>
+        <div class="os-icon-circle os-icon-gray"><i class="fas fa-times-circle"></i></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ 탭 ══════════ -->
+  <ul class="nav of-tabs" id="offerTabs">
+    <li class="nav-item">
+      <a class="nav-link active" href="#" data-filter="all">
+        전체 <span class="cnt">(<span th:text="${#lists.size(offers)}">0</span>)</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="#" data-filter="pending">
+        검토중 <span class="cnt">(<span th:text="${pendingCount}">0</span>)</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="#" data-filter="accepted">
+        수락 <span class="cnt">(<span th:text="${acceptedCount}">0</span>)</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="#" data-filter="rejected">
+        거절 <span class="cnt">(<span th:text="${rejectedCount}">0</span>)</span>
+      </a>
+    </li>
+  </ul>
+
+  <!-- ══════════ 검색바 ══════════ -->
+  <div class="js-search-bar d-flex align-items-center" style="gap: 10px;">
+    <div class="flex-fill position-relative">
+      <i class="fas fa-search position-absolute text-muted"
+         style="left:12px; top:50%; transform:translateY(-50%); font-size:0.85rem;"></i>
+      <input type="text" id="searchInput" class="form-control"
+             style="padding-left: 36px;"
+             placeholder="공고명, 회사명으로 검색" maxlength="100">
+    </div>
+    <select id="sortSelect" class="form-control" style="width:120px;">
+      <option value="latest">최신순</option>
+      <option value="deadline">마감순</option>
+    </select>
+  </div>
+
+  <!-- ══════════ 제안 없음 ══════════ -->
+  <div th:if="${#lists.isEmpty(offers)}" class="of-empty" id="emptyState">
+    <i class="fas fa-envelope-open fa-3x mb-3"></i>
+    <p class="h6 mt-2">받은 제안이 없습니다.</p>
+    <p class="small text-muted">이력서를 공개하면 기업으로부터 제안을 받을 수 있습니다.</p>
+    <a th:href="@{/jobseeker/resume/list}" class="btn btn-primary btn-sm mt-2">
+      <i class="fas fa-file-alt"></i> 이력서 관리
+    </a>
+  </div>
+
+  <!-- ══════════ 필터 결과 없음 (JS에서 토글) ══════════ -->
+  <div id="filterEmpty" class="of-empty" style="display:none;">
+    <i class="fas fa-search fa-3x mb-3"></i>
+    <p class="h6 mt-2">검색 결과가 없습니다.</p>
+    <p class="small text-muted">검색어나 필터 조건을 변경해 보세요.</p>
+  </div>
+
+  <!-- ══════════ 제안 목록 ══════════ -->
+  <div id="offerListContainer">
+
+    <div th:each="offer : ${offers}"
+         class="of-card"
+         th:classappend="${offer.status == 'UNREAD'} ? ' is-unread' : ''"
+         th:attr="data-status=${offer.status},
+                  data-company=${offer.companyName},
+                  data-title=${offer.postTitle},
+                  data-send-at=${offer.sendAt},
+                  data-expire-at=${offer.expireAt},
+                  data-offer-submit-id=${offer.offerSubmitId}">
+
+      <div class="of-card-body">
+        <div class="d-flex" style="gap:18px;">
+
+          <!-- 기업 로고 -->
+          <div class="of-logo">
+            <img th:if="${offer.companyLogo != null and offer.companyLogo != ''}"
+                 th:src="@{/{path}(path=${offer.companyLogo})}"
+                 style="width:100%; height:100%; object-fit:cover; border-radius:10px;" alt="로고">
+            <span th:unless="${offer.companyLogo != null and offer.companyLogo != ''}"
+                  style="font-size:22px; color:#bfc4cc;">
+              <i class="fas fa-building"></i>
+            </span>
+          </div>
+
+          <!-- 내용 -->
+          <div class="flex-fill" style="min-width:0;">
+
+            <!-- 1행: 기업명 + 타입 | 상태 -->
+            <div class="d-flex justify-content-between align-items-start mb-0">
+              <div>
+                <span class="of-company-name" th:text="${offer.companyName}">기업명</span>
+                <span class="of-company-type" th:if="${offer.companyType != null}" th:text="${offer.companyType}">중견기업</span>
+              </div>
+              <div class="ml-3 flex-shrink-0" data-status-badge-wrap>
+                <span th:if="${offer.status == 'UNREAD'}"   class="of-status st-unread"><span class="unread-dot"></span> 미열람</span>
+                <span th:if="${offer.status == 'PENDING'}"  class="of-status st-pending"><i class="fas fa-clock"></i> 검토중</span>
+                <span th:if="${offer.status == 'ACCEPTED'}" class="of-status st-accepted"><i class="fas fa-check-circle"></i> 수락</span>
+                <span th:if="${offer.status == 'REJECTED'}" class="of-status st-rejected"><i class="fas fa-times-circle"></i> 거절</span>
+              </div>
+            </div>
+
+            <!-- 2행: 공고 제목 -->
+            <div class="of-title" th:text="${offer.postTitle}">공고 제목</div>
+
+            <!-- 3행: 태그 -->
+            <div class="mb-2">
+              <span class="of-tag" th:if="${offer.regionName != null}"><i class="fas fa-map-marker-alt"></i> <span th:text="${offer.regionName}">지역</span></span>
+              <span class="of-tag" th:if="${offer.careerType != null}"><i class="fas fa-briefcase"></i> <span th:text="${offer.careerType}">경력</span></span>
+              <span class="of-tag" th:if="${offer.workType != null}" th:text="${offer.workType}">정규직</span>
+              <span class="of-tag salary"><i class="fas fa-won-sign"></i> <span th:text="${offer.salaryText}">협의</span></span>
+            </div>
+
+            <!-- 4행: 메시지 프리뷰 -->
+            <div class="of-msg-preview" th:if="${offer.message != null}">
+              "<span th:text="${offer.message}">제안 메시지</span>"
+            </div>
+
+            <!-- 5행: 날짜 -->
+            <div class="of-dates">
+              <i class="far fa-calendar-alt"></i> 제안일: <span th:text="${offer.sendAt}">2026.02.11</span>
+              &nbsp;&nbsp;
+              <span class="deadline"><i class="far fa-clock"></i> 응답 기한: <span th:text="${offer.expireAt}">2026.03.10</span></span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 상세보기 패널 (토글) ── -->
+      <div th:id="'detail-' + ${offer.offerSubmitId}" class="of-detail-panel">
+        <div class="row">
+          <!-- 좌측: 제안 정보 -->
+          <div class="col-md-7 mb-2">
+            <div class="detail-section-title"><i class="fas fa-envelope-open-text text-primary"></i> 제안 정보</div>
+            <div class="detail-msg-box">
+              <div style="margin-bottom:8px;"><strong>제안서 제목:</strong> <span th:text="${offer.title}">제안서 제목</span></div>
+              <div style="border-top:1px solid #f1f3f5; padding-top:8px;"><strong>제안 메시지</strong></div>
+              <div th:text="${offer.message != null} ? ${offer.message} : '담당자가 보낸 메시지가 없습니다.'">메시지 내용</div>
+            </div>
+          </div>
+          <!-- 우측: 기업 정보 -->
+          <div class="col-md-5 mb-2">
+            <div class="detail-section-title"><i class="fas fa-building text-primary"></i> 기업 정보</div>
+            <div class="detail-msg-box">
+              <table style="width:100%; font-size:13px; border-collapse:collapse;">
+                <tr th:if="${offer.companyType != null}">
+                  <td style="color:#9ca3af; width:70px; padding:5px 0; vertical-align:top; white-space:nowrap;">기업형태</td>
+                  <td style="color:#374151; font-weight:600; padding:5px 0 5px 6px;" th:text="${offer.companyType}">-</td>
+                </tr>
+                <tr th:if="${offer.ceoName != null}">
+                  <td style="color:#9ca3af; padding:5px 0; vertical-align:top; white-space:nowrap;">대표자</td>
+                  <td style="color:#374151; font-weight:600; padding:5px 0 5px 6px;" th:text="${offer.ceoName}">-</td>
+                </tr>
+                <tr th:if="${offer.industryCode != null}">
+                  <td style="color:#9ca3af; padding:5px 0; vertical-align:top; white-space:nowrap;">업종</td>
+                  <td style="color:#374151; font-weight:600; padding:5px 0 5px 6px;" class="industry-code-text" th:data-code="${offer.industryCode}" th:text="${offer.industryCode}">-</td>
+                </tr>
+                <tr th:if="${offer.openDate != null}">
+                  <td style="color:#9ca3af; padding:5px 0; vertical-align:top; white-space:nowrap;">설립일</td>
+                  <td style="color:#374151; font-weight:600; padding:5px 0 5px 6px;" th:text="${offer.openDate}">-</td>
+                </tr>
+                <tr th:if="${offer.addr1 != null}">
+                  <td style="color:#9ca3af; padding:5px 0; vertical-align:top; white-space:nowrap;">주소</td>
+                  <td style="color:#374151; font-weight:600; padding:5px 0 5px 6px;" th:text="${offer.addr1 + (offer.addr2 != null ? ' ' + offer.addr2 : '')}">-</td>
+                </tr>
+                <tr th:if="${offer.homepageUrl != null}">
+                  <td style="color:#9ca3af; padding:5px 0; vertical-align:top; white-space:nowrap;">홈페이지</td>
+                  <td style="padding:5px 0 5px 6px;"><a th:href="${offer.homepageUrl}" target="_blank" style="color:#2563EB; font-weight:600; word-break:break-all; font-size:12.5px;">바로가기</a></td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 제안 수락 안내 -->
+        <div class="accept-info-box" th:if="${offer.status == 'PENDING' or offer.status == 'UNREAD'}">
+          <div class="info-title"><i class="fas fa-info-circle text-primary"></i> <i class="fas fa-lightbulb" style="color:#F5A623;"></i> 제안 수락 안내</div>
+          <ul>
+            <li>제안을 수락하면 담당자가 연락드립니다.</li>
+            <li>수락 후에도 면접 일정 조율이 가능합니다.</li>
+            <li>응답 기한: <strong th:text="${offer.expireAt}">2026.03.10</strong>까지</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ── 카드 하단 ── -->
+      <div class="of-card-footer">
+        <div class="d-flex" style="gap:8px;">
+          <button type="button"
+                  class="btn btn-sm btn-outline-secondary btn-toggle-detail"
+                  th:attr="data-target='#detail-' + ${offer.offerSubmitId},
+                           data-offer-submit-id=${offer.offerSubmitId}">
+            <i class="fas fa-chevron-down"></i> 상세보기
+          </button>
+          <a th:href="@{/job/detail/{id}(id=${offer.jobId})}" target="_blank" class="btn btn-sm btn-outline-primary btn-view">
+            <i class="far fa-eye"></i> 공고 보기
+          </a>
+        </div>
+
+        <div class="d-flex align-items-center" style="gap:8px;" data-action-area>
+          <!-- 수락/거절 (PENDING, UNREAD) -->
+          <div th:if="${offer.status == 'PENDING' or offer.status == 'UNREAD'}" class="d-flex" style="gap:8px;">
+            <button type="button" class="btn btn-sm btn-accept btn-do-accept"
+                    th:attr="data-offer-submit-id=${offer.offerSubmitId}">
+              <i class="fas fa-check-circle"></i> 수락하기
+            </button>
+            <button type="button" class="btn btn-sm btn-deny btn-do-reject"
+                    th:attr="data-offer-submit-id=${offer.offerSubmitId},
+                             data-company-name=${offer.companyName},
+                             data-target='#rejectModal-' + ${offer.offerSubmitId}"
+                    data-toggle="modal">
+              <i class="fas fa-times-circle"></i> 거절
+            </button>
+          </div>
+
+          <!-- 수락 완료 -->
+          <span th:if="${offer.status == 'ACCEPTED'}" class="result-msg">
+            <i class="fas fa-info-circle"></i> 이미 응답한 제안입니다
+          </span>
+
+          <!-- 거절 완료 -->
+          <span th:if="${offer.status == 'REJECTED'}" class="result-msg">
+            <i class="fas fa-info-circle"></i> 이미 응답한 제안입니다
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 거절 확인 모달 ── -->
+    <div th:each="offer : ${offers}"
+         th:if="${offer.status == 'PENDING' or offer.status == 'UNREAD'}"
+         class="modal fade reject-modal"
+         th:id="'rejectModal-' + ${offer.offerSubmitId}"
+         tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered" style="max-width:400px;">
+        <div class="modal-content">
+          <div class="modal-body text-center py-4">
+            <div class="mb-3" style="font-size:3rem; color:#F5A623;">
+              <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h5 class="font-weight-bold mb-2">제안 거절</h5>
+            <p class="text-muted small mb-0">
+              <strong th:text="${offer.companyName}">기업명</strong>의 제안을 거절하시겠습니까?<br>
+              거절 후에는 되돌릴 수 없습니다.
+            </p>
+          </div>
+          <div class="modal-footer border-0 justify-content-center" style="gap:8px;">
+            <button type="button" class="btn btn-outline-secondary px-4" data-dismiss="modal">취소</button>
+            <button type="button" class="btn btn-danger px-4 btn-confirm-reject"
+                    th:attr="data-offer-submit-id=${offer.offerSubmitId}">
+              거절하기
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end offerListContainer -->
+
+
+  <script th:inline="javascript">
+  (function() {
+
+    // context-path 자동 처리
+    var contextPath = /*[[@{/}]]*/ '/';
+
+    // ═══════════════ 탭 필터링 ═══════════════
+    var currentFilter = 'all';
+
+    document.querySelectorAll('#offerTabs .nav-link').forEach(function(tab) {
+      tab.addEventListener('click', function(e) {
+        e.preventDefault();
+
+        // 활성 탭 변경
+        document.querySelectorAll('#offerTabs .nav-link').forEach(function(t) {
+          t.classList.remove('active');
+        });
+        this.classList.add('active');
+
+        currentFilter = this.getAttribute('data-filter');
+        applyFilterAndSearch();
+      });
+    });
+
+
+    // ═══════════════ 검색 ═══════════════
+    var searchInput = document.getElementById('searchInput');
+    var searchTimer = null;
+
+    searchInput.addEventListener('input', function() {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(function() {
+        applyFilterAndSearch();
+      }, 300);
+    });
+
+
+    // ═══════════════ 정렬 ═══════════════
+    var sortSelect = document.getElementById('sortSelect');
+    sortSelect.addEventListener('change', function() {
+      applyFilterAndSearch();
+    });
+
+
+    // ═══════════════ 통합 필터/검색/정렬 함수 ═══════════════
+    function applyFilterAndSearch() {
+      var keyword = searchInput.value.trim().toLowerCase();
+      var sortBy = sortSelect.value;
+      var cards = document.querySelectorAll('#offerListContainer .of-card');
+      var container = document.getElementById('offerListContainer');
+      var visibleCount = 0;
+
+      // 카드를 배열로 변환하여 정렬
+      var cardArray = Array.prototype.slice.call(cards);
+
+      // 정렬
+      cardArray.sort(function(a, b) {
+        if (sortBy === 'deadline') {
+          var expA = a.getAttribute('data-expire-at') || '';
+          var expB = b.getAttribute('data-expire-at') || '';
+          return expA.localeCompare(expB); // 마감 임박순 (빠른 날짜 먼저)
+        } else {
+          var sendA = a.getAttribute('data-send-at') || '';
+          var sendB = b.getAttribute('data-send-at') || '';
+          return sendB.localeCompare(sendA); // 최신순 (늦은 날짜 먼저)
+        }
+      });
+
+      // 정렬된 순서로 DOM 재배치
+      cardArray.forEach(function(card) {
+        container.appendChild(card);
+      });
+
+      // 필터 + 검색 적용
+      cardArray.forEach(function(card) {
+        var status = card.getAttribute('data-status');
+        var company = (card.getAttribute('data-company') || '').toLowerCase();
+        var title = (card.getAttribute('data-title') || '').toLowerCase();
+
+        // 탭 필터
+        var matchFilter = false;
+        if (currentFilter === 'all') {
+          matchFilter = true;
+        } else if (currentFilter === 'pending') {
+          matchFilter = (status === 'UNREAD' || status === 'PENDING');
+        } else if (currentFilter === 'accepted') {
+          matchFilter = (status === 'ACCEPTED');
+        } else if (currentFilter === 'rejected') {
+          matchFilter = (status === 'REJECTED');
+        }
+
+        // 검색 필터
+        var matchSearch = true;
+        if (keyword !== '') {
+          matchSearch = (company.indexOf(keyword) !== -1 || title.indexOf(keyword) !== -1);
+        }
+
+        if (matchFilter && matchSearch) {
+          card.style.display = '';
+          visibleCount++;
+        } else {
+          card.style.display = 'none';
+        }
+      });
+
+      // 필터 결과 없음 표시
+      var filterEmpty = document.getElementById('filterEmpty');
+      var emptyState = document.getElementById('emptyState');
+      if (cards.length > 0 && visibleCount === 0) {
+        filterEmpty.style.display = '';
+      } else {
+        filterEmpty.style.display = 'none';
+      }
+    }
+
+
+    // ═══════════════ 상세보기 토글 + 열람 처리 ═══════════════
+    document.querySelectorAll('.btn-toggle-detail').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var targetId = this.getAttribute('data-target');
+        var panel = document.querySelector(targetId);
+        if (!panel) return;
+
+        var isOpen = panel.style.display !== 'none' && panel.style.display !== '';
+        panel.style.display = isOpen ? 'none' : 'block';
+        this.innerHTML = isOpen
+          ? '<i class="fas fa-chevron-down"></i> 상세보기'
+          : '<i class="fas fa-chevron-up"></i> 간략히';
+
+        // 업종코드 → 한글명 변환
+        if (!isOpen) {
+          var industryMap = {
+            'IT': 'IT·인터넷', 'SW': '소프트웨어', 'FIN': '금융·핀테크',
+            'EDU': '교육·에듀테크', 'MKT': '마케팅', 'ETC': '기타'
+          };
+          panel.querySelectorAll('.industry-code-text').forEach(function(el) {
+            var code = el.getAttribute('data-code');
+            el.textContent = industryMap[code] || code || '-';
+          });
+        }
+
+        // 열람 처리 (UNREAD → PENDING)
+        if (!isOpen) {
+          var card = this.closest('.of-card');
+          var offerSubmitId = this.getAttribute('data-offer-submit-id');
+
+          if (card && card.classList.contains('is-unread')) {
+            var url = contextPath + 'api/offer/' + offerSubmitId + '/view';
+
+            fetch(url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' }
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+              if (data.result === 'ok') {
+                // UI 업데이트: UNREAD → PENDING
+                card.classList.remove('is-unread');
+                card.setAttribute('data-status', 'PENDING');
+                var badgeWrap = card.querySelector('[data-status-badge-wrap]');
+                if (badgeWrap) {
+                  badgeWrap.innerHTML = '<span class="of-status st-pending"><i class="fas fa-clock"></i> 검토중</span>';
+                }
+                updateCountsAfterResponse();
+              }
+            })
+            .catch(function(err) {
+              console.error('[열람처리] 에러:', err);
+            });
+          }
+        }
+      });
+    });
+
+
+    // ═══════════════ 수락 처리 (AJAX) ═══════════════
+    document.querySelectorAll('.btn-do-accept').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var offerSubmitId = this.getAttribute('data-offer-submit-id');
+        var card = this.closest('.of-card');
+
+        if (!confirm('이 제안을 수락하시겠습니까?')) return;
+
+        fetch(contextPath + 'api/offer/' + offerSubmitId + '/accept', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.result === 'ok') {
+            // UI 업데이트
+            card.classList.remove('is-unread');
+            card.setAttribute('data-status', 'ACCEPTED');
+
+            // 상태 뱃지 변경
+            var badgeWrap = card.querySelector('[data-status-badge-wrap]');
+            if (badgeWrap) {
+              badgeWrap.innerHTML = '<span class="of-status st-accepted"><i class="fas fa-check-circle"></i> 수락</span>';
+            }
+
+            // 버튼 영역 → 응답 완료 메시지로 교체
+            var actionArea = card.querySelector('[data-action-area]');
+            if (actionArea) {
+              actionArea.innerHTML = '<span class="result-msg"><i class="fas fa-info-circle"></i> 이미 응답한 제안입니다</span>';
+            }
+
+            // 상세패널 내 수락안내 숨김
+            var detailPanel = document.getElementById('detail-' + offerSubmitId);
+            if (detailPanel) {
+              var infoBox = detailPanel.querySelector('.accept-info-box');
+              if (infoBox) infoBox.style.display = 'none';
+            }
+
+            // 카운트 업데이트
+            updateCountsAfterResponse();
+
+            alert('제안을 수락했습니다.');
+          } else {
+            alert(data.message || '처리에 실패했습니다.');
+          }
+        })
+        .catch(function() {
+          alert('서버 오류가 발생했습니다.');
+        });
+      });
+    });
+
+
+    // ═══════════════ 거절 처리 (모달 확인 후 AJAX) ═══════════════
+    document.querySelectorAll('.btn-confirm-reject').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var offerSubmitId = this.getAttribute('data-offer-submit-id');
+        var card = document.querySelector('.of-card[data-offer-submit-id="' + offerSubmitId + '"]');
+        var modal = this.closest('.modal');
+
+        fetch(contextPath + 'api/offer/' + offerSubmitId + '/reject', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          // 모달 닫기
+          if (modal) {
+            $(modal).modal('hide');
+          }
+
+          if (data.result === 'ok') {
+            // UI 업데이트
+            card.classList.remove('is-unread');
+            card.setAttribute('data-status', 'REJECTED');
+
+            // 상태 뱃지 변경
+            var badgeWrap = card.querySelector('[data-status-badge-wrap]');
+            if (badgeWrap) {
+              badgeWrap.innerHTML = '<span class="of-status st-rejected"><i class="fas fa-times-circle"></i> 거절</span>';
+            }
+
+            // 버튼 영역 → 응답 완료 메시지로 교체
+            var actionArea = card.querySelector('[data-action-area]');
+            if (actionArea) {
+              actionArea.innerHTML = '<span class="result-msg"><i class="fas fa-info-circle"></i> 이미 응답한 제안입니다</span>';
+            }
+
+            // 상세패널 내 수락안내 숨김
+            var detailPanel = document.getElementById('detail-' + offerSubmitId);
+            if (detailPanel) {
+              var infoBox = detailPanel.querySelector('.accept-info-box');
+              if (infoBox) infoBox.style.display = 'none';
+            }
+
+            // 카운트 업데이트
+            updateCountsAfterResponse();
+
+            alert('제안을 거절했습니다.');
+          } else {
+            alert(data.message || '처리에 실패했습니다.');
+          }
+        })
+        .catch(function() {
+          alert('서버 오류가 발생했습니다.');
+        });
+      });
+    });
+
+
+    // ═══════════════ 카운트 재계산 (클라이언트 사이드) ═══════════════
+    function updateCountsAfterResponse() {
+      var cards = document.querySelectorAll('#offerListContainer .of-card');
+      var total = 0, pending = 0, accepted = 0, rejected = 0;
+
+      cards.forEach(function(card) {
+        total++;
+        var status = card.getAttribute('data-status');
+        if (status === 'UNREAD' || status === 'PENDING') pending++;
+        else if (status === 'ACCEPTED') accepted++;
+        else if (status === 'REJECTED') rejected++;
+      });
+
+      // 요약 카드 업데이트
+      document.getElementById('count-total').textContent = total;
+      document.getElementById('count-pending').textContent = pending;
+      document.getElementById('count-accepted').textContent = accepted;
+      document.getElementById('count-rejected').textContent = rejected;
+
+      // 탭 카운트 업데이트
+      var tabs = document.querySelectorAll('#offerTabs .nav-link');
+      tabs[0].querySelector('.cnt').innerHTML = '(' + total + ')';
+      tabs[1].querySelector('.cnt').innerHTML = '(' + pending + ')';
+      tabs[2].querySelector('.cnt').innerHTML = '(' + accepted + ')';
+      tabs[3].querySelector('.cnt').innerHTML = '(' + rejected + ')';
+    }
+
+  })();
+  </script>
+
+  </div><!-- /container-fluid -->
+
+</div>
+</body>
+</html>

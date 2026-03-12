@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring.app.jobseeker.model.ApplyDAO">
+
+    <!-- ================================================================ -->
+    <!--  지원 전 검증                                                      -->
+    <!-- ================================================================ -->
+
+    <select id="selectApplicationCount" resultType="int">
+        SELECT count(*)
+        FROM tbl_job_application
+        WHERE fk_job_id = #{jobId}
+          AND fk_memberid = #{memberid}
+          AND application_status = 0
+    </select>
+
+    <select id="selectMaxApplicationRound" resultType="int">
+        SELECT NVL(MAX(application_round), 0)
+        FROM tbl_job_application
+        WHERE fk_job_id = #{jobId}
+          AND fk_memberid = #{memberid}
+    </select>
+
+
+    <!-- ================================================================ -->
+    <!--  지원서 스냅샷 (tbl_submitted_resume)                              -->
+    <!-- ================================================================ -->
+
+    <insert id="insertSubmittedResume" parameterType="com.spring.app.jobseeker.domain.SubmittedResumeDTO">
+        <selectKey keyProperty="submittedResumeId" resultType="long" order="BEFORE">
+            SELECT seq_submitted_resume_id.nextval FROM dual
+        </selectKey>
+        INSERT INTO tbl_submitted_resume
+            (submitted_resume_id, fk_memberid, title, address, self_intro, photo_path,
+             education, career, language, portfolio, award,
+             submitted_at, fk_edu_level_code, total_career_months, desired_salary)
+        VALUES
+            (#{submittedResumeId}, #{memberid}, #{title}, #{address}, #{selfIntro, jdbcType=CLOB}, #{photoPath, jdbcType=VARCHAR},
+             #{education, jdbcType=CLOB}, #{career, jdbcType=CLOB}, #{language, jdbcType=CLOB}, #{portfolio, jdbcType=CLOB}, #{award, jdbcType=CLOB},
+             SYSDATE, #{eduLevelCode}, #{totalCareerMonths}, #{desiredSalary, jdbcType=NUMERIC})
+    </insert>
+
+    <select id="selectSubmittedResume" resultType="com.spring.app.jobseeker.domain.SubmittedResumeDTO">
+        SELECT submitted_resume_id AS submittedResumeId,
+               fk_memberid        AS memberid,
+               title,
+               address,
+               self_intro          AS selfIntro,
+               photo_path          AS photoPath,
+               education,
+               career,
+               language,
+               portfolio,
+               award,
+               TO_CHAR(submitted_at, 'YYYY.MM.DD HH24:MI') AS submittedAt,
+               fk_edu_level_code   AS eduLevelCode,
+               total_career_months AS totalCareerMonths,
+               desired_salary      AS desiredSalary
+        FROM tbl_submitted_resume
+        WHERE submitted_resume_id = #{submittedResumeId}
+    </select>
+
+
+    <!-- ================================================================ -->
+    <!--  지원서 기술스택 / 자격증                                           -->
+    <!-- ================================================================ -->
+
+    <insert id="insertApplicationTechstack">
+        INSERT INTO tbl_application_techstack (fk_submitted_resume_id, fk_skill_id, proficiency)
+        VALUES (#{submittedResumeId}, #{skillId}, #{proficiency})
+    </insert>
+
+    <insert id="insertApplicationCertificate">
+        INSERT INTO tbl_application_certificate (fk_certificate_code, fk_submitted_resume_id, acquired_date)
+        VALUES (#{certificateCode}, #{submittedResumeId}, TO_DATE(#{acquiredDate}, 'YYYY-MM-DD'))
+    </insert>
+
+    <!-- 지원서 기술스택 상세 목록 (skill_name + proficiency) -->
+    <select id="selectApplicationTechstackList" resultType="java.util.Map">
+        SELECT S.skill_name  AS "skillName",
+               AT.proficiency AS "proficiency"
+        FROM tbl_application_techstack AT
+        JOIN tbl_skill S ON AT.fk_skill_id = S.skill_id
+        WHERE AT.fk_submitted_resume_id = #{submittedResumeId}
+        ORDER BY S.skill_name
+    </select>
+
+    <!-- 지원서 자격증 상세 목록 (certificate_name + issuer + acquired_date) -->
+    <select id="selectApplicationCertificateList" resultType="java.util.Map">
+        SELECT C.certificate_name AS "certificateName",
+               C.issuer           AS "issuer",
+               TO_CHAR(AC.acquired_date, 'YYYY-MM-DD') AS "acquiredDate"
+        FROM tbl_application_certificate AC
+        JOIN tbl_certificate C ON AC.fk_certificate_code = C.certificate_code
+        WHERE AC.fk_submitted_resume_id = #{submittedResumeId}
+        ORDER BY AC.acquired_date DESC
+    </select>
+
+
+    <!-- ================================================================ -->
+    <!--  입사지원 (tbl_job_application)                                    -->
+    <!-- ================================================================ -->
+
+    <insert id="insertJobApplication" parameterType="com.spring.app.jobseeker.domain.JobApplicationDTO">
+        <selectKey keyProperty="applicationId" resultType="long" order="BEFORE">
+            SELECT seq_job_application_id.nextval FROM dual
+        </selectKey>
+        INSERT INTO tbl_job_application
+            (application_id, fk_job_id, fk_memberid, fk_submitted_resume_id,
+             name, birth_date, gender, phone, email,
+             application_round, application_status, process_status, applied_at)
+        VALUES
+            (#{applicationId}, #{jobId}, #{memberid}, #{submittedResumeId},
+             #{name}, TO_DATE(#{birthDate}, 'YYYY-MM-DD'), #{gender}, #{phone}, #{email},
+             #{applicationRound}, 0, 0, SYSDATE)
+    </insert>
+
+
+    <!-- ================================================================ -->
+    <!--  첨부파일 (tbl_image_file)                                        -->
+    <!-- ================================================================ -->
+
+    <insert id="insertImageFile" parameterType="com.spring.app.jobseeker.domain.ImageFileDTO">
+        <selectKey keyProperty="fileId" resultType="long" order="BEFORE">
+            SELECT seq_image_file_id.nextval FROM dual
+        </selectKey>
+        INSERT INTO tbl_image_file
+            (file_id, target_id, target_type, filecategory, file_url, created_at, original_filename)
+        VALUES
+            (#{fileId}, #{targetId}, #{targetType}, #{filecategory}, #{fileUrl}, SYSDATE, #{originalFilename})
+    </insert>
+
+    <select id="selectImageFileList" resultType="com.spring.app.jobseeker.domain.ImageFileDTO">
+        SELECT file_id       AS fileId,
+               target_id     AS targetId,
+               target_type   AS targetType,
+               filecategory  AS filecategory,
+               file_url      AS fileUrl,
+               TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI') AS createdAt,
+               original_filename AS originalFilename
+        FROM tbl_image_file
+        WHERE target_id   = #{targetId}
+          AND target_type = #{targetType}
+        ORDER BY file_id
+    </select>
+
+
+    <!-- ================================================================ -->
+    <!--  지원 내역 조회                                                    -->
+    <!-- ================================================================ -->
+
+    <select id="selectApplicationList" resultType="com.spring.app.jobseeker.domain.JobApplicationDTO">
+        SELECT A.application_id   AS applicationId,
+               A.fk_job_id        AS jobId,
+               A.fk_memberid      AS memberid,
+               A.fk_submitted_resume_id AS submittedResumeId,
+               A.name,
+               TO_CHAR(A.birth_date, 'YYYY-MM-DD') AS birthDate,
+               A.gender,
+               A.phone,
+               A.email,
+               A.application_round  AS applicationRound,
+               A.application_status AS applicationStatus,
+               A.process_status     AS processStatus,
+               TO_CHAR(A.applied_at, 'YYYY.MM.DD')   AS appliedAt,
+               TO_CHAR(A.cancelled_at, 'YYYY.MM.DD') AS cancelledAt,
+               TO_CHAR(A.viewed_at, 'YYYY.MM.DD HH24:MI') AS viewedAt,
+               J.title              AS postTitle,
+               C.company_name       AS companyName,
+               S.title              AS resumeTitle,
+               DECODE(A.process_status,
+                      0, '미열람',
+                      1, '열람',
+                      2, '서류탈락',
+                      3, '면접요청',
+                      4, '합격',
+                      5, '불합격') AS processStatusText,
+               R.region_name        AS regionName,
+               JC.category_name     AS categoryName,
+               J.work_type          AS workType,
+               J.salary             AS salary,
+               TO_CHAR(J.deadline_at, 'YYYY.MM.DD') AS deadlineAt,
+               (SELECT I.file_url
+                FROM tbl_image_file I
+                WHERE I.target_type = 'company'
+                  AND I.filecategory = 'logo'
+                  AND I.target_id = CI.company_intro_id
+                  AND ROWNUM = 1) AS companyLogo
+        FROM tbl_job_application A
+        JOIN tbl_job_posting J ON A.fk_job_id = J.job_id
+        JOIN tbl_company C ON J.fk_memberid = C.fk_memberid
+        JOIN tbl_submitted_resume S ON A.fk_submitted_resume_id = S.submitted_resume_id
+        LEFT JOIN tbl_region R ON J.fk_region_code = R.region_code
+        LEFT JOIN tbl_job_category JC ON J.fk_category_id = JC.category_id
+        LEFT JOIN tbl_company_intro CI ON C.fk_memberid = CI.fk_memberid
+        WHERE A.fk_memberid = #{memberid}
+          AND A.application_status = 0
+        ORDER BY A.applied_at DESC
+    </select>
+
+    <select id="selectApplicationDetail" resultType="com.spring.app.jobseeker.domain.JobApplicationDTO">
+        SELECT A.application_id   AS applicationId,
+               A.fk_job_id        AS jobId,
+               A.fk_memberid      AS memberid,
+               A.fk_submitted_resume_id AS submittedResumeId,
+               A.name,
+               TO_CHAR(A.birth_date, 'YYYY.MM.DD') AS birthDate,
+               A.gender,
+               A.phone,
+               A.email,
+               A.application_round  AS applicationRound,
+               A.application_status AS applicationStatus,
+               A.process_status     AS processStatus,
+               TO_CHAR(A.applied_at, 'YYYY.MM.DD HH24:MI')   AS appliedAt,
+               TO_CHAR(A.cancelled_at, 'YYYY.MM.DD HH24:MI') AS cancelledAt,
+               TO_CHAR(A.viewed_at, 'YYYY.MM.DD HH24:MI')    AS viewedAt,
+               J.title              AS postTitle,
+               C.company_name       AS companyName,
+               S.title              AS resumeTitle,
+               DECODE(A.process_status,
+                      0, '미열람',
+                      1, '열람',
+                      2, '서류탈락',
+                      3, '면접요청',
+                      4, '합격',
+                      5, '불합격') AS processStatusText,
+               R.region_name        AS regionName,
+               JC.category_name     AS categoryName,
+               J.work_type          AS workType,
+               J.salary             AS salary,
+               TO_CHAR(J.deadline_at, 'YYYY.MM.DD') AS deadlineAt
+        FROM tbl_job_application A
+        JOIN tbl_job_posting J ON A.fk_job_id = J.job_id
+        JOIN tbl_company C ON J.fk_memberid = C.fk_memberid
+        JOIN tbl_submitted_resume S ON A.fk_submitted_resume_id = S.submitted_resume_id
+        LEFT JOIN tbl_region R ON J.fk_region_code = R.region_code
+        LEFT JOIN tbl_job_category JC ON J.fk_category_id = JC.category_id
+        WHERE A.application_id = #{applicationId}
+          AND A.fk_memberid    = #{memberid}
+    </select>
+
+    <update id="cancelApplication">
+        UPDATE tbl_job_application
+        SET application_status = 1,
+            cancelled_at       = SYSDATE
+        WHERE application_id  = #{applicationId}
+          AND fk_memberid     = #{memberid}
+          AND application_status = 0
+          AND process_status   = 0
+    </update>
+
+    <select id="selectApplicationStatusCounts" resultType="java.util.Map">
+        SELECT process_status, COUNT(*) AS cnt
+        FROM tbl_job_application
+        WHERE fk_memberid = #{memberid}
+          AND application_status = 0
+        GROUP BY process_status
+    </select>
+
+    <!-- 지원 진행상태 이력 조회 -->
+    <select id="selectApplicationHistory" parameterType="long" resultType="map">
+        SELECT new_status AS "newStatus",
+               TO_CHAR(changed_at, 'YYYY.MM.DD HH24:MI') AS "changedAt"
+        FROM tbl_application_history
+        WHERE fk_application_id = #{applicationId}
+        ORDER BY changed_at ASC
+    </select>
+
+</mapper>

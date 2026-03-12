@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/layout_admin :: layout(~{::title},~{::link},~{::style},~{::script},~{::section})}">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>리포트</title>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --border: #E8EAF0;
+      --text: #0F1117;
+      --text-muted: #8B92A5;
+      --text-light: #B8BDC8;
+      --bg: #F4F6FA;
+      --white: #FFFFFF;
+      --blue: #2563EB;
+      --blue-light: rgba(37,99,235,0.08);
+      --red: #DC2626;
+      --green: #16A34A;
+      --amber: #D97706;
+      --purple: #7C3AED;
+      --radius: 14px;
+      --radius-sm: 8px;
+      --shadow: 0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .dash { padding: 28px 32px; width: 100%; }
+
+    .page-header {
+      display: flex; align-items: flex-end;
+      justify-content: space-between; margin-bottom: 24px;
+    }
+    .page-header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.4px; }
+    .page-header p  { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+    .header-badge {
+      font-size: 12px; font-weight: 600; color: var(--text-muted);
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 20px; padding: 5px 12px;
+    }
+
+    .filter-bar {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 20px; margin-bottom: 28px;
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      box-shadow: var(--shadow);
+    }
+    .filter-label {
+      font-size: 12px; font-weight: 600; color: var(--text-muted);
+      white-space: nowrap; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+
+    .period-tabs {
+      display: flex; gap: 2px; background: var(--bg);
+      padding: 3px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+    }
+    .period-tab {
+      padding: 5px 14px; border: none; border-radius: 6px; font-size: 13px;
+      font-weight: 500; cursor: pointer; font-family: inherit;
+      background: transparent; color: var(--text-muted); transition: all 0.15s;
+    }
+    .period-tab.active { background: var(--text); color: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.18); }
+
+    .divider-v { width: 1px; height: 24px; background: var(--border); }
+
+    .date-range { display: flex; align-items: center; gap: 8px; }
+    .date-input {
+      padding: 6px 11px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+      font-size: 13px; font-family: inherit; color: var(--text); background: #fff; transition: border-color 0.15s;
+    }
+    .date-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    .date-sep { font-size: 13px; color: var(--text-muted); }
+
+    .quick-btns { display: flex; gap: 4px; }
+    .quick-btn {
+      padding: 5px 11px; border: 1px solid var(--border); border-radius: 6px;
+      font-size: 12px; font-weight: 500; font-family: inherit; background: #fff;
+      color: var(--text-muted); cursor: pointer; transition: all 0.15s;
+    }
+    .quick-btn:hover { border-color: var(--text); color: var(--text); }
+    .quick-btn.active { border-color: var(--text); color: var(--text); background: #F0F0F0; font-weight: 600; }
+
+    .btn-apply {
+      margin-left: auto; padding: 8px 22px; background: var(--text); color: #fff;
+      border: none; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600;
+      font-family: inherit; cursor: pointer; transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn-apply:hover   { opacity: 0.85; }
+    .btn-apply:active  { transform: scale(0.97); }
+    .btn-apply:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .report-nav { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 24px; }
+    .report-nav-tab {
+      padding: 10px 22px; font-size: 14px; font-weight: 600; color: var(--text-muted);
+      cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px;
+      transition: all 0.15s; background: none; border-top: none; border-left: none;
+      border-right: none; font-family: inherit;
+    }
+    .report-nav-tab.active { color: #111; border-bottom-color: #111; }
+    .report-nav-tab:hover:not(.active) { color: var(--text); }
+
+    .report-section        { display: none; }
+    .report-section.active { display: block; }
+
+    .chart-row     { display: grid; gap: 14px; margin-bottom: 14px; }
+    .chart-row.col-2  { grid-template-columns: 1fr 1fr; }
+    .chart-row.col-1  { grid-template-columns: 1fr; }
+    .chart-row.col-13 {
+      display: flex; flex-direction: row; align-items: stretch;
+      justify-content: flex-start; gap: 14px; margin-bottom: 14px;
+    }
+    .chart-row.col-13 > .chart-card:first-child { flex: 1 1 0; min-width: 0; max-width: 700px; }
+    .chart-row.col-13 > .chart-card:last-child  { flex: 0 0 300px; width: 300px; }
+
+    .chart-card {
+      background: var(--white); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 22px 24px 24px; box-shadow: var(--shadow);
+      display: flex; flex-direction: column; overflow: visible;
+    }
+    .chart-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
+    .chart-card-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      margin-bottom: 18px; gap: 12px;
+    }
+    .chart-card-title { font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: -0.2px; }
+    .chart-card-sub   { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+    .chart-legend { display: flex; gap: 12px; flex-shrink: 0; margin-top: 2px; }
+    .legend-item  { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-muted); font-weight: 500; }
+    .legend-dot   { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+    .chart-wrap      { position: relative; height: 230px; flex: 1; }
+    .chart-wrap.tall { position: relative; height: 300px; flex: 1; }
+
+    .loading-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.8);
+      backdrop-filter: blur(2px); z-index: 9998; align-items: center;
+      justify-content: center; flex-direction: column; gap: 12px;
+    }
+    .loading-overlay.show { display: flex; }
+    .loading-spinner {
+      width: 36px; height: 36px; border: 3px solid var(--border);
+      border-top-color: var(--text); border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { font-size: 13px; font-weight: 600; color: var(--text-muted); }
+
+    #toast {
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+      background: #111; color: #fff; padding: 10px 22px; border-radius: var(--radius-sm);
+      font-size: 13px; z-index: 9999; opacity: 0; transition: opacity 0.2s;
+      pointer-events: none; white-space: nowrap;
+    }
+
+    @media (max-width: 1100px) {
+      .chart-row.col-2  { grid-template-columns: 1fr; }
+      .chart-row.col-13 { flex-direction: column; }
+      .chart-row.col-13 > .chart-card:first-child { max-width: 100%; }
+      .chart-row.col-13 > .chart-card:last-child  { flex: 1 1 auto; width: 100%; }
+    }
+    @media (max-width: 768px) {
+      .dash { padding: 16px; }
+      .filter-bar { gap: 10px; }
+      .quick-btns { display: none; }
+    }
+  </style>
+</head>
+
+<body>
+<section class="dash">
+
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">데이터 로딩 중...</div>
+  </div>
+  <div id="toast"></div>
+
+  <div class="page-header">
+    <div>
+      <h1>📊 리포트</h1>
+      <p>기간별 데이터를 분석하고 트렌드를 확인하세요</p>
+    </div>
+    <span class="header-badge" id="currentRangeLabel">범위 선택 후 조회하세요</span>
+  </div>
+
+  <!-- 필터 바 -->
+  <div class="filter-bar">
+    <span class="filter-label">단위</span>
+    <div class="period-tabs">
+      <button class="period-tab active" onclick="setPeriod(this,'daily')">일별</button>
+      <button class="period-tab" onclick="setPeriod(this,'weekly')">주별</button>
+      <button class="period-tab" onclick="setPeriod(this,'monthly')">월별</button>
+    </div>
+    <div class="divider-v"></div>
+    <span class="filter-label">기간</span>
+    <div class="date-range">
+      <input type="date" class="date-input" id="date-from">
+      <span class="date-sep">—</span>
+      <input type="date" class="date-input" id="date-to">
+    </div>
+    <div class="quick-btns">
+      <button class="quick-btn" onclick="setQuick(this,7)">7일</button>
+      <button class="quick-btn active" onclick="setQuick(this,30)">30일</button>
+      <button class="quick-btn" onclick="setQuick(this,90)">3개월</button>
+      <button class="quick-btn" onclick="setQuick(this,180)">6개월</button>
+      <button class="quick-btn" onclick="setQuick(this,365)">1년</button>
+    </div>
+    <button class="btn-apply" onclick="applyFilter()">조회</button>
+  </div>
+
+  <!-- 탭 -->
+  <div class="report-nav">
+    <button class="report-nav-tab active" onclick="switchSection(this,'member')">👥 회원 리포트</button>
+    <button class="report-nav-tab"        onclick="switchSection(this,'job')"   >💼 채용공고 리포트</button>
+    <button class="report-nav-tab"        onclick="switchSection(this,'board')" >📝 게시판 리포트</button>
+  </div>
+
+  <!-- 회원 리포트 -->
+  <div class="report-section active" id="sec-member">
+    <div class="chart-row col-2">
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-card-title">회원 가입 / 탈퇴 추이</div>
+            <div class="chart-card-sub" id="memberTrendSub">기간을 선택하세요</div>
+          </div>
+          <div class="chart-legend">
+            <span class="legend-item"><span class="legend-dot" style="background:#2563EB"></span>신규 가입</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#DC2626"></span>탈퇴</span>
+          </div>
+        </div>
+        <div class="chart-wrap tall"><canvas id="memberTrendChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-card-title" id="memberDayTitle">요일별 평균 가입 수</div>
+            <div class="chart-card-sub">가입 패턴 분석</div>
+          </div>
+        </div>
+        <div class="chart-wrap tall"><canvas id="memberDayChart"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-row col-1">
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-card-title">월별 누적 회원 성장</div>
+            <div class="chart-card-sub">최근 12개월 누적 추이</div>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="memberGrowthChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 채용공고 리포트 -->
+  <div class="report-section" id="sec-job">
+    <div class="chart-row col-13">
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-card-title">채용공고 등록 / 마감 추이</div>
+            <div class="chart-card-sub" id="jobTrendSub">기간을 선택하세요</div>
+          </div>
+          <div class="chart-legend">
+            <span class="legend-item"><span class="legend-dot" style="background:#2563EB"></span>등록</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#94A3B8"></span>마감</span>
+          </div>
+        </div>
+        <div class="chart-wrap tall"><canvas id="jobTrendChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-card-title">급여 구간 분포</div>
+            <div class="chart-card-sub">salary 기준 (만원)</div>
+          </div>
+        </div>
+        <div class="chart-wrap tall"><canvas id="salaryChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 게시판 리포트 -->
+  <div class="report-section" id="sec-board">
+    <div class="chart-row col-1">
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-card-title">게시글 / 댓글 작성 추이</div>
+            <div class="chart-card-sub" id="boardTrendSub">기간을 선택하세요</div>
+          </div>
+          <div class="chart-legend">
+            <span class="legend-item"><span class="legend-dot" style="background:#16A34A"></span>게시글</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#D97706"></span>댓글</span>
+          </div>
+        </div>
+        <div class="chart-wrap tall"><canvas id="boardTrendChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function() {
+    let currentPeriod  = 'daily';
+    let charts         = {};
+    let lastData       = null;
+    let lastFrom       = '';
+    let lastTo         = '';
+    let currentSection = 'member';
+
+    const baseOpts = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0F1117', titleColor: '#fff',
+          bodyColor: 'rgba(255,255,255,0.75)', padding: 10, cornerRadius: 8,
+          titleFont: { size: 12, weight: '600' }, bodyFont: { size: 12 }
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, border: { display: false },
+             ticks: { font: { size: 11 }, color: '#9CA3AF', maxTicksLimit: 12 } },
+        y: { grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
+             border: { display: false, dash: [4, 4] },
+             ticks: { font: { size: 11 }, color: '#9CA3AF', padding: 6 }, beginAtZero: true }
+      }
+    };
+
+    /* 해당 섹션 차트만 destroy */
+    function destroySection(sec) {
+	  const canvasIds = {
+	    member: ['memberTrendChart', 'memberDayChart', 'memberGrowthChart'],
+	    job:    ['jobTrendChart', 'salaryChart'],
+	    board:  ['boardTrendChart']
+	  };
+	  (canvasIds[sec] || []).forEach(id => {
+	    const canvas = document.getElementById(id);
+	    if (canvas) {
+	      const existing = Chart.getChart(canvas);
+	      if (existing) existing.destroy();
+	    }
+	  });
+	  // charts 객체도 초기화
+	  const keys = { member: ['memberTrend','memberDay','memberGrowth'], job: ['jobTrend','salary'], board: ['boardTrend'] };
+	  (keys[sec] || []).forEach(k => delete charts[k]);
+	}
+
+    /* ── 회원 차트만 렌더링 ── */
+    function renderMember(d, from, to) {
+      destroySection('member');
+      document.getElementById('memberTrendSub').textContent  = `${from} ~ ${to}`;
+      document.getElementById('memberDayTitle').textContent  = d.dayChartTitle || '요일별 평균 가입 수';
+
+      charts.memberTrend = new Chart(document.getElementById('memberTrendChart'), {
+        type: 'line',
+        data: {
+          labels: d.joinTrend.labels,
+          datasets: [
+            { label: '신규 가입', data: d.joinTrend.data,
+              borderColor: '#2563EB', backgroundColor: 'rgba(37,99,235,0.07)',
+              fill: true, tension: 0.4,
+              pointRadius: d.joinTrend.labels.length > 60 ? 0 : 3,
+              pointHoverRadius: 5, borderWidth: 2 },
+            { label: '탈퇴', data: d.withdrawTrend.data,
+              borderColor: '#DC2626', backgroundColor: 'rgba(220,38,38,0.05)',
+              fill: true, tension: 0.4, pointRadius: 2, pointHoverRadius: 5,
+              borderDash: [5, 3], borderWidth: 1.5 }
+          ]
+        },
+        options: baseOpts
+      });
+
+      charts.memberDay = new Chart(document.getElementById('memberDayChart'), {
+        type: 'bar',
+        data: {
+          labels: d.dayChart.labels,
+          datasets: [{
+            data: d.dayChart.data,
+            backgroundColor: d.dayChart.labels.map((_, i) => i >= 5 ? '#CBD5E1' : '#0F1117'),
+            borderRadius: 6, borderSkipped: false
+          }]
+        },
+        options: baseOpts
+      });
+
+      charts.memberGrowth = new Chart(document.getElementById('memberGrowthChart'), {
+        type: 'line',
+        data: {
+          labels: d.memberGrowth.labels,
+          datasets: [{
+            data: d.memberGrowth.data,
+            borderColor: '#2563EB', backgroundColor: 'rgba(37,99,235,0.08)',
+            fill: true, tension: 0.4, pointRadius: 3, pointHoverRadius: 5, borderWidth: 2
+          }]
+        },
+        options: baseOpts
+      });
+    }
+
+    /* ── 채용공고 차트만 렌더링 ── */
+    function renderJob(d, from, to) {
+      destroySection('job');
+      document.getElementById('jobTrendSub').textContent = `${from} ~ ${to}`;
+
+      charts.jobTrend = new Chart(document.getElementById('jobTrendChart'), {
+        type: 'bar',
+        data: {
+          labels: d.jobReg.labels,
+          datasets: [
+            { label: '등록', data: d.jobReg.data,    backgroundColor: '#2563EB', borderRadius: 4, borderSkipped: false },
+            { label: '마감', data: d.jobClosed.data, backgroundColor: '#CBD5E1', borderRadius: 4, borderSkipped: false }
+          ]
+        },
+        options: baseOpts
+      });
+
+      charts.salary = new Chart(document.getElementById('salaryChart'), {
+        type: 'bar',
+        data: {
+          labels: d.salary.labels,
+          datasets: [{ data: d.salary.data, backgroundColor: '#7C3AED', borderRadius: 6, borderSkipped: false }]
+        },
+        options: { ...baseOpts, layout: { padding: { right: 12 } } }
+      });
+    }
+
+    /* ── 게시판 차트만 렌더링 ── */
+    function renderBoard(d, from, to) {
+      destroySection('board');
+      document.getElementById('boardTrendSub').textContent = `${from} ~ ${to}`;
+
+      charts.boardTrend = new Chart(document.getElementById('boardTrendChart'), {
+        type: 'line',
+        data: {
+          labels: d.postTrend.labels,
+          datasets: [
+            { label: '게시글', data: d.postTrend.data,
+              borderColor: '#16A34A', backgroundColor: 'rgba(22,163,74,0.07)',
+              fill: true, tension: 0.4, pointRadius: 2, pointHoverRadius: 5, borderWidth: 2 },
+            { label: '댓글', data: d.commentTrend.data,
+              borderColor: '#D97706', backgroundColor: 'rgba(217,119,6,0.07)',
+              fill: true, tension: 0.4, pointRadius: 2, pointHoverRadius: 5, borderWidth: 2 }
+          ]
+        },
+        options: baseOpts
+      });
+    }
+
+    /* 현재 탭만 렌더링 */
+    function renderCurrentSection() {
+      if (!lastData) return;
+      if (currentSection === 'member') renderMember(lastData, lastFrom, lastTo);
+      if (currentSection === 'job')    renderJob(lastData, lastFrom, lastTo);
+      if (currentSection === 'board')  renderBoard(lastData, lastFrom, lastTo);
+    }
+
+    function fetchAndRender() {
+      const from = document.getElementById('date-from').value;
+      const to   = document.getElementById('date-to').value;
+      if (!from || !to || from > to) { alert('날짜 범위를 올바르게 입력해주세요.'); return; }
+
+      const btn = document.querySelector('.btn-apply');
+      btn.textContent = '조회 중...'; btn.disabled = true;
+      document.getElementById('loadingOverlay').classList.add('show');
+
+      fetch(`/finalProject/admin/stats/chart-data?from=${from}&to=${to}&period=${currentPeriod}`)
+        .then(res => { if (!res.ok) throw new Error('서버 오류'); return res.json(); })
+        .then(data => {
+          lastData = data; lastFrom = from; lastTo = to;
+          document.getElementById('currentRangeLabel').textContent = `${from} ~ ${to}`;
+          renderCurrentSection(); // 현재 탭 차트만 그리기
+        })
+        .catch(err => alert('데이터 로드 실패: ' + err.message))
+        .finally(() => {
+          btn.textContent = '조회'; btn.disabled = false;
+          document.getElementById('loadingOverlay').classList.remove('show');
+        });
+    }
+
+    /* 탭 클릭 시 해당 섹션 차트만 렌더링 */
+    window.switchSection = function(el, sec) {
+      document.querySelectorAll('.report-nav-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.report-section').forEach(s => s.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('sec-' + sec).classList.add('active');
+      currentSection = sec;
+      renderCurrentSection();
+    };
+
+    window.setPeriod = function(el, type) {
+      document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      currentPeriod = type;
+    };
+
+    window.setQuick = function(el, days) {
+      document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      const to = new Date(), from = new Date();
+      from.setDate(from.getDate() - days);
+      document.getElementById('date-to').value   = to.toISOString().split('T')[0];
+      document.getElementById('date-from').value = from.toISOString().split('T')[0];
+      const rec = days <= 90 ? 'daily' : days <= 365 ? 'weekly' : 'monthly';
+      currentPeriod = rec;
+      const lm = { daily: '일별', weekly: '주별', monthly: '월별' };
+      document.querySelectorAll('.period-tab').forEach(t => t.classList.toggle('active', t.textContent === lm[rec]));
+    };
+
+    window.applyFilter = fetchAndRender;
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const today = new Date(), from = new Date();
+      from.setDate(from.getDate() - 30);
+      document.getElementById('date-to').value   = today.toISOString().split('T')[0];
+      document.getElementById('date-from').value = from.toISOString().split('T')[0];
+      fetchAndRender(); // 최초 로드 시 회원 탭(currentSection = 'member')만 렌더링
+    });
+  })();
+  </script>
+
+</section>
+</body>
+</html>

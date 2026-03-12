@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring.app.jobseeker.model.MypageDAO">
+
+    <!-- ================================================================ -->
+    <!--  회원 기본정보 조회 (프로필용)                                      -->
+    <!-- ================================================================ -->
+    <select id="selectMemberById" parameterType="string"
+            resultType="com.spring.app.member.domain.MemberDTO">
+        SELECT memberid                AS memberId,
+               name                    AS name,
+               birth_date              AS birthDate,
+               email                   AS email,
+               phone                   AS phone,
+               gender                  AS gender,
+               community_company_name  AS communityCompanyName
+        FROM tbl_member
+        WHERE memberid = #{memberId}
+    </select>
+
+    <!-- ================================================================ -->
+    <!--  대표이력서 조회 (사진, 희망지역명, 희망직무명)                      -->
+    <!-- ================================================================ -->
+    <select id="selectPrimaryResume" parameterType="string"
+            resultType="com.spring.app.jobseeker.domain.ResumeDTO">
+        SELECT R.resume_id       AS resumeId,
+               R.photo_path      AS photoPath,
+               R.fk_region_code  AS regionCode,
+               R.fk_category_id  AS categoryId,
+               RG.region_name    AS regionName,
+               JC.category_name  AS categoryName
+        FROM tbl_resume R
+        LEFT JOIN tbl_region RG
+               ON R.fk_region_code = RG.region_code
+        LEFT JOIN tbl_job_category JC
+               ON R.fk_category_id = JC.category_id
+        WHERE R.fk_memberid = #{memberId}
+          AND R.is_primary = 1
+          AND R.is_deleted = 0
+    </select>
+
+    <!-- ================================================================ -->
+    <!--  프로필 수정 (이름, 생년월일, 성별, 이메일, 전화번호)               -->
+    <!-- ================================================================ -->
+    <update id="updateProfile" parameterType="com.spring.app.member.domain.MemberDTO">
+        UPDATE tbl_member
+        SET name       = #{name},
+            birth_date = #{birthDate},
+            gender     = #{gender},
+            email      = #{email},
+            phone      = #{phone},
+            updated_at = SYSDATE
+        WHERE memberid = #{memberId}
+    </update>
+
+    <!-- ================================================================ -->
+    <!--  비밀번호 조회 (현재 비밀번호 확인용)                               -->
+    <!-- ================================================================ -->
+    <select id="selectPassword" parameterType="string" resultType="string">
+        SELECT password
+        FROM tbl_member
+        WHERE memberid = #{memberId}
+    </select>
+
+    <!-- ================================================================ -->
+    <!--  비밀번호 수정                                                     -->
+    <!-- ================================================================ -->
+    <update id="updatePassword">
+        UPDATE tbl_member
+        SET password   = #{encodedPassword},
+            updated_at = SYSDATE
+        WHERE memberid = #{memberId}
+    </update>
+
+    <!-- ================================================================ -->
+    <!--  대시보드 통계 : 지원 내역 총 건수 (제출 상태만)                     -->
+    <!-- ================================================================ -->
+    <select id="selectTotalApplications" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+        FROM tbl_job_application
+        WHERE fk_memberid = #{memberId}
+          AND application_status = 0
+    </select>
+
+    <!-- ================================================================ -->
+    <!--  대시보드 통계 : 진행중 지원 건수 (미열람/열람/면접요청)             -->
+    <!-- ================================================================ -->
+    <select id="selectActiveApplications" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+        FROM tbl_job_application
+        WHERE fk_memberid = #{memberId}
+          AND application_status = 0
+          AND process_status IN (0, 1, 3)
+    </select>
+
+    <!-- ================================================================ -->
+    <!--  대시보드 통계 : 받은 제안 총 건수                                  -->
+    <!-- ================================================================ -->
+    <select id="selectTotalOffers" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+        FROM tbl_offer_response
+        WHERE fk_memberid = #{memberId}
+    </select>
+
+    <!-- ================================================================ -->
+    <!--  대시보드 통계 : 읽지 않은 제안 건수                                -->
+    <!-- ================================================================ -->
+    <select id="selectUnreadOffers" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+        FROM tbl_offer_response
+        WHERE fk_memberid = #{memberId}
+          AND viewed_at IS NULL
+    </select>
+
+    <!-- ================================================================ -->
+    <!--  대시보드 통계 : 스크랩한 공고 건수                                 -->
+    <!-- ================================================================ -->
+    <select id="selectScrappedCount" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+        FROM tbl_job_scrap
+        WHERE fk_memberid = #{memberId}
+    </select>
+
+    <!-- ================================================================ -->
+    <!--  대시보드 통계 : 팔로우 기업 건수                                   -->
+    <!-- ================================================================ -->
+    <select id="selectFollowedCompanies" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+        FROM tbl_company_follow
+        WHERE fk_memberid = #{memberId}
+    </select>
+
+    <!-- ================================================================ -->
+    <!--  대시보드 : 최근 지원 내역 (최근 3건)                               -->
+    <!--  dashboard.html 키: id, postTitle, companyName, appliedAt, status -->
+    <!-- ================================================================ -->
+    <select id="selectRecentApplications" parameterType="string" resultType="java.util.HashMap">
+        SELECT * FROM (
+            SELECT A.application_id                             AS "id",
+                   P.title                                      AS "postTitle",
+                   C.company_name                               AS "companyName",
+                   TO_CHAR(A.applied_at, 'YYYY.MM.DD')         AS "appliedAt",
+                   CASE A.process_status
+                       WHEN 0 THEN 'UNREAD'
+                       WHEN 1 THEN 'READ'
+                       WHEN 3 THEN 'UNDER_REVIEW'
+                       ELSE 'READ'
+                   END                                          AS "status"
+            FROM tbl_job_application A
+            JOIN tbl_job_posting P ON A.fk_job_id = P.job_id
+            JOIN tbl_company C     ON P.fk_memberid = C.fk_memberid
+            WHERE A.fk_memberid = #{memberId}
+              AND A.application_status = 0
+            ORDER BY A.applied_at DESC
+        ) WHERE ROWNUM &lt;= 3
+    </select>
+
+    <!-- ================================================================ -->
+    <!--  대시보드 : 최근 본 공고 (최근 3건)                                 -->
+    <!--  dashboard.html 키: id, title, companyName, viewedAt             -->
+    <!-- ================================================================ -->
+    <select id="selectRecentViewedPosts" parameterType="string" resultType="java.util.HashMap">
+        SELECT * FROM (
+            SELECT V.fk_job_id                                                  AS "id",
+                   P.title                                                      AS "title",
+                   C.company_name                                               AS "companyName",
+                   CASE
+                       WHEN TRUNC(SYSDATE) = TRUNC(V.viewed_at)
+                           AND FLOOR((SYSDATE - V.viewed_at) * 24 * 60) &lt; 1
+                           THEN '방금 전'
+                       WHEN TRUNC(SYSDATE) = TRUNC(V.viewed_at)
+                           AND FLOOR((SYSDATE - V.viewed_at) * 24) &lt; 1
+                           THEN FLOOR((SYSDATE - V.viewed_at) * 24 * 60) || '분 전'
+                       WHEN TRUNC(SYSDATE) = TRUNC(V.viewed_at)
+                           THEN FLOOR((SYSDATE - V.viewed_at) * 24) || '시간 전'
+                       WHEN TRUNC(SYSDATE) - TRUNC(V.viewed_at) = 1
+                           THEN '1일 전'
+                       ELSE FLOOR(TRUNC(SYSDATE) - TRUNC(V.viewed_at)) || '일 전'
+                   END                                                          AS "viewedAt"
+            FROM tbl_viewed_posting V
+            JOIN tbl_job_posting P ON V.fk_job_id = P.job_id
+            JOIN tbl_company C     ON P.fk_memberid = C.fk_memberid
+            WHERE V.fk_memberid = #{memberId}
+            ORDER BY V.viewed_at DESC
+        ) WHERE ROWNUM &lt;= 3
+    </select>
+
+    <!-- ================================================================ -->
+    <!--  커뮤니티 인증 : 직장명 등록/변경                                   -->
+    <!-- ================================================================ -->
+    <update id="updateCommunityCompanyName">
+        UPDATE tbl_member
+        SET community_company_name = #{companyName},
+            updated_at = SYSDATE
+        WHERE memberid = #{memberId}
+    </update>
+
+</mapper>

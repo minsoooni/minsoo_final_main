@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/layout_company :: layout(~{::title},~{::link},~{::style},~{::script},~{::section})}">
+
+<head>
+  <title>기업 대시보드</title>
+  <link rel="stylesheet" th:href="@{/css/company/job_list.css}">
+  <style type="text/css"></style>
+  
+  <script th:inline="javascript">
+  const contextPath = /*[[@{/}]]*/ "";
+  
+  document.addEventListener("click", async (e) => {
+   // 1) ⋮ 버튼 클릭 -> 메뉴 토글
+    const moreBtn = e.target.closest(".js-more");
+    if (moreBtn) {
+  	  e.preventDefault();
+  	  e.stopPropagation(); // 행 클릭 방지
+  	
+  	  const wrap = moreBtn.closest(".job-actions");
+  	  const menu = wrap.querySelector(".job-menu");
+  	
+  	  // 다른 메뉴 닫기
+  	  document.querySelectorAll(".job-menu").forEach(m => {
+  	    if (m !== menu) m.hidden = true;
+  	  });
+  	
+  	  menu.hidden = !menu.hidden;
+  	  return;
+  }
+
+
+   // 1-1) 삭제 클릭 -> AJAX DELETE
+   const delBtn = e.target.closest(".js-delete");
+   if (delBtn) {
+	  e.preventDefault();
+	  e.stopPropagation();
+	
+	  const jobId = delBtn.dataset.jobId;
+	  if (!jobId) return;
+	
+	  if (!confirm("해당 공고를 삭제할까요?")) return;
+	
+	  const res = await fetch(`${contextPath}company/api/jobs/${jobId}`, { method: "DELETE" });
+	  if (!res.ok) { alert("삭제 실패"); return; }
+	
+	  // 행 제거
+	  delBtn.closest("tr")?.remove();
+	
+	  // 상세 미리보기에서 현재 선택된 공고를 보고 있었다면, 목록으로 이동
+	  // (간단히 새로고침)
+	  location.href = /*[[@{/company/job/list}]]*/ "/company/job/list";
+	  return;
+   }
+
+   // 2) 메뉴 내부 클릭은 행 클릭(selectJob)으로 안 올라가게 막기
+   if (e.target.closest(".job-menu")) {
+	  e.stopPropagation(); // 중요
+	  return;
+   }
+
+	  // 3) 바깥 클릭 -> 모든 메뉴 닫기
+	  document.querySelectorAll(".job-menu").forEach(m => m.hidden = true);
+   });
+
+	
+  function selectJob(e, jobId){
+    if(!jobId) return;
+  
+    // action 영역(⋮/메뉴) 클릭이면 무시
+    if (e && e.target && e.target.closest(".job-actions")) return;
+  
+    const baseUrl = /*[[@{/company/job/list}]]*/ '';
+    location.href = baseUrl + '?jobId=' + encodeURIComponent(jobId);
+  }
+  </script>
+  
+</head>
+
+
+<body>
+<section class="dash">
+
+  <!-- 상단 헤더 -->
+  <div class="job-head">
+    <div>
+      <h3 class="job-title">채용 공고 관리</h3>
+      <div class="job-desc">채용 공고를 생성하고 관리하세요</div>
+    </div>
+
+    <a class="btn btn-dark job-add-btn" th:href="@{/company/job/job_write}">
+      <i class="fa-solid fa-plus"></i> 공고 등록
+    </a>
+  </div>
+
+  <!-- 검색/필터 (현재는 정적 UI) -->
+  <div class="panel job-filter-panel">
+    <div class="job-filters">
+      <div class="job-search">
+        <i class="fa-solid fa-magnifying-glass job-search-icon"></i>
+        <input type="text" placeholder="공고 제목으로 검색...">
+      </div>
+
+      <select class="job-select">
+        <option>전체</option>
+        <option>진행중</option>
+        <option>마감</option>
+        <option>임시저장</option>
+      </select>
+
+      <select class="job-select">
+        <option>전체</option>
+        <option>정규직</option>
+        <option>계약직</option>
+        <option>인턴</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- 공고 목록 -->
+  <div class="panel">
+    <div class="panel-head">
+      <h3>
+        채용 공고 목록
+        <span th:text="|(${totalCount}건)|">(0건)</span>
+      </h3>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table job-table mb-0">
+        <thead>
+          <tr>
+            <th style="min-width:220px;">공고 제목</th>
+            <th style="min-width:160px;">직무 분야</th>
+            <th style="min-width:90px;">채용 형태</th>
+            <th style="min-width:150px;">마감일</th>
+            <th style="min-width:100px;">상태</th>
+            <th style="min-width:70px;">조회수</th>
+            
+            <th style="min-width:70px;">채용인원</th>
+            <th style="min-width:90px;">스크랩수</th>
+            <th style="width:60px;"></th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <!-- ✅ DB 연동 버전 -->
+          <tr th:each="job : ${jobList}"
+              th:onclick="|selectJob(event, ${job.jobId})|"
+              class="job-row"
+              th:classappend="${selectedJob != null and selectedJob.jobId == job.jobId} ? ' is-selected' : ''">
+
+            <td><b th:text="${job.title}">공고제목</b></td>
+
+            <!-- 분류는 DTO에 categoryId만 있으면 화면용 categoryName을 같이 내려주는 걸 추천 -->
+            <td th:text="${job.categoryName}">백엔드</td>
+
+			<!-- 채용형태 -->
+            <td th:text="${job.workType}">정규직</td>
+            
+            <!-- 마감일 -->
+            <td>
+              <i class="fa-regular fa-clock"></i>
+              <span th:text="${job.deadlineAt}">2026. 3. 16.</span>
+            </td>
+            
+            <!-- 공고 상태(진행중/마감/임시저장) -->
+            <td th:switch="${job.status}">
+			  <span th:case="'게시중'" class="badge-darkpill">게시중</span>
+			  <span th:case="'마감'" class="badge-deleted">마감</span>
+			  <span th:case="'임시저장'" class="badge-lightpill">임시저장</span>
+			  <span th:case="'대기'" class="badge-graypill">대기</span>
+			  <span th:case="'삭제됨'" class="badge-graypill">삭제됨</span>
+			</td>
+			
+			
+            <!-- 수정필요!! 조회수 -->
+            <td>
+              <i class="fa-regular fa-eye"></i>				
+              <span th:text="${job.viewCount != null ? job.viewCount : 0}">0</span>
+            </td>
+			
+			<!-- 수정필요!! 채용인원-->
+            <td>
+              <i class="fa-regular fa-user"></i>			
+              <span th:text="${job.headcount != null ? job.headcount : 0}">0</span>
+            </td>
+            
+			<!-- 스크랩 수 -->
+            <!-- <td th:text="${job.scrapCount}">조회수</td> -->
+            <td th:text="${job.scrapCount}"
+			    th:classappend="${job.scrapCount > 0} ? 'text-red' : ''">
+			</td>
+
+			<td>
+			  <div class="job-actions" th:attr="data-job-id=${job.jobId}">
+			    <button type="button" class="job-row-action js-more" title="더보기">
+			      <i class="fa-solid fa-ellipsis-vertical"></i>
+			    </button>
+			  
+			    <div class="job-menu" hidden>
+			      <!-- 수정: GET 이동 -->
+			      <a class="job-menu-item"
+			         th:href="@{/company/job/update(jobId=${job.jobId})}">수정</a>
+			  
+			      <!-- 삭제: AJAX DELETE -->
+                  <button type="button" class="job-menu-item js-delete"
+                          th:attr="data-job-id=${job.jobId}"
+                          onclick="return false;">삭제</button>
+			    </div>
+			  </div>
+			  
+			</td>
+			
+          </tr>
+
+          <!-- 목록이 비었을 때 -->
+          <tr th:if="${#lists.isEmpty(jobList)}">
+            <td colspan="10" class="job-empty-td">
+              등록된 공고가 없습니다.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- 페이징 처리 페이지바 -->
+    <div class="job-pagination" th:if="${totalPage > 1}">
+	  <!-- 이전 -->
+	  <a th:if="${currentShowPageNo > 1}"
+	     th:href="@{/company/job/list(currentShowPageNo=${currentShowPageNo - 1}, jobId=${selectedJob != null ? selectedJob.jobId : null})}"
+	     class="page-link">
+	    이전
+	  </a>
+	
+	  <!-- 페이지 번호 -->
+	  <th:block th:each="i : ${#numbers.sequence(1, totalPage)}">
+	    <a th:if="${i != currentShowPageNo}"
+	       th:href="@{/company/job/list(currentShowPageNo=${i}, jobId=${selectedJob != null ? selectedJob.jobId : null})}"
+	       th:text="${i}"
+	       class="page-link">
+	    </a>
+	
+	    <span th:if="${i == currentShowPageNo}"
+	          th:text="${i}"
+	          class="page-link active">
+	    </span>
+	  </th:block>
+	
+	  <!-- 다음 -->
+	  <a th:if="${currentShowPageNo < totalPage}"
+	     th:href="@{/company/job/list(currentShowPageNo=${currentShowPageNo + 1}, jobId=${selectedJob != null ? selectedJob.jobId : null})}"
+	     class="page-link">
+	    다음
+	  </a>
+	</div>
+    
+  </div>
+  
+  
+
+  <!-- 공고 상세 미리보기 (구직자 화면처럼 전체 렌더링) -->
+  <div class="panel panel-detail">
+    <div class="panel-head">
+      <h3>공고 상세 미리보기</h3>
+    </div>
+
+    <div class="preview-box">
+      <!-- 선택 전 -->
+      <div class="preview-empty" th:if="${selectedJob == null}">
+        표에서 공고를 클릭하여 상세 정보를 확인하세요
+      </div>
+
+      <!-- 선택 후: 구직자 상세 화면 느낌으로 전체 구성 -->
+      <div class="job-view" th:if="${selectedJob != null}">
+
+        <!-- 상단 타이틀 영역 -->
+        <div class="jv-head">
+          <div class="jv-title" th:text="${selectedJob.title}">프론트엔드 개발자</div>
+
+          <!-- 회사명은 selectedJob에 없으면 companyName 같이 내려주는 걸 추천 -->
+          <div class="jv-company" th:text="${selectedJob.memberId != null ? selectedJob.memberId : '기업명'}">테크기업</div>
+
+          <!-- 조회수 제거(요구사항) / 마감일만 노출 -->
+          <div class="jv-meta">
+            <i class="fa-regular fa-clock"></i>
+            <span th:text="${selectedJob.deadlineAt}">~ 2026.03.15</span>
+          </div>
+        </div>
+
+        <hr class="jv-divider"/>
+
+        <!-- 모집 조건 -->
+        <div class="jv-section">
+          <div class="jv-section-title">모집 조건</div>
+
+          <div class="jv-grid" style="padding-left: 10px">
+            <!-- 모집 지역 -->
+            <div class="jv-item">
+			  <div class="jv-label">
+			    <i class="fa-solid fa-location-dot"></i>지역
+			  </div>
+			  <div class="jv-value" th:text="${selectedJob.regionCode}">서울 강남구</div>
+			</div>
+			
+			<!-- 모집 직무 -->
+            <div class="jv-item">
+			  <div class="jv-label">
+			    <i class="fa-solid fa-briefcase"></i>직무
+			  </div>
+			  <div class="jv-value"
+			       th:text="${selectedJob.categoryName}">
+			    개발
+			  </div>
+			</div>
+			
+			<!-- 모집 학력 -->
+            <div class="jv-item">
+			  <div class="jv-label">
+			    <i class="fa-regular fa-clock"></i>학력
+			  </div>
+			  <div class="jv-value" th:text="${selectedJob.eduLevelName}">
+			    경력 3년 이상
+			  </div>
+			</div>
+
+			<!-- 모집 경력 -->
+            <div class="jv-item">
+			  <div class="jv-label">
+			    <i class="fa-regular fa-clock"></i>경력
+			  </div>
+			  <div class="jv-value" th:text="${selectedJob.careerType}">
+			    경력 3년 이상
+			  </div>
+			</div>
+
+			<!-- 모집 고용형태 -->
+            <div class="jv-item">
+			  <div class="jv-label">
+			    <i class="fa-solid fa-briefcase"></i>고용형태
+			  </div>
+			  <div class="jv-value" th:text="${selectedJob.workType}">
+			    정규직
+			  </div>
+			</div>
+			
+			<!-- 모집 인원 -->
+			<div class="jv-item">
+			  <div class="jv-label">
+			    <i class="fa-solid fa-user-group"></i>모집인원
+			  </div>
+			  <div class="jv-value" th:text="${selectedJob.headcount} + ' 명'">
+			  	0 명
+			  </div>
+			</div>
+
+			<!-- 모집 급여 -->
+            <div class="jv-item">
+			  <div class="jv-label">
+			    <i class="fa-solid fa-sack-dollar"></i>급여
+			  </div>
+			  <div class="jv-value jv-salary"
+			       th:text="${selectedJob.salary != null ? '연봉 ' + #numbers.formatInteger(selectedJob.salary,0,'COMMA') + '만원 이상': '-'}">
+			    연봉 4000만원 이상
+			  </div>
+			</div>
+            
+          </div>
+        </div>
+
+        <!-- 상세 내용 -->
+        <div class="jv-section" style="margin-top: 30px;">
+          <div class="jv-section-title">상세 내용</div>
+
+          <!-- content가 텍스트(줄바꿈 포함)라면 text + pre-wrap -->
+          <div class="jv-content" style="padding-left: 10px;" th:text="${selectedJob.content}">
+            주요 업무...
+          </div>
+
+          <!-- content가 HTML 저장이면 아래로 교체(둘 중 하나만 쓰기)
+          <div class="jv-content" th:utext="${selectedJob.content}"></div>
+          -->
+        </div>
+
+        <hr class="jv-divider"/>
+
+        <!-- 하단 버튼(정적 태그, 클릭이벤트 없음) -->
+        <div class="jv-bottom">
+          <button type="button" class="jv-btn jv-btn-ghost">URL 복사</button>
+
+          <div class="jv-bottom-right">
+            <button type="button" class="jv-btn jv-btn-ghost">목록</button>
+            <button type="button" class="jv-btn jv-btn-primary">지원하기</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</section>
+</body>
+</html>

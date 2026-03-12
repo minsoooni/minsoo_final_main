@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- ==== 루트 엘리먼트 & 네임스페이스 설정(프로젝트 전체내에서 유일해야 한다.) ==== -->
+<mapper namespace="com.spring.app.company.model.CompanyApplicantMapper">
+
+	<resultMap id="applicantListMap" type="com.spring.app.company.domain.ApplicantListDTO">
+	    <id property="applicationId" column="APPLICATION_ID"/>
+	    <result property="jobId" column="FK_JOB_ID"/>
+	    <result property="memberId" column="FK_MEMBERID"/>
+	    <result property="submittedResumeId" column="FK_SUBMITTED_RESUME_ID"/>
+	
+	    <result property="name" column="NAME"/>
+	    <result property="email" column="EMAIL"/>
+	    <result property="phone" column="PHONE"/>
+	    <result property="birthDate" column="BIRTH_DATE"/>
+	    <result property="gender" column="GENDER"/>
+	
+	    <result property="applicationRound" column="APPLICATION_ROUND"/>
+	    <result property="applicationStatus" column="APPLICATION_STATUS"/>
+	    <result property="processStatus" column="PROCESS_STATUS"/>
+	
+	    <result property="appliedAt" column="APPLIED_AT"/>
+	    <result property="cancelledAt" column="CANCELLED_AT"/>
+	    <result property="viewedAt" column="VIEWED_AT"/>
+	
+	    <result property="resumeTitle" column="RESUME_TITLE"/>
+	    <result property="desiredSalary" column="DESIRED_SALARY"/>
+	
+	    <result property="jobTitle" column="JOB_TITLE"/>
+	</resultMap>
+	
+	
+	
+	<!-- 지원자 목록 조회 -->
+	<select id="selectApplicantList" parameterType="map" resultMap="applicantListMap">
+	    SELECT
+	        A.APPLICATION_ID,
+	        A.FK_JOB_ID,
+	        A.FK_MEMBERID,
+	        A.FK_SUBMITTED_RESUME_ID,
+	        A.NAME,
+	        A.BIRTH_DATE,
+	        A.GENDER,
+	        A.PHONE,
+	        A.EMAIL,
+	        A.APPLICATION_ROUND,
+	        A.APPLICATION_STATUS,
+	        A.PROCESS_STATUS,
+	        A.APPLIED_AT,
+	        A.CANCELLED_AT,
+	        A.VIEWED_AT,
+	        J.TITLE AS JOB_TITLE,
+	        SR.TITLE AS RESUME_TITLE,
+	        SR.DESIRED_SALARY AS DESIRED_SALARY
+	    FROM TBL_JOB_APPLICATION A
+	    INNER JOIN TBL_JOB_POSTING J
+	        ON A.FK_JOB_ID = J.JOB_ID
+	    LEFT JOIN TBL_SUBMITTED_RESUME SR
+	        ON A.FK_SUBMITTED_RESUME_ID = SR.SUBMITTED_RESUME_ID
+	    WHERE J.FK_MEMBERID = #{memberId}
+	      AND A.APPLICATION_STATUS = 0
+	
+	    <if test="keyword != null and keyword != ''">
+	        AND (
+	            A.NAME LIKE '%' || #{keyword} || '%'
+	            OR A.EMAIL LIKE '%' || #{keyword} || '%'
+	        )
+	    </if>
+	
+	    <if test="processStatus != null">
+	        AND A.PROCESS_STATUS = #{processStatus}
+	    </if>
+	
+	    <if test="jobId != null">
+	        AND A.FK_JOB_ID = #{jobId}
+	    </if>
+	
+	    ORDER BY A.APPLIED_AT DESC, A.APPLICATION_ID DESC
+	</select>
+	
+	
+	
+	<!-- 현재 지원 상태 검증 조회 -->
+	<select id="selectApplicantCurrentStatus" parameterType="map" resultType="int">
+	    SELECT A.PROCESS_STATUS
+	    FROM TBL_JOB_APPLICATION A
+	    INNER JOIN TBL_JOB_POSTING J
+	        ON A.FK_JOB_ID = J.JOB_ID
+	    WHERE A.APPLICATION_ID = #{applicationId}
+	      AND J.FK_MEMBERID = #{memberId}
+	</select>
+	
+	
+	<!-- 지원자 상세를 클릭했을 때 상태 변경 -->
+	<update id="updateApplicantReadStatus" parameterType="map">
+	    UPDATE TBL_JOB_APPLICATION
+	       SET PROCESS_STATUS = 1,
+	           VIEWED_AT = SYSDATE
+	     WHERE APPLICATION_ID = #{applicationId}
+	       AND PROCESS_STATUS = 0
+	       AND FK_JOB_ID IN (
+	            SELECT JOB_ID
+	              FROM TBL_JOB_POSTING
+	             WHERE FK_MEMBERID = #{memberId}
+	       )
+	</update>
+	
+	
+	<!-- 지원자 상태 변경 -->
+	<update id="updateApplicantStatus" parameterType="map">
+	    UPDATE TBL_JOB_APPLICATION
+	       SET PROCESS_STATUS = #{newStatus}
+	     WHERE APPLICATION_ID = #{applicationId}
+	       AND PROCESS_STATUS != 0
+	       AND FK_JOB_ID IN (
+	            SELECT JOB_ID
+	              FROM TBL_JOB_POSTING
+	             WHERE FK_MEMBERID = #{memberId}
+	       )
+	</update>
+	
+	
+	<!-- 상태 변경 이력 저장 -->
+	<insert id="insertApplicationHistory" parameterType="map">
+	    INSERT INTO TBL_APPLICATION_HISTORY (
+	        HISTORY_ID,
+	        FK_APPLICATION_ID,
+	        PREV_STATUS,
+	        NEW_STATUS,
+	        CHANGED_AT
+	    )
+	    VALUES (
+	    	seq_application_history_id.NEXTVAL,
+	        #{applicationId},
+	        #{prevStatus},
+	        #{newStatus},
+	        SYSDATE
+	    )
+	</insert>
+	
+	
+	<!-- 지원자 이력서 상세 조회 -->
+	<select id="selectApplicantDetailForCompany"
+        parameterType="map"
+        resultType="com.spring.app.company.domain.ApplicantDetailDTO">
+	    SELECT
+	           A.application_id               AS applicationId,
+	           A.fk_job_id                    AS jobId,
+	           A.fk_memberid                  AS memberId,
+	           A.fk_submitted_resume_id       AS submittedResumeId,
+	
+	           A.name                         AS name,
+	           A.birth_date                   AS birthDate,
+	           A.gender                       AS gender,
+	           A.phone                        AS phone,
+	           A.email                        AS email,
+	
+	           A.application_round            AS applicationRound,
+	           A.application_status           AS applicationStatus,
+	           A.process_status               AS processStatus,
+	           DECODE(A.process_status,
+	                  0, '미열람',
+	                  1, '열람',
+	                  2, '서류탈락',
+	                  3, '면접요청',
+	                  4, '합격',
+	                  5, '불합격')            AS processStatusText,
+	           A.applied_at                   AS appliedAt,
+	           A.cancelled_at                 AS cancelledAt,
+	           A.viewed_at                    AS viewedAt,
+	
+	           J.title                        AS postTitle,
+	           C.company_name                 AS companyName,
+	           S.title                        AS resumeTitle,
+	           R.region_name                  AS regionName,
+	           JC.category_name               AS categoryName,
+	           J.work_type                    AS workType,
+	           J.salary                       AS salary,
+	           J.deadline_at                  AS deadlineAt,
+	
+	           S.self_intro                   AS selfIntro,
+	           S.education                    AS education,
+	           S.career                       AS career,
+	           S.language                     AS language,
+	           S.portfolio                    AS portfolio,
+	           S.award                        AS award,
+	           S.address                      AS address,
+	           S.photo_path                   AS photoPath,
+	           S.desired_salary               AS desiredSalary
+	    FROM tbl_job_application A
+	    JOIN tbl_job_posting J
+	      ON A.fk_job_id = J.job_id
+	    JOIN tbl_company C
+	      ON J.fk_memberid = C.fk_memberid
+	    JOIN tbl_submitted_resume S
+	      ON A.fk_submitted_resume_id = S.submitted_resume_id
+	    LEFT JOIN tbl_region R
+	      ON J.fk_region_code = R.region_code
+	    LEFT JOIN tbl_job_category JC
+	      ON J.fk_category_id = JC.category_id
+	    WHERE A.application_id = #{applicationId}
+	      AND J.fk_memberid    = #{memberId}
+	</select>
+	
+	
+	<!-- 첨부파일 조회 -->
+	<select id="getApplicationFiles"
+        parameterType="long"
+        resultType="com.spring.app.company.domain.ImageFileDTO">
+	    SELECT file_id           AS fileId,
+	           target_id         AS targetId,
+	           target_type       AS targetType,
+	           filecategory      AS fileCategory,
+	           file_url          AS fileUrl,
+	           original_filename AS originalFilename
+	    FROM tbl_image_file
+	    WHERE target_id   = #{applicationId}
+	      AND target_type = 'application'
+	    ORDER BY file_id
+	</select>
+	
+	
+	<!-- 기술자격 조회 -->
+	<select id="getApplicationTechstackList" resultType="java.util.Map">
+	    SELECT S.skill_name   AS "skillName",
+	           AT.proficiency AS "proficiency"
+	    FROM tbl_application_techstack AT
+	    JOIN tbl_skill S
+	      ON AT.fk_skill_id = S.skill_id
+	    WHERE AT.fk_submitted_resume_id = #{submittedResumeId}
+	    ORDER BY S.skill_name
+	</select>
+	
+	
+	<!-- 자격증 조회 -->
+	<select id="getApplicationCertificateList" resultType="java.util.Map">
+	    SELECT C.certificate_name AS "certificateName",
+	           C.issuer           AS "issuer",
+	           TO_CHAR(AC.acquired_date, 'YYYY-MM-DD') AS "acquiredDate"
+	    FROM tbl_application_certificate AC
+	    JOIN tbl_certificate C
+	      ON AC.fk_certificate_code = C.certificate_code
+	    WHERE AC.fk_submitted_resume_id = #{submittedResumeId}
+	    ORDER BY AC.acquired_date DESC
+	</select>
+	
+	
+</mapper>

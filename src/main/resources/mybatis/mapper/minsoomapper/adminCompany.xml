@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring.app.admin.model.AdminCompanyDAO">
+
+    <select id="selectPagedCompanyList"
+        resultType="com.spring.app.admin.domain.AdminCompanyDTO">
+
+    SELECT * FROM (
+        SELECT ROWNUM rn, a.*
+        FROM (
+            SELECT
+                m.MEMBERID        AS memberId,
+                c.COMPANY_NAME    AS companyName,
+                c.BIZ_NO          AS bizNo,
+                c.INDUSTRY_CODE   AS industryCode,
+                m.STATUS          AS status,
+                CASE c.APPROVED_YN
+                    WHEN 0 THEN 'PENDING'
+                    WHEN 1 THEN 'APPROVED'
+                    WHEN 2 THEN 'REJECTED'
+                END               AS approvedYn,
+                c.REJECT_REASON   AS rejectReason,
+                COUNT(jp.job_id)  AS postCount,
+                m.CREATED_AT      AS createdAt
+            FROM TBL_MEMBER m
+            JOIN TBL_COMPANY c ON m.MEMBERID = c.FK_MEMBERID
+            LEFT JOIN TBL_JOB_POSTING jp ON m.MEMBERID = jp.FK_MEMBERID
+            <where>
+                m.TYPE = 1
+                <if test="search != null and search != ''">
+                    AND (
+                        c.COMPANY_NAME LIKE '%' || #{search} || '%'
+                        OR c.BIZ_NO LIKE '%' || #{search} || '%'
+                    )
+                </if>
+                <if test="status != null and status != ''">
+                    AND m.STATUS = #{status}
+                </if>
+                <if test="approval != null and approval != ''">
+                    AND c.APPROVED_YN = CASE #{approval}
+                                            WHEN 'APPROVED' THEN 1
+                                            WHEN 'REJECTED' THEN 2
+                                            WHEN 'PENDING'  THEN 0
+                                        END
+                </if>
+            </where>
+            GROUP BY
+                m.MEMBERID, c.COMPANY_NAME, c.BIZ_NO,
+                c.INDUSTRY_CODE, m.STATUS, c.APPROVED_YN,
+                c.REJECT_REASON, m.CREATED_AT
+            ORDER BY m.CREATED_AT DESC
+        ) a
+        WHERE ROWNUM &lt;= #{offset} + #{limit}
+    )
+    WHERE rn &gt; #{offset}
+
+</select>
+
+	<select id="selectCompanyCount" resultType="int">
+
+    SELECT COUNT(DISTINCT m.MEMBERID)
+    FROM TBL_MEMBER m
+    JOIN TBL_COMPANY c ON m.MEMBERID = c.FK_MEMBERID
+    <where>
+        m.TYPE = 1
+        <if test="search != null and search != ''">
+            AND (
+                c.COMPANY_NAME LIKE '%' || #{search} || '%'
+                OR c.BIZ_NO LIKE '%' || #{search} || '%'
+            )
+        </if>
+        <if test="status != null and status != ''">
+            AND m.STATUS = #{status}
+        </if>
+        <if test="approval != null and approval != ''">
+            AND c.APPROVED_YN = CASE #{approval}
+                                    WHEN 'APPROVED' THEN 1
+                                    WHEN 'REJECTED' THEN 2
+                                    WHEN 'PENDING'  THEN 0
+                                END
+        </if>
+    </where>
+
+</select>
+
+    <update id="updateApprovedYn">
+        UPDATE TBL_COMPANY
+        SET APPROVED_YN = CASE #{approvedYn}
+                            WHEN 'APPROVED' THEN 1
+                            WHEN 'REJECTED' THEN 2
+                            WHEN 'PENDING'  THEN 0
+                          END,
+            APPROVAL_AT = SYSDATE
+        WHERE FK_MEMBERID = #{memberId}
+    </update>
+
+    <update id="updateApprovedYnWithReason">
+        UPDATE TBL_COMPANY
+        SET APPROVED_YN   = CASE #{approvedYn}
+                                WHEN 'APPROVED' THEN 1
+                                WHEN 'REJECTED' THEN 2
+                                WHEN 'PENDING'  THEN 0
+                            END,
+            REJECT_REASON = #{rejectReason},
+            APPROVAL_AT   = SYSDATE
+        WHERE FK_MEMBERID = #{memberId}
+    </update>
+
+    <update id="updateMemberStatus">
+        UPDATE TBL_MEMBER
+        SET STATUS     = CASE #{status}
+                            WHEN 'SUSPENDED'  THEN 0 
+                            WHEN 'ACTIVE' THEN 1
+                            WHEN 'WITHDRAWN' THEN 2
+                         END,
+            UPDATED_AT = SYSDATE
+        WHERE MEMBERID = #{memberId}
+    </update>
+
+    <insert id="insertAuthority">
+        INSERT INTO TBL_MEMBER_AUTHORITY (AUTH_NUM, FK_MEMBERID, AUTHORITY)
+        VALUES (SEQ_MEMBER_AUTHORITY_AUTH_NUM.NEXTVAL, #{memberId}, 'ROLE_COMPANY')
+    </insert>
+
+    <delete id="deleteAuthority">
+        DELETE FROM TBL_MEMBER_AUTHORITY
+        WHERE FK_MEMBERID = #{memberId} AND AUTHORITY = 'ROLE_COMPANY'
+    </delete>
+    
+    
+    <select id="selectCompanyById" resultType="com.spring.app.admin.domain.AdminCompanyDTO">
+	  SELECT
+	      m.MEMBERID        AS memberId,
+	      c.COMPANY_NAME    AS companyName,
+	      c.BIZ_NO          AS bizNo,
+	      c.INDUSTRY_CODE   AS industryCode,
+	      c.CEO_NAME        AS ceoName,
+	      c.ZIP_CODE        AS zipCode,
+	      c.ADDR1           AS addr1,
+	      c.ADDR2           AS addr2,
+	      m.STATUS          AS status,
+	      CASE c.APPROVED_YN
+	          WHEN 0 THEN 'PENDING'
+	          WHEN 1 THEN 'APPROVED'
+	          WHEN 2 THEN 'REJECTED'
+	      END               AS approvedYn,
+	      c.REJECT_REASON   AS rejectReason,
+	      c.APPROVAL_AT     AS approvalAt,
+	      m.CREATED_AT      AS createdAt
+	  FROM TBL_MEMBER m
+	  JOIN TBL_COMPANY c ON m.MEMBERID = c.FK_MEMBERID
+	  WHERE m.MEMBERID = #{memberId}
+	</select>
+	
+	<update id="updateCompanyInfo">
+
+    UPDATE TBL_COMPANY
+    SET 
+        BIZ_NO = #{bizNo},
+        CEO_NAME = #{ceoName},
+        INDUSTRY_CODE = #{industryCode},
+        COMPANY_NAME = #{companyName}
+    WHERE FK_MEMBERID = #{memberId}
+
+</update>
+
+</mapper>

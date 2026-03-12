@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      lang="ko"
+      th:replace="~{fragment/jobseeker_bar :: jobseeker_layout(~{::div#applicationDetailContent})}" >
+
+<head>
+  <title>지원서 상세 | 구인구직</title>
+  <th:block data-slot="link"></th:block>
+  <th:block data-slot="css"><style></style></th:block>
+  <th:block data-slot="script"><script th:inline="javascript"></script></th:block>
+</head>
+
+<body>
+<div id="applicationDetailContent">
+<style>
+.detail-container { max-width: 900px; margin: 0 auto; padding: 24px 0; }
+
+/* ===== 상단 헤더 ===== */
+.apply-header {
+    background: #fff; border: 2px solid #e9ecef; border-radius: 12px;
+    padding: 28px 32px; margin-bottom: 24px;
+}
+.apply-header .back-link {
+    font-size: 14px; color: #868e96; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 6px; margin-bottom: 16px;
+}
+.apply-header .back-link:hover { color: #333; }
+.header-body {
+    display: flex; justify-content: space-between; align-items: flex-end; gap: 24px;
+}
+.header-left { flex: 1; min-width: 0; }
+.header-left h2 {
+    font-size: 22px; font-weight: 700; color: #222; margin: 0 0 34px;
+}
+.header-left .header-meta {
+    font-size: 14px; color: #868e96;
+}
+.header-left .header-meta span + span::before {
+    content: "·"; margin: 0 8px; color: #dee2e6;
+}
+
+/* 진행상태 (우측) */
+.header-status {
+    background: linear-gradient(135deg, #e3f2fd 0%, #f0f7ff 100%);
+    border: 1px solid #bbdefb; border-radius: 10px;
+    padding: 16px 24px; text-align: center; flex-shrink: 0; min-width: 180px;
+}
+.header-status .status-top {
+    display: flex; align-items: center; gap: 10px; justify-content: center; margin-bottom: 10px;
+}
+.header-status .status-icon {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 15px;
+}
+.header-status .status-label { font-size: 12px; color: #868e96; text-align: left; }
+.header-status .status-text { font-size: 16px; font-weight: 700; text-align: left; }
+.header-status .status-dates {
+    font-size: 12px; color: #868e96;
+    border-top: 1px solid #bbdefb; padding-top: 10px;
+}
+.header-status .status-dates div + div { margin-top: 3px; }
+
+.st-icon-UNREAD       { background: #f1f3f5; color: #868e96; }
+.st-icon-READ         { background: #e3f2fd; color: #1565c0; }
+.st-icon-INTERVIEW    { background: #fff3e0; color: #e65100; }
+.st-icon-PASSED       { background: #e8f5e9; color: #2e7d32; }
+.st-icon-REJECTED     { background: #fce4ec; color: #c62828; }
+.st-text-UNREAD       { color: #868e96; }
+.st-text-READ         { color: #1565c0; }
+.st-text-INTERVIEW    { color: #e65100; }
+.st-text-PASSED       { color: #2e7d32; }
+.st-text-REJECTED     { color: #c62828; }
+
+/* ===== 기본 정보 헤더 ===== */
+.detail-header {
+    background: #fff; border: 2px solid #e9ecef; border-radius: 12px;
+    padding: 32px; margin-bottom: 24px;
+}
+.detail-photo {
+    width: 120px; height: 150px; border-radius: 8px; overflow: hidden;
+    border: 2px solid #e9ecef; background: #f8f9fa;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.detail-photo img { width: 100%; height: 100%; object-fit: cover; }
+.detail-photo .placeholder { text-align: center; color: #adb5bd; }
+.detail-name { font-size: 24px; font-weight: 700; color: #222; margin: 0; }
+.detail-title { font-size: 16px; color: #495057; margin-top: 4px; }
+.detail-info { font-size: 14px; color: #868e96; margin-top: 8px; }
+.detail-info span { margin-right: 16px; }
+.detail-info i { margin-right: 4px; color: #adb5bd; }
+
+/* ===== 섹션 공통 ===== */
+.detail-section {
+    background: #fff; border: 2px solid #e9ecef; border-radius: 12px;
+    padding: 28px 32px; margin-bottom: 20px;
+}
+.detail-section-title {
+    font-size: 18px; font-weight: 700; color: #222;
+    padding-bottom: 12px; margin-bottom: 20px;
+    border-bottom: 2px solid #007bff;
+    display: flex; align-items: center; gap: 8px;
+}
+.detail-section-title i { color: #007bff; }
+.detail-item {
+    padding: 16px 0; border-bottom: 1px solid #f0f0f0;
+}
+.detail-item:last-child { border-bottom: none; padding-bottom: 0; }
+.detail-item:first-child { padding-top: 0; }
+.detail-item-title { font-size: 15px; font-weight: 600; color: #333; }
+.detail-item-sub { font-size: 13px; color: #868e96; margin-top: 2px; }
+.detail-item-desc { font-size: 14px; color: #495057; margin-top: 6px; line-height: 1.6; white-space: pre-wrap; }
+.detail-period {
+    font-size: 13px; color: #007bff; font-weight: 500;
+    background: #f0f7ff; padding: 2px 10px; border-radius: 4px;
+    display: inline-block; white-space: nowrap;
+}
+.detail-badge {
+    font-size: 12px; padding: 2px 8px; border-radius: 4px;
+    margin-left: 8px; font-weight: 500;
+}
+.badge-graduated { background: #e8f5e9; color: #2e7d32; }
+.badge-enrolled { background: #fff3e0; color: #e65100; }
+.badge-dropped { background: #fce4ec; color: #c62828; }
+.self-intro-box {
+    background: #f8f9fa; border-radius: 8px; padding: 20px;
+    font-size: 14px; color: #495057; line-height: 1.8; white-space: pre-wrap;
+}
+.skill-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #f1f3f5; border: 1px solid #dee2e6; border-radius: 20px;
+    padding: 6px 14px; margin: 4px; font-size: 13px;
+}
+.skill-badge .proficiency {
+    font-size: 11px; color: #fff; border-radius: 10px;
+    padding: 1px 8px; font-weight: 600;
+}
+.proficiency-1 { background: #adb5bd; }
+.proficiency-2 { background: #007bff; }
+.proficiency-3 { background: #28a745; }
+.portfolio-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: #007bff; font-size: 14px; text-decoration: none;
+    padding: 8px 16px; border: 1px solid #007bff; border-radius: 8px;
+    margin: 4px; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
+}
+.portfolio-link:hover { background: #007bff; color: #fff; text-decoration: none; }
+.portfolio-file {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: #495057; font-size: 14px;
+    padding: 8px 16px; border: 1px solid #dee2e6; border-radius: 8px;
+    margin: 4px;
+}
+.portfolio-file:hover { background: #f1f3f5; color: #333; text-decoration: none; }
+.btn-actions { display: flex; gap: 10px; justify-content: center; margin-top: 8px; }
+.btn-actions .btn { font-size: 14px; padding: 10px 28px; border-radius: 8px; }
+.bg-danger-light { background-color: #fce4ec; }
+
+@media (max-width: 600px) {
+    .header-body { flex-direction: column; }
+    .header-status { min-width: auto; width: 100%; }
+}
+</style>
+
+<div class="detail-container">
+
+    <!-- ===== 상단 헤더 (공고정보 좌 + 진행상태 우) ===== -->
+    <div class="apply-header">
+        <a th:href="@{/jobseeker/application/list}" class="back-link">
+            <i class="fas fa-arrow-left"></i> 뒤로가기
+        </a>
+        <div class="header-body">
+            <div class="header-left">
+                <h2>지원서 상세</h2>
+                <div class="header-meta">
+                    <span th:text="${appDetail['postTitle']}">프론트엔드 개발자</span>
+                    <span th:text="${appDetail['companyName']}">테크기업</span>
+                    <span th:text="${appDetail['appliedAt']}">2026.02.05 14:30</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ===== 기본 정보 ===== -->
+    <div class="detail-header">
+        <div class="d-flex" style="gap: 24px;">
+            <div class="detail-photo">
+                <img th:if="${appDetail['photoPath'] != null and !#strings.isEmpty(appDetail['photoPath'])}"
+                     th:src="@{/{path}(path=${appDetail['photoPath'].substring(1)})}" alt="프로필 사진">
+                <div th:if="${appDetail['photoPath'] == null or #strings.isEmpty(appDetail['photoPath'])}" class="placeholder">
+                    <i class="fas fa-user" style="font-size: 40px;"></i>
+                </div>
+            </div>
+            <div style="flex: 1;">
+                <h1 class="detail-name" th:text="${appDetail['name']}">홍길동</h1>
+                <p class="detail-title" th:text="${appDetail['resumeTitle']}">이력서 제목</p>
+                <div class="detail-info">
+                    <span th:if="${appDetail['email'] != null}">
+                        <i class="fas fa-envelope"></i> <span th:text="${appDetail['email']}"></span>
+                    </span>
+                    <span th:if="${appDetail['phone'] != null}">
+                        <i class="fas fa-phone"></i> <span th:text="${appDetail['phone']}"></span>
+                    </span>
+                </div>
+                <div class="detail-info">
+                    <span th:if="${appDetail['birthDate'] != null}">
+                        <i class="fas fa-birthday-cake"></i> <span th:text="${appDetail['birthDate']}"></span>
+                    </span>
+                    <span th:if="${appDetail['gender'] != null}">
+                        <i class="fas fa-venus-mars"></i>
+                        <span th:if="${appDetail['gender'] == 1}">남성</span>
+                        <span th:if="${appDetail['gender'] == 2}">여성</span>
+                    </span>
+                </div>
+                <div class="detail-info" th:if="${appDetail['address'] != null and !#strings.isEmpty(appDetail['address'])}">
+                    <span><i class="fas fa-map-marker-alt"></i> <span th:text="${appDetail['address']}"></span></span>
+                </div>
+                <div class="detail-info" th:if="${appDetail['desiredSalary'] != null and appDetail['desiredSalary'] > 0}">
+                    <span>
+                        <i class="fas fa-won-sign"></i> 희망연봉 &nbsp;<span th:text="${#numbers.formatInteger(appDetail['desiredSalary'], 3, 'COMMA')}"></span>만원
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 자기소개 ===== -->
+    <div class="detail-section" th:if="${appDetail['selfIntro'] != null and !#strings.isEmpty(appDetail['selfIntro'])}">
+        <div class="detail-section-title"><i class="fas fa-file-alt"></i> 자기소개</div>
+        <div class="self-intro-box" th:text="${appDetail['selfIntro']}"></div>
+    </div>
+
+    <!-- ===== 학력 (JSON) ===== -->
+    <div class="detail-section" th:if="${appDetail['education'] != null and !#strings.isEmpty(appDetail['education'])}">
+        <div class="detail-section-title"><i class="fas fa-graduation-cap"></i> 학력</div>
+        <div id="educationArea"></div>
+    </div>
+
+    <!-- ===== 경력 (JSON) ===== -->
+    <div class="detail-section" th:if="${appDetail['career'] != null and !#strings.isEmpty(appDetail['career'])}">
+        <div class="detail-section-title"><i class="fas fa-briefcase"></i> 경력</div>
+        <div id="careerArea"></div>
+    </div>
+
+    <!-- ===== 기술스택 ===== -->
+    <div class="detail-section" th:if="${appDetail['techstacks'] != null and !appDetail['techstacks'].isEmpty()}">
+        <div class="detail-section-title"><i class="fas fa-code"></i> 기술스택</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+            <span th:each="tech : ${appDetail['techstacks']}" class="skill-badge">
+                <span th:text="${tech['skillName']}">Java</span>
+                <span class="proficiency"
+                      th:classappend="${tech['proficiency'] == 1 ? 'proficiency-1' : (tech['proficiency'] == 2 ? 'proficiency-2' : 'proficiency-3')}"
+                      th:text="${tech['proficiency'] == 1 ? '초급' : (tech['proficiency'] == 2 ? '중급' : '고급')}">중급</span>
+            </span>
+        </div>
+    </div>
+
+    <!-- ===== 자격증 ===== -->
+    <div class="detail-section" th:if="${appDetail['certificates'] != null and !appDetail['certificates'].isEmpty()}">
+        <div class="detail-section-title"><i class="fas fa-certificate"></i> 자격증</div>
+        <div th:each="cert : ${appDetail['certificates']}" class="detail-item">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="detail-item-title" th:text="${cert['certificateName']}">자격증명</span>
+                    <div class="detail-item-sub" th:if="${cert['issuer'] != null}" th:text="${cert['issuer']}">발급기관</div>
+                </div>
+                <span class="detail-period"
+                      th:if="${cert['acquiredDate'] != null}"
+                      th:text="${cert['acquiredDate']}">취득일</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 어학 (JSON) ===== -->
+    <div class="detail-section" th:if="${appDetail['language'] != null and !#strings.isEmpty(appDetail['language'])}">
+        <div class="detail-section-title"><i class="fas fa-language"></i> 어학</div>
+        <div id="languageArea"></div>
+    </div>
+
+    <!-- ===== 수상 (JSON) ===== -->
+    <div class="detail-section" th:if="${appDetail['award'] != null and !#strings.isEmpty(appDetail['award'])}">
+        <div class="detail-section-title"><i class="fas fa-trophy"></i> 수상</div>
+        <div id="awardArea"></div>
+    </div>
+
+    <!-- ===== 포트폴리오 (JSON) ===== -->
+    <div class="detail-section" th:if="${appDetail['portfolio'] != null and !#strings.isEmpty(appDetail['portfolio'])}">
+        <div class="detail-section-title"><i class="fas fa-folder-open"></i> 포트폴리오</div>
+        <div id="portfolioArea" style="display: flex; flex-wrap: wrap; gap: 4px;"></div>
+    </div>
+
+    <!-- ===== 첨부파일 ===== -->
+    <div class="detail-section" th:if="${appDetail['files'] != null and !#lists.isEmpty(appDetail['files'])}">
+        <div class="detail-section-title"><i class="fas fa-paperclip"></i> 첨부 파일</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+            <th:block th:each="file : ${appDetail['files']}">
+                <a class="portfolio-file"
+                   th:href="@{/upload/{name}(name=${file.fileUrl})}"
+                   th:download="${file.originalFilename}">
+                    <i class="fas fa-download"></i>
+                    <span th:text="${file.originalFilename}">파일명.pdf</span>
+                </a>
+            </th:block>
+        </div>
+    </div>
+
+    <!-- ===== 하단 버튼 ===== -->
+    <div class="btn-actions">
+        <a th:href="@{/job/detail/{id}(id=${appDetail['postId']})}" class="btn btn-outline-primary">
+            <i class="fas fa-external-link-alt"></i> 공고 보기
+        </a>
+        <button th:if="${appDetail['canCancel']}"
+                type="button"
+                class="btn btn-outline-danger"
+                data-toggle="modal"
+                data-target="#cancelModal">
+            <i class="fas fa-times"></i> 지원 취소
+        </button>
+    </div>
+
+</div>
+
+<!-- ===== 취소 확인 모달 ===== -->
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 12px; border: none;">
+            <div class="modal-body text-center py-4">
+                <div class="bg-danger-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                     style="width: 64px; height: 64px;">
+                    <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                </div>
+                <h5 class="font-weight-bold mb-2">지원 취소 확인</h5>
+                <p class="text-secondary mb-2">정말 지원을 취소하시겠습니까?</p>
+                <p class="text-muted small">취소 후 재지원이 가능합니다.</p>
+            </div>
+            <div class="modal-footer" style="border-top: none; justify-content: center; gap: 8px;">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" style="border-radius: 8px; min-width: 100px;">닫기</button>
+                <form th:action="@{/jobseeker/application/{id}/cancel(id=${appDetail['id']})}" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-danger" style="border-radius: 8px; min-width: 100px;">취소하기</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== JSON 스냅샷 파싱 ===== -->
+<script th:inline="javascript">
+var CTX = /*[[@{/}]]*/ '/finalProject/';
+$(function() {
+
+    var eduJson = /*[[${appDetail['education']}]]*/ null;
+    if (eduJson) {
+        try {
+            var list = JSON.parse(eduJson);
+            var h = '';
+            list.forEach(function(e) {
+                var statusBadge = '';
+                if (e.status == 0 || e.status === '졸업') statusBadge = '<span class="detail-badge badge-graduated">졸업</span>';
+                else if (e.status == 1 || e.status === '재학') statusBadge = '<span class="detail-badge badge-enrolled">재학</span>';
+                else if (e.status == 2 || e.status === '중퇴') statusBadge = '<span class="detail-badge badge-dropped">중퇴</span>';
+                else if (e.status) statusBadge = '<span class="detail-badge badge-graduated">' + esc(String(e.status)) + '</span>';
+                var period = '';
+                if (e.enrolldate) {
+                    period = esc(e.enrolldate);
+                    if (e.graduationdate) period += ' ~ ' + esc(e.graduationdate);
+                    else if (e.status == 1 || e.status === '재학') period += ' ~ 현재';
+                }
+                h += '<div class="detail-item"><div class="d-flex justify-content-between align-items-start"><div>';
+                h += '<span class="detail-item-title">' + esc(e.schoolname || '') + '</span>' + statusBadge;
+                h += '<div class="detail-item-sub">';
+                if (e.educationLevelName) h += esc(e.educationLevelName);
+                if (e.major) h += ' · ' + esc(e.major);
+                h += '</div></div>';
+                if (period) h += '<span class="detail-period">' + period + '</span>';
+                h += '</div></div>';
+            });
+            $('#educationArea').html(h);
+        } catch(ex) { $('#educationArea').html('<p class="text-muted small">학력 정보를 불러올 수 없습니다.</p>'); }
+    }
+
+    var careerJson = /*[[${appDetail['career']}]]*/ null;
+    if (careerJson) {
+        try {
+            var list = JSON.parse(careerJson);
+            var h = '';
+            list.forEach(function(c) {
+                var jobName = c.categoryName || c.jobnameCustom || '';
+                var sub = esc(jobName);
+                if (c.position) sub += ' · ' + esc(c.position);
+                var period = '';
+                if (c.joindate) {
+                    period = esc(c.joindate);
+                    period += c.leavedate ? ' ~ ' + esc(c.leavedate) : ' ~ 재직중';
+                }
+                h += '<div class="detail-item"><div class="d-flex justify-content-between align-items-start">';
+                h += '<div style="flex:1; min-width:0;">';
+                h += '<span class="detail-item-title">' + esc(c.companyname || '') + '</span>';
+                if (sub) h += '<div class="detail-item-sub">' + sub + '</div>';
+                if (c.jobDesc) h += '<div class="detail-item-desc">' + esc(c.jobDesc) + '</div>';
+                h += '</div>';
+                if (period) h += '<span class="detail-period" style="margin-left:12px;">' + period + '</span>';
+                h += '</div></div>';
+            });
+            $('#careerArea').html(h);
+        } catch(ex) { $('#careerArea').html('<p class="text-muted small">경력 정보를 불러올 수 없습니다.</p>'); }
+    }
+
+    var langJson = /*[[${appDetail['language']}]]*/ null;
+    if (langJson) {
+        try {
+            var list = JSON.parse(langJson);
+            var h = '';
+            list.forEach(function(l) {
+                h += '<div class="detail-item"><div class="d-flex justify-content-between align-items-center"><div>';
+                h += '<span class="detail-item-title">' + esc(l.languageName || '') + '</span>';
+                h += '<div class="detail-item-sub">' + esc(l.testname || '') + ' · ' + esc(l.score || '') + '</div>';
+                h += '</div>';
+                if (l.acquiredDate) h += '<span class="detail-period">' + esc(l.acquiredDate) + '</span>';
+                h += '</div></div>';
+            });
+            $('#languageArea').html(h);
+        } catch(ex) { $('#languageArea').html('<p class="text-muted small">어학 정보를 불러올 수 없습니다.</p>'); }
+    }
+
+    var awardJson = /*[[${appDetail['award']}]]*/ null;
+    if (awardJson) {
+        try {
+            var list = JSON.parse(awardJson);
+            var h = '';
+            list.forEach(function(a) {
+                h += '<div class="detail-item"><div class="d-flex justify-content-between align-items-start">';
+                h += '<div style="flex:1; min-width:0;">';
+                h += '<span class="detail-item-title">' + esc(a.awardName || '') + '</span>';
+                if (a.organizationName) h += '<div class="detail-item-sub">' + esc(a.organizationName) + '</div>';
+                if (a.description) h += '<div class="detail-item-desc">' + esc(a.description) + '</div>';
+                h += '</div>';
+                if (a.awardDate) h += '<span class="detail-period" style="margin-left:12px;">' + esc(a.awardDate) + '</span>';
+                h += '</div></div>';
+            });
+            $('#awardArea').html(h);
+        } catch(ex) { $('#awardArea').html('<p class="text-muted small">수상 정보를 불러올 수 없습니다.</p>'); }
+    }
+
+    var portJson = /*[[${appDetail['portfolio']}]]*/ null;
+    if (portJson) {
+        try {
+            var list = JSON.parse(portJson);
+            var h = '';
+            list.forEach(function(p) {
+                if (p.portfolioType == 0) {
+                    h += '<a href="' + esc(p.link || '#') + '" target="_blank" class="portfolio-link">';
+                    h += '<i class="fas fa-external-link-alt"></i> ' + esc(p.link || p.portfolioTitle || 'URL');
+                    h += '</a>';
+                } else {
+                    var filePath = p.filepath || '';
+                    var fileName = p.originalFilename || p.portfolioTitle || '첨부파일';
+                    if (filePath) {
+                        var href = CTX + filePath.replace(/^\//, '');
+                        h += '<a href="' + esc(href) + '" download="' + esc(fileName) + '" class="portfolio-file" style="text-decoration:none; cursor:pointer;">';
+                        h += '<i class="fas fa-download"></i> ' + esc(fileName);
+                        h += '</a>';
+                    } else {
+                        h += '<span class="portfolio-file">';
+                        h += '<i class="fas fa-file-alt"></i> ' + esc(fileName);
+                        h += '</span>';
+                    }
+                }
+            });
+            $('#portfolioArea').html(h);
+        } catch(ex) { $('#portfolioArea').html('<p class="text-muted small">포트폴리오 정보를 불러올 수 없습니다.</p>'); }
+    }
+
+    function esc(str) {
+        if (!str) return '';
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+});
+</script>
+
+</div>
+</body>
+</html>

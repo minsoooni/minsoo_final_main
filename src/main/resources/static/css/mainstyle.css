@@ -1,0 +1,52 @@
+/* ===== 공통 컨테이너 ===== */
+.jp-container { max-width: 1200px; }
+
+
+body {font-family: Arial, Helvetica, sans-serif, 돋움; }
+
+/* ===== 헤더 공통 ===== */
+.jp-header .jp-container { max-width: 1200px; }
+
+.jp-brand__icon{
+  width:34px;height:34px;border-radius:10px;
+  display:inline-flex;align-items:center;justify-content:center;
+  background:#09a3ff;color:#fff;margin-right:10px;
+}
+.jp-brand__text{ font-weight:700; font-size:18px; color:#111; }
+.jp-auth__link{ color:#333; margin-right:14px; text-decoration:none; }
+.jp-auth__btn{ border-radius:10px; padding:8px 14px;}
+
+/* ===== 헤더 고정(sticky) 상단 네비게이션 스크롤에 따라 이동 ===== */
+#myheader {
+    position: sticky;
+    top: 0;
+    z-index: 3000;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+/* 스크롤 시 그림자 */
+#myheader.scrolled {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+
+
+
+/* ===== 푸터 공통 ===== */
+.jp-footer{
+  background:#0b1524;
+  color:#cbd5e1;
+  margin-top:0;
+}
+.jp-footer a{ color:#cbd5e1; text-decoration:none; }
+.jp-footer a:hover{ color:#fff; }
+.jp-footer__title{ color:#fff; font-weight:900; }
+.jp-footer__subtitle{ color:#fff; font-weight:800; margin-bottom:12px; }
+.jp-footer__text{ font-size:13px; margin:6px 0; opacity:.9; }
+.jp-footer__list{ list-style:none; padding:0; margin:0; }
+.jp-footer__list li{ margin:8px 0; font-size:13px; }
+.jp-footer__muted{ opacity:.85; }
+.jp-footer__bottom{ border-top:1px solid rgba(255,255,255,.08); }
+.jp-footer__copy{ font-size:12px; opacity:.85; }
+.jp-footer__links{ font-size:12px; opacity:.85; }

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/layout_company :: layout(~{::title},~{::link},~{::style},~{::script},~{::section})}">
+
+<head>
+  <title>포인트 &amp; 지갑</title>
+  <link rel="stylesheet" th:href="@{/css/company/wallet.css}">
+  <style type="text/css"></style>
+
+  <script src="https://cdn.iamport.kr/v1/iamport.js"></script>
+
+  <script type="text/javascript" th:inline="javascript">
+  document.addEventListener("DOMContentLoaded", function () {
+
+    /* ===================== 1) 미니탭(예치금/포인트) ===================== */
+    /*
+    const miniTabBtns = document.querySelectorAll(".mini-tab-btn");
+    const miniTabPanels = document.querySelectorAll(".mini-tab-panel");
+
+    miniTabBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        miniTabBtns.forEach(b => b.classList.remove("active"));
+        miniTabPanels.forEach(p => p.classList.remove("show"));
+
+        btn.classList.add("active");
+        const target = document.getElementById(btn.dataset.target);
+        if (target) target.classList.add("show");
+      });
+    });
+    */
+
+    /* ===================== 2) PortOne V1 결제 초기화 ===================== */
+    const impCode = /*[[${impCode}]]*/ "imp_XXXX";
+    const readyUrl = /*[[@{/company/Wallet/payments/ready}]]*/ "";
+    const completeUrl = /*[[@{/company/Wallet/payments/complete}]]*/ "";
+
+    if (!window.IMP) {
+      alert("결제 모듈 로딩 실패(IMP 없음)");
+      return;
+    }
+
+    const IMP = window.IMP;
+    IMP.init(impCode);
+    
+    //console.log(impCode);
+
+    /* ===================== 3) 버튼 이벤트 ===================== */
+    const btnCharge = document.getElementById("btnCharge");
+    if (btnCharge) {
+      btnCharge.addEventListener("click", openChargeModal);
+    }
+
+    // 전역에서 onclick으로 호출되는 함수들은 window에 달아둬야 함
+    window.openChargeModal = openChargeModal;
+    window.closeChargeModal = closeChargeModal;
+    window.startCharge = startCharge;
+
+    /* ===================== functions ===================== */
+
+    function openChargeModal() {
+      const modal = document.getElementById("chargeModal");
+      if (!modal) return;
+      modal.style.display = "block";
+      modal.setAttribute("aria-hidden", "false");
+    }
+
+    function closeChargeModal() {
+      const modal = document.getElementById("chargeModal");
+      if (!modal) return;
+      modal.style.display = "none";
+      modal.setAttribute("aria-hidden", "true");
+    }
+
+    async function startCharge() {
+      try {
+        const selected = document.querySelector("input[name='chargeAmount']:checked");
+        if (!selected) {
+          alert("충전 금액을 선택하세요.");
+          return;
+        }
+
+        const chargeAmount = Number(selected.value); // 100000 / 200000 / 500000
+        if (!Number.isFinite(chargeAmount) || chargeAmount <= 0) {
+          alert("올바른 충전 금액을 선택하세요.");
+          return;
+        }
+
+        // 1) 서버 ready (주문 생성 + PENDING insert + 결제창 파라미터 반환)
+        const readyRes = await fetch(readyUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chargeAmount })
+        }).then(r => r.json());
+
+        if (!readyRes || !readyRes.ok) {
+          alert("결제 준비 실패: " + (readyRes?.message || "서버 오류"));
+          return;
+        }
+
+        // 2) PortOne 결제창 (프로젝트용 실제 결제 금액 = 100원)
+        IMP.request_pay({
+          pg: "html5_inicis",
+          pay_method: "card",
+          merchant_uid: readyRes.orderId,     // 서버가 만든 주문번호
+          name: readyRes.orderName,           // 예: "포인트 충전(10만원)"
+          amount: readyRes.payAmount,         // ★ 100원
+          buyer_email: readyRes.buyerEmail || "",
+          buyer_name: readyRes.buyerName || "",
+          buyer_tel: readyRes.buyerTel || ""
+        }, async function (rsp) {
+          /* 
+          console.log("rsp =", rsp);
+          console.log("imp_uid =", rsp.imp_uid, "merchant_uid =", rsp.merchant_uid);
+          console.log("imp_uid length =", (rsp.imp_uid || "").length);
+          
+          console.log("rsp.emb_pg_provider =", rsp.emb_pg_provider);
+          console.log("rsp =", rsp);
+ 		  */          
+          if (rsp.success) {
+        	  
+            // 3) 서버 complete (imp_uid 검증 + 포인트 적립)
+            const doneRes = await fetch(completeUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                impUid: rsp.imp_uid,
+                merchantUid: rsp.merchant_uid,
+              })
+            }).then(r => r.json());
+
+            if (doneRes && doneRes.ok) {
+              alert("결제 완료! 포인트가 충전되었습니다.");
+              closeChargeModal();
+              location.reload();
+            } else {
+              alert("결제 처리 실패: " + (doneRes?.message || "서버 오류"));
+            }
+          } else {
+            alert("결제 실패: " + (rsp.error_msg || "알 수 없는 오류"));
+          }
+        });
+
+      } catch (e) {
+        console.error(e);
+        alert("결제 진행 중 오류가 발생했습니다.");
+      }
+    }
+  });//document.addEventListener("DOMContentLoaded", function () {}
+  </script>
+
+</head>
+
+<body>
+<section class="dash">
+
+  <!-- 헤더 영역 -->
+  <div class="wa-head">
+    <div>
+      <h2 class="wa-title">포인트 &amp; 지갑 관리</h2>
+      <p class="wa-desc">포인트 잔액과 포인트 거래 내역, 결제 내역을 확인하세요</p>
+    </div>
+  </div>
+
+  <!-- 탭: 지갑/결제 -->
+  <ul class="nav nav-pills ctab" role="tablist">
+    <li class="nav-item">
+      <a class="nav-link"
+         th:classappend="${activeTab}=='wallet' ? ' active' : ''"
+         th:href="@{/company/wallet(menu='wallet', tab='wallet')}"
+         role="tab">지갑 · 거래내역</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link"
+         th:classappend="${activeTab}=='payment' ? ' active' : ''"
+         th:href="@{/company/wallet(menu='wallet', tab='payment')}"
+         role="tab">결제 내역</a>
+    </li>
+  </ul>
+
+  <!-- ===================== (TAB 1) 지갑/거래내역 ===================== -->
+  <div th:if="${activeTab}=='wallet'">
+
+    <!-- 상단 잔액 카드 2개 -->
+    <div class="cgrid-1">
+	  <div class="panel balance-card">
+	    <div class="ccard-top">
+	      <div class="ccard-label">포인트 잔액</div>
+	      <i class="fa-solid fa-coins ccard-ico"></i>
+	    </div>
+	    <div class="ccard-value">
+	      <span th:text="${#numbers.formatInteger(pointBalance, 3, 'COMMA')}">17,000</span><span class="unit">P</span>
+	    </div>
+	    <div class="btn-row">
+	      <button id="btnCharge" class="btn btn-dark btn-block">
+	        <i class="fa-solid fa-plus mr-2"></i>충전하기
+	      </button>
+	    </div>
+	  </div>
+	</div>
+    
+
+    <!-- 거래 내역 (예치금/포인트 탭 느낌) -->
+    <div class="panel mt-4">
+	  <div class="ccard-head">
+	    <div class="ccard-title">
+	      포인트 거래 내역
+	      (<span th:text="${pointTxList == null ? 0 : #lists.size(pointTxList)}">0</span>건)
+	    </div>
+	  </div>
+	
+	  <table class="table ctable">
+	    <thead>
+	      <tr>
+	        <th>거래 유형</th>
+	        <th>포인트 변동</th>
+	        <th>사용가능 잔액</th>
+	        <th>예치/잠금 잔액</th>
+	        <th>메모</th>
+	        <th>거래일시</th>
+	      </tr>
+	    </thead>
+	
+	    <tbody>
+	      <!-- 비어있을 때 -->
+	      <tr th:if="${pointTxList == null or #lists.isEmpty(pointTxList)}">
+	        <td colspan="6" class="text-center">포인트 거래 내역이 없습니다.</td>
+	      </tr>
+	
+	      <!-- 포인트 거래내역 -->
+	      <tr th:each="tx : ${pointTxList}">
+	        <td>
+	          <span class="badge"
+	                th:classappend="${tx.txType == 'CHARGE'} ? ' badge-dark' : (${tx.txType == 'USE'} ? ' badge-secondary' : ' badge-light')"
+	                th:text="${tx.txLabel}">
+	            충전
+	          </span>
+	        </td>
+	
+	        <td th:classappend="${tx.deltaAvailable > 0} ? 'plus' : 'minus'"
+	            th:text="${tx.deltaAvailable > 0 ? '+' : ''} + ${#numbers.formatInteger(tx.deltaAvailable, 3, 'COMMA')} + 'P'">
+	          +10,000P
+	        </td>
+	
+	        <td th:text="${#numbers.formatInteger(tx.availableBalanceAfter, 3, 'COMMA')} + 'P'">10,000P</td>
+	
+	        <td th:text="${#numbers.formatInteger(tx.reservedBalanceAfter, 3, 'COMMA')} + 'P'">0P</td>
+	
+	        <td th:text="${tx.txMemo}">포인트 충전</td>
+	
+	        <td th:text="${tx.createdAt}">2026-03-12 10:00:00</td>
+	      </tr>
+	    </tbody>
+	  </table>
+	</div>
+
+    <!-- 안내 -->
+    <div class="panel mt-4">
+	  <div class="ccard-head">
+	    <div class="ccard-title">포인트 이용 안내</div>
+	  </div>
+	  <ul class="cinfo">
+	    <li>포인트는 충전 후 즉시 사용 가능합니다.</li>
+	    <li>포인트는 배너 광고, 공고 상단 노출 등 기업 서비스 이용 시 차감됩니다.</li>
+	    <li>포인트 거래 내역에서는 충전, 사용 내역을 확인할 수 있습니다.</li>
+	    <li>결제 관련 문의사항은 고객센터로 문의해 주세요.</li>
+	  </ul>
+	</div>
+
+  </div>
+
+  <!-- ===================== (TAB 2) 결제 내역 ===================== -->
+  <div th:if="${activeTab}=='payment'">
+
+    <!-- 결제 요약 카드 3개 -->
+    <div class="cgrid-3">
+      <div class="panel sum-card">
+        <div class="ccard-top">
+          <div class="ccard-label">총 결제 완료</div>
+          <i class="fa-regular fa-circle-check ccard-ico"></i>
+        </div>
+        <div class="ccard-value">
+          <span class="ok" th:text="${#numbers.formatInteger(paidTotal, 3, 'COMMA')}">150,000</span><span class="unit">원</span>
+        </div>
+      </div>
+
+      <div class="panel sum-card">
+        <div class="ccard-top">
+          <div class="ccard-label">결제 대기</div>
+          <i class="fa-regular fa-hourglass ccard-ico"></i>
+        </div>
+        <div class="ccard-value">
+          <span class="wait" th:text="${#numbers.formatInteger(pendingTotal, 3, 'COMMA')}">30,000</span><span class="unit">원</span>
+        </div>
+      </div>
+
+      <div class="panel sum-card">
+        <div class="ccard-top">
+          <div class="ccard-label">결제 취소</div>
+          <i class="fa-regular fa-circle-xmark ccard-ico"></i>
+        </div>
+        <div class="ccard-value">
+          <span class="muted" th:text="${#numbers.formatInteger(cancelTotal, 3, 'COMMA')}">0</span><span class="unit">원</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 검색/필터 -->
+    <div class="panel mt-4">
+      <div class="filter-row">
+        <div class="filter-search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" class="form-control" placeholder="주문번호로 검색...">
+        </div>
+        <select class="form-control filter-select">
+          <option>전체</option>
+          <option>토스페이먼츠</option>
+          <option>카카오페이</option>
+          <option>네이버페이</option>
+        </select>
+        <select class="form-control filter-select">
+          <option>전체</option>
+          <option>완료</option>
+          <option>대기</option>
+          <option>취소</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 결제내역 테이블 -->
+    <div class="panel mt-3">
+      <div class="ccard-head">
+        <div class="ccard-title">
+		  결제 내역 (<span th:text="${paymentList == null ? 0 : #lists.size(paymentList)}">0</span>건)
+		</div>
+      </div>
+
+      <table class="table ctable">
+        <thead>
+          <tr>
+            <th>주문번호</th>
+            <th>결제 금액</th>
+            <th>결제 수단</th>
+            <th>간편 결제</th>
+            <th>상태</th>
+            <th>결제일시</th>
+            <th>취소일시</th>
+            <th>생성일시</th>
+          </tr>
+        </thead>
+        
+        <tbody>
+		  <!-- 비어있을 때 -->
+		  <tr th:if="${paymentList == null or #lists.isEmpty(paymentList)}">
+		    <td colspan="7" class="text-center">결제 내역이 없습니다.</td>
+		  </tr>
+		
+		  <!-- 결제내역 렌더링 (PaymentDTO) -->
+		  <tr th:each="p : ${paymentList}">
+		    <!-- 주문번호 -->
+		    <td th:text="${p.orderId}">ORD...</td>
+		
+		    <!-- 결제 금액 -->
+		    <td><strong th:text="${#numbers.formatInteger(p.chargeAmount, 0, 'COMMA')} + '원'">0원</strong></td>
+		
+		    <!-- 결제 수단: 현재 DB에 없으므로 임시 '-' -->
+		    <td th:text="${p.payMethod == 'card' ? '카드' :
+			              (p.payMethod == 'trans' ? '계좌이체' :
+			              (p.payMethod == 'point' ? '페이포인트' : p.payMethod))}">
+			</td>
+			
+			<!-- 간편결제 -->
+			<td th:text="${p.embPgProvider == 'kakaopay' ? '카카오페이' :
+			              (p.embPgProvider == 'naverpay' ? '네이버페이' :
+			              (p.embPgProvider == 'tosspay' ? '토스페이' : (p.embPgProvider != null ? p.embPgProvider : '-')))}">
+			</td>
+		
+		    <!-- 상태 -->
+		    <td>
+		      <span class="w-pill"
+		            th:classappend="${p.status == 'PAID'} ? ' w-pill-dark' : (${p.status == 'PENDING'} ? ' w-pill-gray' : ' w-pill-red')"
+		            th:text="${p.status == 'PAID' ? '완료' : (p.status == 'PENDING' ? '대기' : (p.status == 'CANCELED' ? '취소' : '기타'))}">
+		        완료
+		      </span>
+		    </td>
+		
+		    <!-- 결제일시 / 취소일시 / 생성일시 (이미 문자열로 내려옴) -->
+		    <td th:text="${p.paidAt != null ? p.paidAt : '-'}">-</td>
+		    <td th:text="${p.canceledAt != null ? p.canceledAt : '-'}">-</td>
+		    <td class="muted" th:text="${p.createdAt != null ? p.createdAt : '-'}">-</td>
+		  </tr>
+		</tbody>
+        
+      </table>
+    </div>
+
+    <!-- 결제 안내 -->
+    <div class="panel mt-4">
+      <div class="ccard-head">
+        <div class="ccard-title">결제 안내</div>
+      </div>
+      <ul class="cinfo">
+        <li>결제 완료 후 예치금이 자동으로 충전됩니다.</li>
+        <li>결제 취소는 결제 후 7일 이내에만 가능합니다.</li>
+        <li>환불은 영업일 기준 3~5일 소요됩니다.</li>
+        <li>결제 관련 문의사항은 고객센터(1588-1234)로 연락 바랍니다.</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- ===================== ✅ 모달: section 내부로 이동(중요) ===================== -->
+  <div id="chargeModal" class="ofm" aria-hidden="true">
+    <div class="ofm-backdrop" onclick="closeChargeModal()"></div>
+
+    <div class="ofm-dialog" role="dialog" aria-modal="true" aria-labelledby="chargeModalTitle">
+      <div class="ofm-head">
+        <h3 id="chargeModalTitle" class="ofm-title">포인트 충전 금액 선택</h3>
+        <button type="button" class="ofm-x" onclick="closeChargeModal()" aria-label="닫기">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="ofm-body">
+        <div class="form-group">
+          <label class="mb-2">충전 금액</label>
+
+          <div class="charge-options">
+            <!-- ✅ 라디오: display:none + label[for] 연결 + checked 스타일 -->
+            <input id="amt100" class="charge-radio" type="radio" name="chargeAmount" value="100000">
+            <label for="amt100" class="charge-label">100,000원</label>
+
+            <input id="amt200" class="charge-radio" type="radio" name="chargeAmount" value="200000">
+            <label for="amt200" class="charge-label">200,000원</label>
+
+            <input id="amt500" class="charge-radio" type="radio" name="chargeAmount" value="500000">
+            <label for="amt500" class="charge-label">500,000원</label>
+          </div>
+
+          <small class="text-muted d-block mt-2">※ 프로젝트용: 실제 결제는 100원만 결제됩니다.</small>
+        </div>
+
+        <div class="btn-row mt-3" style="display:flex; gap:10px;">
+          <button type="button" class="btn btn-dark btn-block" onclick="startCharge()">결제하기</button>
+          <button type="button" class="btn btn-outline-dark btn-block" onclick="closeChargeModal()">취소</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+</body>
+</html>

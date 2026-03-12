@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- ==== 루트 엘리먼트 & 네임스페이스 설정(프로젝트 전체내에서 유일해야 한다.) ==== -->
+<mapper namespace="com.spring.app.company.model.CompanyProfileMapper">
+
+	<!-- 기업 프로필 resultMap -->
+	<resultMap id="companyProfileResultMap" type="com.spring.app.company.domain.CompanyProfileDTO">
+	    <!-- TBL_COMPANY -->
+	    <result property="memberId"       column="FK_MEMBERID"/>
+	    <result property="companyName"    column="COMPANY_NAME"/>
+	    <result property="bizNo"          column="BIZ_NO"/>
+	    <result property="industryCode"   column="INDUSTRY_CODE"/>
+	    <result property="industryName"   column="INDUSTRY_NAME"/>
+	    <result property="ceoName"        column="CEO_NAME"/>
+	    <result property="approvedYn"     column="APPROVED_YN"/>
+	    <result property="approvalAt"     column="APPROVAL_AT"/>
+	    <result property="rejectReason"   column="REJECT_REASON"/>
+	    <result property="infoCreatedAt"  column="INFO_CREATED_AT"/>
+	    <result property="infoUpdatedAt"  column="INFO_UPDATED_AT"/>
+	    <result property="zipCode"        column="ZIP_CODE"/>
+	    <result property="addr1"          column="ADDR1"/>
+	    <result property="addr2"          column="ADDR2"/>
+	    <result property="lat"            column="LAT"/>
+	    <result property="lng"            column="LNG"/>
+	
+	    <!-- TBL_COMPANY_INTRO -->
+	    <result property="companyIntroId" column="COMPANY_INTRO_ID"/>
+	    <result property="introText"      column="INTRO_TEXT"/>
+	    <result property="welfareText"    column="WELFARE_TEXT"/>
+	    <result property="openDate"       column="OPEN_DATE"/>
+	    <result property="homepageUrl"    column="HOMEPAGE_URL"/>
+	    <result property="visionText"     column="VISION_TEXT"/>
+	    <result property="companyType"    column="COMPANY_TYPE"/>
+	    <result property="createdAt"      column="CREATED_AT"/>
+	    <result property="updatedAt"      column="UPDATED_AT"/>
+	    
+	    <result property="logoPath" column="LOGO_PATH"/>
+	</resultMap>
+	
+	<!-- 기업 로고 등록 resultMap -->
+	<resultMap id="imageFileResultMap" type="com.spring.app.company.domain.ImageFileDTO">
+	    <id     property="fileId"           column="FILE_ID"/>
+	    <result property="targetId"         column="TARGET_ID"/>
+	    <result property="targetType"       column="TARGET_TYPE"/>
+	    <result property="fileCategory"     column="FILECATEGORY"/>
+	    <result property="fileUrl"          column="FILE_URL"/>
+	    <result property="createdAt"        column="CREATED_AT"/>
+	    <result property="originalFilename" column="ORIGINAL_FILENAME"/>
+	</resultMap>
+	
+	
+	
+	<!-- 기업 프로필 조회 -->
+	<select id="selectCompanyProfile" parameterType="string" resultMap="companyProfileResultMap">
+	    SELECT
+	        c.FK_MEMBERID,
+	        c.COMPANY_NAME,
+	        c.BIZ_NO,
+	        c.INDUSTRY_CODE,
+	        DECODE(c.INDUSTRY_CODE,
+	            'IT',  'IT·인터넷',
+	            'SW',  '소프트웨어',
+	            'FIN', '금융·핀테크',
+	            'EDU', '교육·에듀테크',
+	            'MKT', '마케팅',
+	            'ETC', '기타',
+	            c.INDUSTRY_CODE
+	        ) AS INDUSTRY_NAME,
+	        c.CEO_NAME,
+	        c.APPROVED_YN,
+	        c.APPROVAL_AT,
+	        c.REJECT_REASON,
+	        c.INFO_CREATED_AT,
+	        c.INFO_UPDATED_AT,
+	        c.ZIP_CODE,
+	        c.ADDR1,
+	        c.ADDR2,
+	        c.LAT,
+	        c.LNG,
+	
+	        ci.COMPANY_INTRO_ID,
+	        ci.INTRO_TEXT,
+	        ci.WELFARE_TEXT,
+	        ci.OPEN_DATE,
+	        ci.HOMEPAGE_URL,
+	        ci.VISION_TEXT,
+	        ci.COMPANY_TYPE,
+	        ci.CREATED_AT,
+	        ci.UPDATED_AT,
+	
+	        img.FILE_URL AS LOGO_PATH
+	
+	    FROM TBL_COMPANY c
+	    LEFT JOIN TBL_COMPANY_INTRO ci
+	           ON c.FK_MEMBERID = ci.FK_MEMBERID
+	    LEFT JOIN TBL_IMAGE_FILE img
+	           ON img.TARGET_ID = ci.COMPANY_INTRO_ID
+	          AND img.TARGET_TYPE = 'company'
+	          AND img.FILECATEGORY = 'logo'
+	    WHERE c.FK_MEMBERID = #{memberId}
+	</select>
+    
+    
+    
+    <!-- tbl_company 기본정보 수정 -->
+    <update id="updateCompanyBasicInfo"
+        parameterType="com.spring.app.company.domain.CompanyProfileUpdateDTO">
+	    UPDATE TBL_COMPANY
+	       SET COMPANY_NAME   = #{companyName},
+	           BIZ_NO         = #{bizNo},
+	           INDUSTRY_CODE  = #{industryCode},
+	           CEO_NAME       = #{ceoName},
+	           INFO_UPDATED_AT = SYSDATE
+	     WHERE FK_MEMBERID = #{memberId}
+	</update>
+    
+    <!-- 기업 주소정보 수정 -->
+    <update id="updateCompanyAddressInfo"
+        parameterType="com.spring.app.company.domain.CompanyProfileUpdateDTO">
+	    UPDATE TBL_COMPANY
+	       SET ZIP_CODE       = #{zipCode},
+	           ADDR1          = #{addr1},
+	           ADDR2          = #{addr2},
+	           INFO_UPDATED_AT = SYSDATE
+	     WHERE FK_MEMBERID = #{memberId}
+	</update>
+    
+    
+    <!-- tbl_company_intro 존재 여부 확인 -->
+    <select id="existsCompanyIntro" parameterType="string" resultType="int">
+	    SELECT COUNT(*)
+	      FROM TBL_COMPANY_INTRO
+	     WHERE FK_MEMBERID = #{memberId}
+	</select>
+    
+    
+    
+    <!-- 파일 등록을 위한 기업인트로 seq 값 구하기 -->
+    <select id="getCompanyIntroSeq" resultType="long">
+	    SELECT COMPANY_INTRO_SEQ.NEXTVAL
+	      FROM DUAL
+	</select>
+    
+    
+    
+    <!-- 로고 선 등록용 insert문 -->
+    <insert id="insertEmptyCompanyIntro"
+	        parameterType="com.spring.app.company.domain.CompanyProfileUpdateDTO">
+	    INSERT INTO TBL_COMPANY_INTRO (
+	        COMPANY_INTRO_ID,
+	        FK_MEMBERID,
+	        CREATED_AT,
+	        UPDATED_AT
+	    )
+	    VALUES (
+	        #{companyIntroId},
+	        #{memberId},
+	        SYSDATE,
+	        SYSDATE
+	    )
+	</insert>
+    
+    
+    <!-- 기본 정보 저장 시 intro 테이블 수정 -->
+    <update id="updateCompanyIntroBasicInfo"
+	    parameterType="com.spring.app.company.domain.CompanyProfileUpdateDTO">
+	    UPDATE TBL_COMPANY_INTRO
+	       SET HOMEPAGE_URL = #{homepageUrl},
+	           OPEN_DATE    = #{openDate, jdbcType=DATE},
+	           UPDATED_AT   = SYSDATE
+	     WHERE FK_MEMBERID = #{memberId}
+	</update>
+    
+    <insert id="insertCompanyIntroBasicInfo"
+	    parameterType="com.spring.app.company.domain.CompanyProfileUpdateDTO">
+	    INSERT INTO TBL_COMPANY_INTRO (
+	        COMPANY_INTRO_ID,
+	        FK_MEMBERID,
+	        HOMEPAGE_URL,
+	        OPEN_DATE,
+	        CREATED_AT,
+	        UPDATED_AT
+	    )
+	    VALUES (
+	        #{companyIntroId},
+	        #{memberId},
+	        #{homepageUrl},
+	        #{openDate, jdbcType=DATE},
+	        SYSDATE,
+	        SYSDATE
+	    )
+	</insert>
+	
+	
+	
+	<!-- 기업 소개 탭 수정 -->
+	<update id="updateCompanyIntroDetail"
+        parameterType="com.spring.app.company.domain.CompanyProfileUpdateDTO">
+	    UPDATE TBL_COMPANY_INTRO
+	       SET COMPANY_TYPE = #{companyType},
+	           INTRO_TEXT   = #{introText},
+	           WELFARE_TEXT = #{welfareText},
+	           VISION_TEXT  = #{visionText},
+	           UPDATED_AT   = SYSDATE
+	     WHERE FK_MEMBERID = #{memberId}
+	</update>
+	
+	<insert id="insertCompanyIntroDetail"
+	    parameterType="com.spring.app.company.domain.CompanyProfileUpdateDTO">
+	    INSERT INTO TBL_COMPANY_INTRO (
+	        COMPANY_INTRO_ID,
+	        FK_MEMBERID,
+	        COMPANY_TYPE,
+	        INTRO_TEXT,
+	        WELFARE_TEXT,
+	        VISION_TEXT,
+	        CREATED_AT,
+	        UPDATED_AT
+	    )
+	    VALUES (
+	        #{companyIntroId},
+	        #{memberId},
+	        #{companyType},
+	        #{introText},
+	        #{welfareText},
+	        #{visionText},
+	        SYSDATE,
+	        SYSDATE
+	    )
+	</insert>
+	
+    
+    
+	<!-- company_intro_id 조회 -->
+	<select id="selectCompanyIntroIdByMemberId" parameterType="string" resultType="long">
+	    SELECT COMPANY_INTRO_ID
+	      FROM TBL_COMPANY_INTRO
+	     WHERE FK_MEMBERID = #{memberId}
+	</select>
+	
+	<!-- 기존 회사의 로고 조회 -->
+	<select id="selectCompanyLogo"
+	        parameterType="long"
+	        resultMap="imageFileResultMap">
+	    SELECT FILE_ID,
+	           TARGET_ID,
+	           TARGET_TYPE,
+	           FILECATEGORY AS fileCategory,
+	           FILE_URL,
+	           CREATED_AT,
+	           ORIGINAL_FILENAME
+	      FROM TBL_IMAGE_FILE
+	     WHERE TARGET_ID = #{companyIntroId}
+	       AND TARGET_TYPE = 'company'
+	       AND FILECATEGORY = 'logo'
+	</select>
+	
+	
+	<!-- 이미지 파일 시퀀스 조회 -->
+	<select id="getImageFileSeq" resultType="long">
+	    SELECT seq_image_file_id.NEXTVAL
+	      FROM DUAL
+	</select>
+	
+	<!-- 이미지 파일 삽입 -->
+	<insert id="insertImageFile"
+	        parameterType="com.spring.app.company.domain.ImageFileDTO">
+	    INSERT INTO TBL_IMAGE_FILE (
+	        FILE_ID,
+	        TARGET_ID,
+	        TARGET_TYPE,
+	        FILECATEGORY,
+	        FILE_URL,
+	        CREATED_AT,
+	        ORIGINAL_FILENAME
+	    )
+	    VALUES (
+	        #{fileId},
+	        #{targetId},
+	        #{targetType},
+	        #{fileCategory},
+	        #{fileUrl},
+	        SYSDATE,
+	        #{originalFilename}
+	    )
+	</insert>
+    
+    
+    <!-- 기존 로고 update -->
+    <update id="updateCompanyLogoFile"
+	        parameterType="com.spring.app.company.domain.ImageFileDTO">
+	    UPDATE TBL_IMAGE_FILE
+	       SET FILE_URL = #{fileUrl},
+	           ORIGINAL_FILENAME = #{originalFilename}
+	     WHERE FILE_ID = #{fileId}
+	</update>
+    
+    
+    
+</mapper>

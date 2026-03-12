@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      lang="ko"
+      th:replace="~{fragment/jobseeker_bar :: jobseeker_layout(~{::div#resumeListContent})}">
+
+<head>
+  <title>이력서 관리 | 구인구직</title>
+  <th:block data-slot="link"></th:block>
+  <th:block data-slot="css"><style></style></th:block>
+  <th:block data-slot="script"><script th:inline="javascript"></script></th:block>
+</head>
+
+<body>
+<div id="resumeListContent">
+<style>
+.resume-card {
+    border: 2px solid #e9ecef; border-radius: 12px; background: #fff;
+    margin-bottom: 20px; overflow: hidden; transition: box-shadow .2s;
+}
+.resume-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+.resume-card.is-primary { border-color: #28a745; }
+.resume-card-top { padding: 20px 24px; }
+.resume-title { font-size: 18px; font-weight: 700; color: #222; margin: 0; }
+.badge-primary-resume {
+    background: #28a745; color: #fff; font-size: 12px; font-weight: 600;
+    padding: 3px 10px; border-radius: 4px; margin-left: 8px;
+}
+.badge-status {
+    font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 4px; margin-left: 8px;
+}
+.badge-status.completed { background: #e3f2fd; color: #1565c0; }
+.badge-status.draft { background: #fff3e0; color: #e65100; }
+.resume-tags { margin-top: 6px; }
+.resume-tags .tag {
+    display: inline-block; background: #f1f3f5; color: #495057;
+    font-size: 12px; padding: 2px 10px; border-radius: 4px; margin-right: 4px;
+}
+.resume-meta { font-size: 13px; color: #868e96; margin-top: 8px; }
+.resume-offer-toggle {
+    display: flex; align-items: center; gap: 6px; font-size: 13px; color: #495057;
+}
+.resume-offer-toggle input[type="checkbox"] { width: 16px; height: 16px; accent-color: #007bff; }
+.resume-offer-toggle.disabled { color: #adb5bd; }
+.resume-actions {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 24px; border-top: 1px solid #f0f0f0;
+}
+.resume-actions .btn { font-size: 13px; padding: 6px 16px; border-radius: 6px; }
+.btn-view { border: 1px solid #007bff; color: #007bff; background: #fff; }
+.btn-view:hover { background: #007bff; color: #fff; text-decoration: none; }
+.btn-edit { border: 1px solid #ced4da; color: #495057; background: #fff; }
+.btn-edit:hover { background: #f8f9fa; color: #333; text-decoration: none; }
+.btn-set-primary { border: 1px solid #28a745; color: #28a745; background: #fff; }
+.btn-set-primary:hover { background: #28a745; color: #fff; }
+.btn-delete { border: 1px solid #dc3545; color: #dc3545; background: #fff; }
+.btn-delete:hover { background: #dc3545; color: #fff; }
+.btn-nodelete { font-size: 13px; color: #adb5bd; }
+.empty-state { text-align: center; padding: 60px 20px; }
+.empty-state i { font-size: 48px; color: #dee2e6; margin-bottom: 16px; display: block; }
+.empty-state p { color: #868e96; font-size: 16px; }
+.resume-summary {
+    padding: 16px 24px; border-top: 1px solid #f0f0f0;
+}
+.completeness-bar {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+}
+.completeness-label { font-size: 12px; color: #868e96; white-space: nowrap; }
+.progress-wrap { display: flex; align-items: center; gap: 8px; flex: 1; }
+.progress-bg {
+    flex: 1; height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden;
+}
+.progress-fill {
+    height: 100%; border-radius: 4px; transition: width .3s;
+}
+.fill-high { background: #28a745; }
+.fill-mid { background: #ffc107; }
+.fill-low { background: #dc3545; }
+.completeness-pct { font-size: 12px; font-weight: 600; color: #495057; white-space: nowrap; }
+.summary-cols {
+    display: flex; gap: 0; margin-bottom: 12px;
+}
+.summary-col {
+    flex: 1; display: flex; flex-direction: column; gap: 2px;
+    padding: 0 16px; border-right: 1px solid #f0f0f0;
+}
+.summary-col:first-child { padding-left: 0; }
+.summary-col:last-child { border-right: none; padding-right: 0; }
+.summary-label { font-size: 11px; color: #adb5bd; font-weight: 600; }
+.summary-value { font-size: 13px; color: #333; line-height: 1.4; }
+.selfintro-preview {
+    background: #f8f9fa; border-radius: 6px; padding: 10px 14px;
+    font-size: 13px; color: #495057; line-height: 1.5;
+    display: flex; flex-direction: column; gap: 2px;
+}
+</style>
+
+<div class="container-fluid px-4 py-4">
+
+    <!-- 헤더 -->
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div class="js-page-header" style="margin-bottom:0;">
+            <h1 class="js-page-title">이력서 관리</h1>
+            <p class="js-page-subtitle">
+                총 <strong th:text="${resumeList != null ? #lists.size(resumeList) : 0}">0</strong>개
+                / 최대 <span th:text="${maxResumeCount}">5</span>개
+            </p>
+        </div>
+        <a th:if="${resumeList == null || #lists.size(resumeList) < maxResumeCount}"
+           th:href="@{/jobseeker/resume/form}"
+           class="btn btn-primary px-4 py-2 shadow-sm" style="border-radius:8px; font-weight:600;">
+            <i class="fas fa-plus"></i>&nbsp; 새 이력서 작성
+        </a>
+        <button th:if="${resumeList != null && #lists.size(resumeList) >= maxResumeCount}"
+                type="button" class="btn btn-secondary px-4 py-2" style="border-radius:8px;" disabled
+                title="이력서는 최대 5개까지 작성할 수 있습니다.">
+            <i class="fas fa-plus"></i>&nbsp; 새 이력서 작성
+        </button>
+    </div>
+
+    <!-- 안내 -->
+    <div class="alert alert-light border mb-4" style="border-radius:10px;">
+        <div class="d-flex align-items-start">
+            <span style="font-size:18px; margin-right:10px;">💡</span>
+            <div style="font-size:13px; color:#555;">
+                <strong>이력서 관리 안내</strong><br>
+                · <strong>대표 이력서</strong>는 1개만 설정할 수 있으며, 지원 시 기본으로 사용됩니다.<br>
+                · <strong>제안 허용</strong>은 대표 이력서에서만 설정 가능하며, 기업이 이력서를 검색·열람하고 먼저 제안할 수 있습니다.<br>
+                · 임시저장 상태의 이력서는 대표로 설정할 수 없습니다.
+            </div>
+        </div>
+    </div>
+
+    <!-- 이력서 없을 때 -->
+    <div th:if="${resumeList == null || #lists.isEmpty(resumeList)}" class="empty-state">
+        <i class="fas fa-file-alt"></i>
+        <p>등록된 이력서가 없습니다.</p>
+        <a th:href="@{/jobseeker/resume/form}" class="btn btn-primary mt-2 px-4">첫 이력서 작성하기</a>
+    </div>
+
+    <!-- 이력서 카드 목록 -->
+    <div th:each="resume : ${resumeList}">
+        <div class="resume-card" th:classappend="${resume.isPrimary == 1} ? 'is-primary' : ''">
+
+            <!-- 상단: 사진 + 제목 + 배지 + 태그 + 수정일 -->
+            <div class="resume-card-top">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="d-flex" style="flex:1; gap:16px;">
+                        <!-- 프로필 사진 -->
+                        <div style="flex-shrink:0;">
+                            <div style="width:70px; height:85px; border-radius:6px; overflow:hidden; background:#f0f2f5; display:flex; align-items:center; justify-content:center; border:1px solid #e0e0e0;">
+                                <img th:if="${resume.photoPath != null and !#strings.isEmpty(resume.photoPath)}"
+                                     th:src="@{/{path}(path=${resume.photoPath.substring(1)})}"
+                                     style="width:100%; height:100%; object-fit:cover;">
+                                <i th:if="${resume.photoPath == null or #strings.isEmpty(resume.photoPath)}"
+                                   class="fas fa-file-alt" style="font-size:28px; color:#adb5bd;"></i>
+                            </div>
+                        </div>
+                        <!-- 이력서 정보 -->
+                        <div style="flex:1;">
+                            <div class="d-flex align-items-center flex-wrap">
+                            <h3 class="resume-title" th:text="${resume.title}">이력서 제목</h3>
+                            <span th:if="${resume.isPrimary == 1}" class="badge-primary-resume">
+                                <i class="fas fa-star"></i> 대표
+                            </span>
+                            <span th:if="${resume.writeStatus == 1}" class="badge-status completed">작성완료</span>
+                            <span th:if="${resume.writeStatus == 0}" class="badge-status draft">임시저장</span>
+                        </div>
+
+                        <div class="resume-tags">
+                            <!-- 경력이 있으면: 경력 기간 + 경력 직무 -->
+                            <span th:if="${resume.careerMonths != null and resume.careerMonths > 0}" class="tag"
+                                  th:with="years=${resume.careerMonths / 12}, months=${resume.careerMonths % 12}"
+                                  th:text="'경력 총 ' + (${years > 0} ? ${years} + '년 ' : '') + (${months > 0} ? ${months} + '개월' : '')">
+                            </span>
+                            <span th:if="${resume.careerCategoryName != null}" class="tag" th:text="${resume.careerCategoryName}">백엔드</span>
+                            <!-- 경력이 없으면: 학력수준 -->
+                            <span th:if="${(resume.careerMonths == null or resume.careerMonths == 0) and resume.educationLevelName != null}"
+                                  class="tag" th:text="${resume.educationLevelName}">대졸(4년)</span>
+                        </div>
+
+                        <div class="resume-meta">
+                            최종 수정: <span th:text="${resume.uploadedAt}">2026.02.10 14:30</span>
+                        </div>
+                    </div>
+                    </div>
+
+                    <!-- 제안 허용 -->
+                    <div>
+                        <div th:if="${resume.isPrimary == 1 && resume.writeStatus == 1}" class="resume-offer-toggle">
+                            <input type="checkbox"
+                                   th:checked="${resume.allowScout == 1}"
+                                   th:attr="data-id=${resume.resumeId}"
+                                   onchange="toggleScout(this.dataset.id, this.checked)">
+                            <span>제안 허용</span>
+                        </div>
+                        <div th:if="${resume.isPrimary != 1 || resume.writeStatus != 1}" class="resume-offer-toggle disabled">
+                            <span>제안 허용 <i class="fas fa-lock" style="font-size:11px;"></i></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 중간: 완성도 + 요약 정보 -->
+            <div class="resume-summary">
+                <!-- 완성도 프로그레스바 -->
+                <div class="completeness-bar">
+                    <span class="completeness-label">이력서 완성도</span>
+                    <div class="progress-wrap">
+                        <div class="progress-bg">
+                            <div class="progress-fill"
+                                 th:with="score=${
+                                    (resume.title != null and !#strings.isEmpty(resume.title) ? 5 : 0) +
+                                    (resume.selfIntro != null and !#strings.isEmpty(resume.selfIntro) ? 15 : 0) +
+                                    (resume.educationSummary != null and !#strings.isEmpty(resume.educationSummary) ? 15 : 0) +
+                                    (resume.careerSummary != null and !#strings.isEmpty(resume.careerSummary) ? 15 : 0) +
+                                    (resume.techSummary != null and !#strings.isEmpty(resume.techSummary) ? 15 : 0) +
+                                    (resume.photoPath != null and !#strings.isEmpty(resume.photoPath) ? 5 : 0) +
+                                    (resume.categoryName != null ? 5 : 0) +
+                                    (resume.certificateCount > 0 ? 10 : 0) +
+                                    (resume.portfolioCount > 0 ? 10 : 0) +
+                                    (resume.languageCount > 0 ? 5 : 0)
+                                 }"
+                                 th:style="'width:' + ${score} + '%'"
+                                 th:classappend="${score >= 80 ? 'fill-high' : (score >= 50 ? 'fill-mid' : 'fill-low')}">
+                            </div>
+                        </div>
+                        <span class="completeness-pct"
+                              th:with="score=${
+                                 (resume.title != null and !#strings.isEmpty(resume.title) ? 5 : 0) +
+                                 (resume.selfIntro != null and !#strings.isEmpty(resume.selfIntro) ? 15 : 0) +
+                                 (resume.educationSummary != null and !#strings.isEmpty(resume.educationSummary) ? 15 : 0) +
+                                 (resume.careerSummary != null and !#strings.isEmpty(resume.careerSummary) ? 15 : 0) +
+                                 (resume.techSummary != null and !#strings.isEmpty(resume.techSummary) ? 15 : 0) +
+                                 (resume.photoPath != null and !#strings.isEmpty(resume.photoPath) ? 5 : 0) +
+                                 (resume.categoryName != null ? 5 : 0) +
+                                 (resume.certificateCount > 0 ? 10 : 0) +
+                                 (resume.portfolioCount > 0 ? 10 : 0) +
+                                 (resume.languageCount > 0 ? 5 : 0)
+                              }"
+                              th:text="${score} + '%'">0%</span>
+                    </div>
+                </div>
+                <!-- 학력 / 경력 / 기술스택 -->
+                <div class="summary-cols">
+                    <div class="summary-col">
+                        <span class="summary-label">학력</span>
+                        <span class="summary-value" th:if="${resume.educationSummary != null and !#strings.isEmpty(resume.educationSummary)}"
+                              th:text="${resume.educationSummary}">OO대학교 컴퓨터공학과</span>
+                        <span class="summary-value text-muted" th:if="${resume.educationSummary == null or #strings.isEmpty(resume.educationSummary)}">미입력</span>
+                    </div>
+                    <div class="summary-col">
+                        <span class="summary-label">경력</span>
+                        <span class="summary-value" th:if="${resume.careerSummary != null and !#strings.isEmpty(resume.careerSummary)}"
+                              th:text="${resume.careerSummary}">테크기업 (1건)</span>
+                        <span class="summary-value text-muted" th:if="${resume.careerSummary == null or #strings.isEmpty(resume.careerSummary)}">미입력</span>
+                    </div>
+                    <div class="summary-col">
+                        <span class="summary-label">기술스택</span>
+                        <span class="summary-value" th:if="${resume.techSummary != null and !#strings.isEmpty(resume.techSummary)}"
+                              th:text="${#strings.length(resume.techSummary) > 30 ? #strings.substring(resume.techSummary, 0, 30) + '...' : resume.techSummary}">React, TypeScript...</span>
+                        <span class="summary-value text-muted" th:if="${resume.techSummary == null or #strings.isEmpty(resume.techSummary)}">미입력</span>
+                    </div>
+                </div>
+                <!-- 자기소개 미리보기 -->
+                <div th:if="${resume.selfIntro != null and !#strings.isEmpty(resume.selfIntro)}" class="selfintro-preview">
+                    <span class="summary-label">자기소개</span>
+                    <span th:text="${#strings.length(resume.selfIntro) > 80 ? #strings.substring(resume.selfIntro, 0, 80) + '...' : resume.selfIntro}">자기소개 내용...</span>
+                </div>
+            </div>
+
+            <!-- 하단: 버튼 -->
+            <div class="resume-actions">
+                <div class="d-flex" style="gap:8px;">
+                    <a th:href="@{/jobseeker/resume/detail/{id}(id=${resume.resumeId})}" class="btn btn-view">
+                        <i class="fas fa-eye"></i> 보기
+                    </a>
+                    <a th:href="@{/jobseeker/resume/form/{id}(id=${resume.resumeId})}" class="btn btn-edit">
+                        <i class="fas fa-edit"></i> 수정
+                    </a>
+                    <button th:if="${resume.isPrimary != 1 && resume.writeStatus == 1}"
+                            type="button" class="btn btn-set-primary"
+                            th:attr="data-id=${resume.resumeId}"
+                            onclick="setPrimary(this.dataset.id)">
+                        <i class="far fa-star"></i> 대표 설정
+                    </button>
+                </div>
+                <div>
+                    <button th:if="${resume.isPrimary != 1}"
+                            type="button" class="btn btn-delete"
+                            th:attr="data-id=${resume.resumeId}"
+                            onclick="deleteResume(this.dataset.id)">
+                        <i class="fas fa-trash-alt"></i> 삭제
+                    </button>
+                    <span th:if="${resume.isPrimary == 1}" class="btn-nodelete">
+                        <i class="fas fa-lock"></i> 대표 이력서는 삭제할 수 없습니다
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    const ctxPath = /*[[@{/}]]*/ '/finalProject/';
+
+    function setPrimary(resumeId) {
+        if (!confirm('이 이력서를 대표 이력서로 설정하시겠습니까?')) return;
+
+        const allowScout = confirm('기업의 제안을 허용하시겠습니까?\n\n허용하면 기업이 이력서를 검색·열람하고 먼저 제안할 수 있습니다.') ? 1 : 0;
+
+        $.ajax({
+            url: ctxPath + 'api/resume/primary/' + resumeId,
+            type: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify({ allowScout: allowScout }),
+            dataType: 'json',
+            success: function(data) {
+                if (data.result === 1) {
+                    alert('대표 이력서가 설정되었습니다.');
+                    location.reload();
+                } else { alert('설정에 실패하였습니다.'); }
+            },
+            error: function() { alert('오류가 발생하였습니다.'); }
+        });
+    }
+
+    function deleteResume(resumeId) {
+        if (confirm('정말 이 이력서를 삭제하시겠습니까?\n삭제된 이력서는 복구할 수 없습니다.')) {
+            $.ajax({
+                url: ctxPath + 'api/resume/delete/' + resumeId,
+                type: 'DELETE',
+                dataType: 'json',
+                success: function(data) {
+                    if (data.result === 1) {
+                        alert('이력서가 삭제되었습니다.');
+                        location.reload();
+                    } else { alert('삭제에 실패하였습니다.'); }
+                },
+                error: function() { alert('오류가 발생하였습니다.'); }
+            });
+        }
+    }
+
+    function toggleScout(resumeId, checked) {
+        $.ajax({
+            url: ctxPath + 'api/resume/scout/' + resumeId,
+            type: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify({ allowScout: checked ? 1 : 0 }),
+            dataType: 'json',
+            success: function(data) {
+                if (data.result !== 1) {
+                    alert('설정 변경에 실패하였습니다.');
+                    location.reload();
+                }
+            },
+            error: function() { alert('오류가 발생하였습니다.'); location.reload(); }
+        });
+    }
+</script>
+</div>
+</body>
+</html>

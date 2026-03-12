@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/layout_company :: layout(~{::title},~{::link},~{::style},~{::script},~{::section})}">
+
+<head>
+  <title>인재 검색</title>
+  <link rel="stylesheet" th:href="@{/css/company/talent_search.css}">
+  <style type="text/css"></style>
+  <script type="text/javascript"></script>
+</head>
+
+<body>
+<section class="dash">
+
+  <!-- 타이틀 라인 -->
+  <div class="ta-head">
+    <div>
+      <h2 class="ta-title">인재 검색</h2>
+      <p class="ta-desc">공개된 이력서를 검색하고 우수 인재에게 제안서를 보내세요</p>
+    </div>
+
+    <div class="page-actions">
+      <a class="btn btn-outline-dark btn-sm"
+         th:href="@{/company/talent(menu='talent', onlyLike=1)}">
+        <i class="fa-regular fa-bookmark"></i>
+        찜한 인재 (0)
+      </a>
+    </div>
+  </div>
+
+  <!-- 검색 박스 -->
+  <div class="panel talent-searchbox">
+    <form method="get" th:action="@{/company/talent}">
+      <input type="hidden" name="menu" value="talent"/>
+
+      <div class="talent-searchrow">
+        <div class="talent-searchinput">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text"
+                 name="keyword"
+                 class="form-control"
+                 th:value="${searchDto != null ? searchDto.keyword : ''}"
+                 placeholder="이름, 이력서 제목, 직무로 검색...">
+        </div>
+      </div>
+
+      <div class="talent-chips">
+        <button type="submit" class="chip" name="keyword" value="백엔드">백엔드</button>
+        <button type="submit" class="chip" name="keyword" value="프론트엔드">프론트엔드</button>
+        <button type="submit" class="chip" name="keyword" value="DevOps">DevOps</button>
+        <button type="submit" class="chip" name="keyword" value="UI/UX 디자이너">UI/UX 디자이너</button>
+        <button type="submit" class="chip" name="keyword" value="데이터 분석">데이터 분석</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- 본문 2열 -->
+  <div class="talent-grid">
+
+    <!-- 좌측 필터 -->
+    <aside class="panel filter-card">
+      <form method="get" th:action="@{/company/talent}">
+        <input type="hidden" name="menu" value="talent"/>
+
+        <div class="filter-head">
+          <div class="filter-title">상세 필터</div>
+          <a class="btn btn-link btn-sm p-0 filter-reset"
+             th:href="@{/company/talent(menu='talent')}">초기화</a>
+        </div>
+
+        <!-- 직무 분야 -->
+        <div class="filter-section">
+          <div class="filter-label">직무 분야</div>
+          <div class="filter-scroll">
+            <label class="check"
+                   th:each="jobCat : ${jobCategoryList}">
+              <input type="checkbox"
+                     name="jobCategoryIds"
+                     th:value="${jobCat.categoryId}"
+                     th:checked="${param.jobCategoryIds != null and #lists.contains(#lists.toList(param.jobCategoryIds), #strings.toString(jobCat.categoryId))}">
+              <span th:text="${jobCat.categoryName}">직무명</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 기술 스택 -->
+        <div class="filter-section">
+          <div class="filter-label">기술 스택</div>
+          <div class="filter-scroll">
+
+            <div th:each="skillCat : ${skillCategoryList}" class="skill-group">
+              <div class="filter-subtitle" th:text="${skillCat.categoryName}">기술분류명</div>
+
+              <label class="check"
+                     th:each="skill : ${skillList}"
+                     th:if="${skill.fkSkillCategoryId == skillCat.skillCategoryId}">
+                <input type="checkbox"
+                       name="skillIds"
+                       th:value="${skill.skillId}"
+                       th:checked="${param.skillIds != null and #lists.contains(#lists.toList(param.skillIds), #strings.toString(skill.skillId))}">
+                <span th:text="${skill.skillName}">Spring Boot</span>
+              </label>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 경력 -->
+        <div class="filter-section">
+          <div class="filter-label">경력 (년)</div>
+          <div class="range-row">
+            <input type="text"
+                   name="careerMin"
+                   class="form-control form-control-sm"
+                   th:value="${searchDto != null and searchDto.careerMin != null ? searchDto.careerMin : ''}"
+                   placeholder="최소">
+            <span>~</span>
+            <input type="text"
+                   name="careerMax"
+                   class="form-control form-control-sm"
+                   th:value="${searchDto != null and searchDto.careerMax != null ? searchDto.careerMax : ''}"
+                   placeholder="최대">
+          </div>
+        </div>
+
+        <!-- 학력 -->
+        <div class="filter-section">
+          <div class="filter-label">학력</div>
+          <select name="educationLevel" class="form-control form-control-sm">
+            <option value="">전체</option>
+            <option value="고졸"
+                    th:selected="${searchDto != null and searchDto.educationLevel == '고졸'}">고졸</option>
+            <option value="전문대졸"
+                    th:selected="${searchDto != null and searchDto.educationLevel == '전문대졸'}">전문대졸</option>
+            <option value="대졸(4년제)"
+                    th:selected="${searchDto != null and searchDto.educationLevel == '대졸(4년제)'}">대졸(4년제)</option>
+            <option value="석사"
+                    th:selected="${searchDto != null and searchDto.educationLevel == '석사'}">석사</option>
+            <option value="박사"
+                    th:selected="${searchDto != null and searchDto.educationLevel == '박사'}">박사</option>
+          </select>
+        </div>
+
+        <!-- 희망 근무지 -->
+        <div class="filter-section">
+          <div class="filter-label">희망 근무지</div>
+          <select name="regionCode" class="form-control form-control-sm">
+            <option value="">전체</option>
+            <option value="SEOUL"
+                    th:selected="${searchDto != null and searchDto.regionCode == 'SEOUL'}">서울</option>
+            <option value="GYEONGGI"
+                    th:selected="${searchDto != null and searchDto.regionCode == 'GYEONGGI'}">경기</option>
+          </select>
+        </div>
+
+        <!-- 희망 연봉 -->
+        <div class="filter-section">
+          <div class="filter-label">희망 연봉 (만원)</div>
+          <div class="range-row">
+            <input type="text"
+                   name="salaryMin"
+                   class="form-control form-control-sm"
+                   th:value="${searchDto != null and searchDto.salaryMin != null ? searchDto.salaryMin : ''}"
+                   placeholder="최소">
+            <span>~</span>
+            <input type="text"
+                   name="salaryMax"
+                   class="form-control form-control-sm"
+                   th:value="${searchDto != null and searchDto.salaryMax != null ? searchDto.salaryMax : ''}"
+                   placeholder="최대">
+          </div>
+        </div>
+
+        <!-- 이력서 업데이트 -->
+        <div class="filter-section">
+          <div class="filter-label">이력서 업데이트</div>
+          <select name="updatedWithin" class="form-control form-control-sm">
+            <option value="">전체</option>
+            <option value="7"
+                    th:selected="${searchDto != null and searchDto.updatedWithin == 7}">최근 7일</option>
+            <option value="30"
+                    th:selected="${searchDto != null and searchDto.updatedWithin == 30}">최근 30일</option>
+            <option value="90"
+                    th:selected="${searchDto != null and searchDto.updatedWithin == 90}">최근 3개월</option>
+          </select>
+        </div>
+
+        <!-- 포트폴리오 -->
+        <label class="check mt-2">
+          <input type="checkbox"
+                 name="hasPortfolio"
+                 value="1"
+                 th:checked="${searchDto != null and searchDto.hasPortfolio == 1}">
+          <span>포트폴리오 보유</span>
+        </label>
+
+        <div class="mt-3 d-grid">
+          <button type="submit" class="btn btn-dark btn-sm">적용하기</button>
+        </div>
+      </form>
+    </aside>
+
+    <!-- 우측 결과 -->
+    <div class="results">
+      <div class="results-head">
+        <div class="results-title">
+          검색 결과 (<span th:text="${totalCount}">0</span>명)
+        </div>
+
+        <!-- 정렬 -->
+        <form method="get" th:action="@{/company/talent}">
+          <input type="hidden" name="menu" value="talent"/>
+
+          <!-- 기존 검색 조건 유지 -->
+          <input type="hidden" name="keyword" th:value="${searchDto != null ? searchDto.keyword : ''}"/>
+
+          <th:block th:if="${param.jobCategoryIds != null}">
+            <input type="hidden"
+                   name="jobCategoryIds"
+                   th:each="jobCategoryId : ${param.jobCategoryIds}"
+                   th:value="${jobCategoryId}" />
+          </th:block>
+
+          <th:block th:if="${param.skillIds != null}">
+            <input type="hidden"
+                   name="skillIds"
+                   th:each="skillId : ${param.skillIds}"
+                   th:value="${skillId}" />
+          </th:block>
+
+          <input type="hidden" name="careerMin" th:value="${searchDto != null and searchDto.careerMin != null ? searchDto.careerMin : ''}"/>
+          <input type="hidden" name="careerMax" th:value="${searchDto != null and searchDto.careerMax != null ? searchDto.careerMax : ''}"/>
+          <input type="hidden" name="educationLevel" th:value="${searchDto != null ? searchDto.educationLevel : ''}"/>
+          <input type="hidden" name="regionCode" th:value="${searchDto != null ? searchDto.regionCode : ''}"/>
+          <input type="hidden" name="salaryMin" th:value="${searchDto != null and searchDto.salaryMin != null ? searchDto.salaryMin : ''}"/>
+          <input type="hidden" name="salaryMax" th:value="${searchDto != null and searchDto.salaryMax != null ? searchDto.salaryMax : ''}"/>
+          <input type="hidden" name="updatedWithin" th:value="${searchDto != null and searchDto.updatedWithin != null ? searchDto.updatedWithin : ''}"/>
+          <input type="hidden" name="hasPortfolio" th:value="${searchDto != null and searchDto.hasPortfolio != null ? searchDto.hasPortfolio : ''}"/>
+
+          <select name="sort"
+                  class="form-control form-control-sm results-sort"
+                  onchange="this.form.submit()">
+            <option value="latest"
+                    th:selected="${searchDto == null or searchDto.sort == null or searchDto.sort == 'latest'}">최근 업데이트순</option>
+            <option value="career"
+                    th:selected="${searchDto != null and searchDto.sort == 'career'}">경력순</option>
+            <option value="salary"
+                    th:selected="${searchDto != null and searchDto.sort == 'salary'}">희망연봉순</option>
+          </select>
+        </form>
+      </div>
+
+      <!-- 조회 결과 카드 -->
+      <div class="panel resume-card" th:each="resume : ${resumeList}">
+        <div class="resume-top">
+
+          <div class="resume-avatar">
+            <img th:if="${resume.photoPath != null and resume.photoPath != ''}"
+                 th:src="@{${resume.photoPath}}"
+                 alt="프로필"
+                 style="width:56px;height:56px;border-radius:999px;object-fit:cover;">
+            <i th:if="${resume.photoPath == null or resume.photoPath == ''}"
+               class="fa-regular fa-user"></i>
+          </div>
+
+          <div class="resume-main">
+            <div class="resume-name">
+              <span th:text="${resume.name}">홍길동</span>
+            </div>
+
+            <div class="resume-sub"
+                 th:text="${resume.resumeTitle}">이력서 제목</div>
+
+            <div class="resume-meta">
+              <span th:if="${resume.career != null and resume.career != ''}">
+                <i class="fa-regular fa-calendar"></i>
+                <span th:text="${resume.career}">경력 3년</span>
+              </span>
+
+              <span th:if="${resume.regionName != null and resume.regionName != ''}">
+                <i class="fa-solid fa-location-dot"></i>
+                <span th:text="${resume.regionName}">서울</span>
+              </span>
+
+              <span th:if="${resume.education != null and resume.education != ''}">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <span th:text="${resume.education}">대졸(4년제)</span>
+              </span>
+
+              <span>
+                <i class="fa-regular fa-clock"></i>
+                <span th:text="${#dates.format(resume.uploadedAt, 'yyyy. M. d.')}">2026. 3. 10.</span>
+              </span>
+            </div>
+
+            <div class="resume-rows">
+              <div class="row-label">희망 직무</div>
+              <div class="resume-pill"
+                   th:if="${resume.categoryName != null and resume.categoryName != ''}"
+                   th:text="${resume.categoryName}">백엔드</div>
+            </div>
+
+            <!-- 기술 스택 -->
+            <div class="resume-rows"
+                 th:if="${resume.techStackNames != null and !#lists.isEmpty(resume.techStackNames)}">
+              <div class="row-label">기술 스택</div>
+
+              <span class="tag"
+                    th:each="skillName, stat : ${resume.techStackNames}"
+                    th:if="${stat.index < 5}"
+                    th:text="${skillName}">Java</span>
+
+              <span class="tag tag-more"
+                    th:if="${#lists.size(resume.techStackNames) > 5}"
+                    th:text="'+' + (${#lists.size(resume.techStackNames)} - 5)">+1</span>
+            </div>
+
+            <div class="resume-bottom">
+              <div class="salary">
+                희망 연봉:
+                <span th:text="${resume.desiredSalary != null ? #numbers.formatInteger(resume.desiredSalary, 3, 'COMMA') + '만원' : '협의'}">0만원</span>
+              </div>
+
+              <div class="bottom-actions">
+                <a class="btn btn-light btn-sm"
+                   th:href="@{/company/talent/detail(resumeId=${resume.resumeId})}">
+                  프로필 보기
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <button class="bookmark" type="button" title="찜">
+            <i class="fa-regular fa-bookmark"></i>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- 결과 없을 때 -->
+      <div class="panel resume-card" th:if="${#lists.isEmpty(resumeList)}">
+        <div class="text-center py-4 text-muted">
+          조회 가능한 공개 대표이력서가 없습니다.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</section>
+</body>
+</html>

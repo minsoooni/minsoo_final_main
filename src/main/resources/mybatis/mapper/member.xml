@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring.app.member.mapper.MemberMapper">
+
+    <select id="countByMemberId" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+        FROM TBL_MEMBER
+        WHERE MEMBERID = #{memberId}
+    </select>
+
+    <select id="countByEmail" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+        FROM TBL_MEMBER
+        WHERE EMAIL = #{email}
+    </select>
+
+    <insert id="insertMember" parameterType="com.spring.app.member.domain.MemberDTO">
+        INSERT INTO TBL_MEMBER (
+            MEMBERID,
+            EMAIL,
+            PASSWORD,
+            NAME,
+            PHONE,
+            TYPE,
+            STATUS,
+            LAST_LOGIN_AT,
+            DORMANT_AT,
+            CREATED_AT,
+            UPDATED_AT,
+            MUST_CHANGE_PASSWORD_YN,
+            BIRTH_DATE,
+            GENDER
+        ) VALUES (
+            #{memberId},
+            #{email},
+            #{password},
+            #{name},
+            #{phone},
+            #{type},
+            #{status},
+            NULL,
+            NULL,
+            SYSDATE,
+            SYSDATE,
+            #{mustChangePasswordYn},
+            #{birthDate, jdbcType=DATE},
+            #{gender, jdbcType=NUMERIC}
+        )
+    </insert>
+
+
+    <!-- 회원 권한 부여 (회원가입 시) -->
+    <insert id="insertAuthority">
+        INSERT INTO TBL_MEMBER_AUTHORITY (AUTH_NUM, FK_MEMBERID, AUTHORITY)
+        VALUES (SEQ_MEMBER_AUTHORITY_AUTH_NUM.NEXTVAL, #{memberId}, #{authority})
+    </insert>
+
+
+    <!-- 기업 정보 저장 (TBL_COMPANY) -->
+    <insert id="insertCompany" parameterType="com.spring.app.member.domain.CompanyMemberDTO">
+        INSERT INTO TBL_COMPANY (
+            FK_MEMBERID,
+            COMPANY_NAME,
+            BIZ_NO,
+            INDUSTRY_CODE,
+            CEO_NAME,
+            APPROVED_YN,
+            APPROVAL_AT,
+            REJECT_REASON,
+            INFO_CREATED_AT,
+            INFO_UPDATED_AT,
+            ZIP_CODE,
+            ADDR1,
+            ADDR2,
+            LAT,
+            LNG
+        ) VALUES (
+            #{memberId},
+            #{companyName},
+            #{bizNo},
+            #{industryCode},
+            #{ceoName},
+            0,
+            NULL,
+            NULL,
+            SYSDATE,
+            SYSDATE,
+            #{zipCode},
+            #{addr1},
+            #{addr2},
+            #{lat, jdbcType=NUMERIC},
+            #{lng, jdbcType=NUMERIC}
+        )
+    </insert>
+    
+    <select id="selectByMemberId" parameterType="string" resultType="com.spring.app.member.domain.MemberDTO">
+        SELECT MEMBERID AS memberId
+             , PASSWORD AS password
+             , TYPE     AS type
+             , STATUS   AS status
+        FROM TBL_MEMBER
+        WHERE MEMBERID = #{memberId}
+    </select>
+
+    <!-- 권한 목록 조회 (TBL_MEMBER_AUTHORITY) -->
+    <select id="selectAuthorities" parameterType="string" resultType="string">
+        SELECT AUTHORITY
+        FROM TBL_MEMBER_AUTHORITY
+        WHERE FK_MEMBERID = #{memberId}
+        ORDER BY AUTH_NUM
+    </select>
+    
+    <select id="countCompanyByBizNo" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+        FROM TBL_COMPANY
+        WHERE BIZ_NO = #{bizNo}
+    </select>
+
+    <select id="selectCompanyApprovedYn" parameterType="string" resultType="int">
+        SELECT NVL(MAX(APPROVED_YN), 0)
+        FROM TBL_COMPANY
+        WHERE FK_MEMBERID = #{memberId}
+    </select>
+
+
+    <select id="selectCompanyRejectReason" parameterType="string" resultType="string">
+        SELECT c.REJECT_REASON
+        FROM TBL_COMPANY c
+        WHERE c.FK_MEMBERID = #{memberId}
+    </select>
+    
+    <select id="selectFailCount" resultType="int">
+        SELECT FAIL_COUNT
+        FROM TBL_LOGIN_SECURITY
+        WHERE FK_MEMBERID = #{memberId}
+    </select>
+    
+    <!-- 실패 1회 증가 (row 없으면 생성) -->
+    <update id="upsertIncreaseFail">
+        MERGE INTO TBL_LOGIN_SECURITY t
+        USING (SELECT #{memberId} AS FK_MEMBERID, #{now} AS NOWVAL FROM dual) s
+            ON (t.FK_MEMBERID = s.FK_MEMBERID)
+            WHEN MATCHED THEN
+                UPDATE SET
+                    t.FAIL_COUNT   = t.FAIL_COUNT + 1,
+                    t.LAST_FAIL_AT = s.NOWVAL
+            WHEN NOT MATCHED THEN
+                INSERT (FK_MEMBERID, FAIL_COUNT, LAST_FAIL_AT)
+                VALUES (s.FK_MEMBERID, 1, s.NOWVAL)
+    </update>
+    
+    <!-- 성공 시 실패횟수 초기화 -->
+    <update id="resetFail">
+        UPDATE TBL_LOGIN_SECURITY
+            SET FAIL_COUNT = 0,
+                LAST_FAIL_AT = NULL
+        WHERE FK_MEMBERID = #{memberId}
+    </update>
+    
+    <!-- 로그인 메타 조회 status/type/last_login_at/must_change_password_yn -->
+    <select id="selectLoginMeta" resultType="com.spring.app.member.domain.MemberDTO">
+        SELECT
+            MEMBERID       AS memberId,
+            STATUS         AS status,
+            TYPE           AS type,
+            LAST_LOGIN_AT  AS lastLoginAt,
+            MUST_CHANGE_PASSWORD_YN AS mustChangePasswordYn
+        FROM TBL_MEMBER
+        WHERE MEMBERID = #{memberId}
+    </select>
+
+    <!-- 휴면 전환 -->
+    <update id="markDormant">
+        UPDATE TBL_MEMBER
+           SET STATUS     = 3,
+               DORMANT_AT = #{now},
+               UPDATED_AT = SYSDATE
+         WHERE MEMBERID = #{memberId}
+    </update>
+
+    <!-- 마지막 로그인일 갱신 -->
+    <update id="updateLastLoginAt">
+        UPDATE TBL_MEMBER
+           SET LAST_LOGIN_AT = #{now},
+               UPDATED_AT    = SYSDATE
+         WHERE MEMBERID = #{memberId}
+    </update>
+    
+    <!-- 휴면 해제 처리 -->
+    <update id="unlockDormant">
+        UPDATE TBL_MEMBER
+           SET STATUS       = 1,
+               DORMANT_AT   = NULL,
+               LAST_LOGIN_AT = #{now},
+               MUST_CHANGE_PASSWORD_YN = 1,
+               UPDATED_AT   = SYSDATE
+         WHERE MEMBERID = #{memberId}
+    </update>
+    
+    <!-- SMS 전송을 위한 휴대폰 조회  -->
+    <select id="selectPhoneByMemberId" resultType="string">
+        SELECT PHONE
+        FROM TBL_MEMBER
+        WHERE MEMBERID = #{memberId}
+    </select>
+    
+    <!-- 비밀번호 변경 여부 플래그 변경 (0/1) -->
+    <update id="updateMustChangePasswordYn">
+        UPDATE TBL_MEMBER
+           SET MUST_CHANGE_PASSWORD_YN = #{mustChangePasswordYn},
+               UPDATED_AT = SYSDATE
+        WHERE MEMBERID = #{memberId}
+    </update>
+
+    <!-- 비밀번호 변경 (BCrypt 해시값 저장) -->
+    <update id="updatePassword">
+        UPDATE TBL_MEMBER
+           SET PASSWORD = #{encodedPassword},
+               UPDATED_AT = SYSDATE
+        WHERE MEMBERID = #{memberId}
+    </update>
+    
+    <select id="findMemberId"
+        parameterType="com.spring.app.member.domain.MemberDTO"
+        resultType="string">
+
+    SELECT MEMBERID
+    FROM TBL_MEMBER
+    WHERE NAME = #{name}
+      AND EMAIL = #{email}
+      AND PHONE = #{phone}
+      AND TYPE = 0
+
+</select>
+
+    <select id="findMemberForPassword"
+        parameterType="com.spring.app.member.domain.MemberDTO"
+        resultType="com.spring.app.member.domain.MemberDTO">
+
+    SELECT MEMBERID
+    FROM TBL_MEMBER
+    WHERE MEMBERID = #{memberId}
+      AND NAME = #{name}
+      AND PHONE = #{phone}
+      AND TYPE = 0
+
+</select>
+
+
+
+    <select id="findCompanyId"
+        parameterType="com.spring.app.member.domain.CompanyMemberDTO"
+        resultType="string">
+
+    SELECT M.MEMBERID
+    FROM TBL_MEMBER M
+    JOIN TBL_COMPANY C
+      ON M.MEMBERID = C.FK_MEMBERID
+    WHERE C.BIZ_NO = #{bizNo}
+      AND M.NAME = #{name}
+      AND M.EMAIL = #{email}
+      AND M.TYPE = 1
+
+</select>
+
+
+        <select id="findCompanyForPassword"
+        parameterType="com.spring.app.member.domain.CompanyMemberDTO"
+        resultType="com.spring.app.member.domain.CompanyMemberDTO">
+
+    SELECT M.MEMBERID
+    FROM TBL_MEMBER M
+    JOIN TBL_COMPANY C
+      ON M.MEMBERID = C.FK_MEMBERID
+    WHERE M.MEMBERID = #{memberId}
+      AND C.BIZ_NO = #{bizNo}
+      AND M.PHONE = #{phone}
+      AND M.TYPE = 1
+
+</select>
+
+<!-- Refresh Token 저장 (있으면 update, 없으면 insert) -->
+    <update id="upsertRefreshToken">
+        MERGE INTO TBL_REFRESHTOKEN t
+        USING (
+            SELECT #{memberId} AS MEMBERID,
+                   #{refreshToken} AS RT_VALUE
+            FROM dual
+        ) s
+        ON (t.MEMBERID = s.MEMBERID)
+        WHEN MATCHED THEN
+            UPDATE SET t.RT_VALUE = s.RT_VALUE
+        WHEN NOT MATCHED THEN
+            INSERT (MEMBERID, RT_VALUE)
+            VALUES (s.MEMBERID, s.RT_VALUE)
+    </update>
+
+    <!-- Refresh Token 조회 -->
+    <select id="selectRefreshToken" resultType="string">
+        SELECT RT_VALUE
+        FROM TBL_REFRESHTOKEN
+        WHERE MEMBERID = #{memberId}
+    </select>
+
+    <!-- Refresh Token 삭제 -->
+    <delete id="deleteRefreshToken">
+        DELETE FROM TBL_REFRESHTOKEN
+        WHERE MEMBERID = #{memberId}
+    </delete>
+    
+</mapper>

@@ -1,0 +1,351 @@
+@charset "UTF-8";
+
+/* ===== page only (job posting write) ===== */
+/* layout */
+.jp-top{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:14px;
+}
+.jp-top-left{
+  display:flex; align-items:center; gap:10px;
+}
+.jp-back{
+  width:34px; height:34px;
+  display:flex; align-items:center; justify-content:center;
+  border:1px solid #e5e7eb;
+  border-radius:10px;
+  background:#fff;
+}
+.jp-title{
+  font-size:18px; font-weight:900; margin:0;
+}
+
+.jp-actions{
+  display:flex; gap:10px; flex-wrap:wrap;
+  align-items:center;
+}
+.jp-btn{
+  border-radius:10px;
+  font-weight:600;
+  padding:10px 14px;
+  font-size:13px;
+  border:1px solid #e5e7eb;
+  background:#fff;
+  white-space:nowrap;
+  display:inline-flex; align-items:center; gap:8px;
+}
+.jp-btn--dark{
+  background:#0b1524;
+  border-color:#0b1524;
+  color:#fff;
+}
+.jp-btn--ghost{
+  background:#fff;
+}
+
+.jp-grid{
+  display:grid;
+  grid-template-columns: 1fr 360px;
+  gap:14px;
+  align-items:start;
+}
+
+/* form panel */
+.jp-section{
+  padding:14px;
+}
+.jp-section-title{
+  font-size:14px; font-weight:900; margin:0 0 14px 0;
+}
+.jp-row{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:14px;
+}
+.jp-row-3{
+  display:grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap:14px;
+}
+.jp-field{
+  display:flex; flex-direction:column;
+  gap:8px;
+  margin-bottom:14px;
+}
+.jp-label{
+  font-size:12px;
+  font-weight:900;
+  color:#111;
+}
+.jp-label .req{ color:#ef4444; margin-left:4px; }
+.jp-help{
+  font-size:12px;
+  color:#6b7280;
+}
+
+.jp-input, .jp-select, .jp-textarea{
+  border:1px solid #e5e7eb;
+  border-radius:10px;
+  background:#f3f4f6;
+  padding:10px 12px;
+  font-size:13px;
+  outline:none;
+}
+.jp-textarea{
+  min-height:120px;
+  resize:vertical;
+  background:#f3f4f6;
+}
+
+.jp-chip-group{
+  display:flex; flex-wrap:wrap; gap:8px;
+}
+.jp-chip{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:7px 12px;
+  border-radius:999px;
+  border:1px solid #e5e7eb;
+  background:#fff;
+  font-size:12px;
+  font-weight:600;
+  cursor:pointer;
+  user-select:none;
+}
+.jp-chip.is-on{
+  background:#0b1524;
+  border-color:#0b1524;
+  color:#fff;
+}
+
+.jp-radio{
+  display:flex; align-items:center; gap:14px;
+  padding-top:4px;
+}
+.jp-radio label{
+  display:inline-flex; align-items:center; gap:8px;
+  font-size:13px;
+  font-weight:800;
+  color:#111;
+  cursor:pointer;
+}
+
+.jp-divider{
+  border-top:1px solid #e5e7eb;
+  margin:10px 0 14px 0;
+}
+
+/* tip box */
+.jp-tip{
+  border:1px solid #e5e7eb;
+  border-radius:14px;
+  padding:14px;
+  background:#f8fafc;
+}
+.jp-tip-title{
+  font-weight:900; margin:0 0 10px 0;
+  display:flex; align-items:center; gap:8px;
+  font-size:13px;
+}
+.jp-tip ul{
+  margin:0; padding-left:18px;
+  color:#374151;
+  font-size:12px;
+  line-height:1.7;
+}
+
+/* ✅ RIGHT: sticky side (buttons + preview) */
+.jp-side{
+  position: sticky;
+  top: 74px;
+  align-self: start;
+  height: fit-content;
+  z-index: 5;
+}
+
+
+.jp-side-actions{
+  display:flex;
+  justify-content:space-between; /* 양쪽 끝으로 분리 */
+  align-items:center;
+  width:100%;
+  padding: 0 10px;
+}
+
+/* 오른쪽 버튼 묶음 */
+.jp-right-actions{
+  display:flex;
+  gap:10px;
+}
+
+/* preview: 이제 sticky 아님 (side가 sticky라서) */
+.jp-preview{
+  position: static;
+}
+.jp-preview-card{
+  padding:14px;
+}
+.jp-prev-box{
+  border:1px solid #e5e7eb;
+  border-radius:14px;
+  padding:14px;
+  background:#fff;
+}
+.jp-prev-title{
+  font-size:14px;
+  font-weight:900;
+  margin:0;
+}
+.jp-prev-company{
+  font-size:12px;
+  color:#6b7280;
+  margin-top:6px;
+  font-weight:800;
+}
+.jp-prev-pills{
+  display:flex; gap:6px; flex-wrap:wrap;
+  margin-top:10px;
+}
+.jp-pill{
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:4px 10px;
+  border-radius:999px;
+  background:#f3f4f6;
+  border:1px solid #e5e7eb;
+  font-size:12px;
+  font-weight:900;
+  color:#111;
+  white-space:nowrap;
+}
+.jp-prev-meta{
+  margin-top:10px;
+  font-size:12px;
+  color:#6b7280;
+  display:flex; align-items:center; gap:8px;
+  border-top:1px solid #eef2f7;
+  padding-top:10px;
+}
+
+.jp-state{
+  border:1px solid #e5e7eb;
+  border-radius:14px;
+  padding:14px;
+  background:#fff;
+  margin-top:12px;
+}
+.jp-state-row{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:10px;
+}
+.jp-badge{
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:4px 10px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:900;
+  border:1px solid #e5e7eb;
+  background:#f3f4f6;
+  color:#111;
+}
+.jp-state-help{
+  margin-top:10px;
+  font-size:12px;
+  color:#6b7280;
+  line-height:1.5;
+}
+
+.jp-required{
+  border:1px solid #e5e7eb;
+  border-radius:14px;
+  padding:14px;
+  background:#fff;
+  margin-top:12px;
+}
+.jp-required-title{
+  font-size:12px;
+  font-weight:900;
+  color:#111;
+  margin:0 0 10px 0;
+}
+.jp-req-item{
+  display:flex; align-items:center; justify-content:space-between;
+  font-size:12px;
+  color:#374151;
+  padding:6px 0;
+  border-top:1px solid #f1f5f9;
+}
+.jp-req-item:first-child{ border-top:0; padding-top:0; }
+.jp-x{ color:#ef4444; font-weight:900; }
+
+
+
+.jp-hidden{
+  display:none;
+}
+
+
+
+/* ===== custom dropdown ===== */
+.jp-dd{ position:relative; width:100%; }
+.jp-dd.is-disabled{ opacity:.55; pointer-events:none; }
+
+.jp-dd-btn{
+  width:100%;
+  display:flex; align-items:center; justify-content:space-between;
+  gap:10px;
+  border:1px solid #e5e7eb;
+  border-radius:10px;
+  background:#fff;
+  padding:10px 12px;
+  font-size:14px;
+  cursor:pointer;
+}
+
+.jp-dd-label{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.jp-dd-menu{
+  position:absolute; left:0; right:0; top:calc(100% + 6px);
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  background:#fff;
+  box-shadow:0 10px 25px rgba(0,0,0,.08);
+  z-index:9999;
+  padding:10px;
+}
+
+.jp-dd-search{
+  width:100%;
+  border:1px solid #e5e7eb;
+  border-radius:10px;
+  padding:8px 10px;
+  font-size:13px;
+  margin-bottom:8px;
+}
+
+.jp-dd-list{
+  list-style:none;
+  margin:0; padding:0;
+  max-height:260px;   /* ✅ 펼쳐졌을 때 세로 길이 제한 */
+  overflow:auto;      /* ✅ 스크롤 */
+}
+
+.jp-dd-item{
+  padding:9px 10px;
+  border-radius:10px;
+  cursor:pointer;
+  font-size:13px;
+}
+.jp-dd-item:hover{ background:#f3f4f6; }
+
+.jp-dd-empty{
+  padding:10px;
+  font-size:13px;
+  color:#6b7280;
+}
+
+

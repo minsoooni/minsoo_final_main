@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      lang="ko"
+      th:replace="~{layout/layout_company :: layout(~{::title},~{::link},~{::style},~{::script},~{::section})}">
+
+<head>
+  <title>인재 프로필</title>
+  <link rel="stylesheet" th:href="@{/css/company/talent_detail.css}">
+  <style type="text/css"></style>
+  <script type="text/javascript"></script>
+</head>
+
+<body>
+<section class="dash">
+  <div class="detail-container">
+
+    <!-- 기본 정보 -->
+    <div class="detail-header">
+      <div class="d-flex" style="gap:24px;">
+        <div class="detail-photo">
+          <img th:if="${resume.photoPath != null and !#strings.isEmpty(resume.photoPath)}"
+               th:src="@{/{path}(path=${resume.photoPath.substring(1)})}" alt="프로필 사진">
+          <div th:if="${resume.photoPath == null or #strings.isEmpty(resume.photoPath)}" class="placeholder">
+            <i class="fas fa-user" style="font-size:40px;"></i>
+          </div>
+        </div>
+
+        <div style="flex:1;">
+          <h1 class="detail-name" th:text="${resume.memberName}">홍길동</h1>
+          <p class="detail-title" th:text="${resume.title}">이력서 제목</p>
+
+          <div class="detail-info">
+            <span th:if="${resume.memberEmail != null}">
+              <i class="fas fa-envelope"></i>
+              <span th:text="${resume.memberEmail}">email@example.com</span>
+            </span>
+            <span th:if="${resume.memberPhone != null}">
+              <i class="fas fa-phone"></i>
+              <span th:text="${resume.memberPhone}">010-0000-0000</span>
+            </span>
+          </div>
+
+          <div class="detail-info">
+            <span th:if="${resume.memberBirthDate != null}">
+              <i class="fas fa-birthday-cake"></i>
+              <span th:text="${resume.memberBirthDate}">1999-01-01</span>
+            </span>
+            <span th:if="${resume.memberGender != null}">
+              <i class="fas fa-venus-mars"></i>
+              <span th:if="${resume.memberGender == 1}">남성</span>
+              <span th:if="${resume.memberGender == 2}">여성</span>
+            </span>
+          </div>
+
+          <div class="detail-info">
+            <span th:if="${resume.address != null and !#strings.isEmpty(resume.address)}">
+              <i class="fas fa-map-marker-alt"></i>
+              <span th:text="${resume.address}">주소</span>
+            </span>
+          </div>
+
+          <div class="detail-info"
+               th:if="${resume.desiredSalary != null and resume.desiredSalary > 0 or resume.categoryName != null or resume.regionName != null}">
+            <strong style="font-size:13px; margin-right:8px;">희망근로조건</strong>
+
+            <span th:if="${resume.desiredSalary != null and resume.desiredSalary > 0}">
+              <i class="fas fa-won-sign"></i>
+              연봉 <span th:text="${#numbers.formatInteger(resume.desiredSalary, 3, 'COMMA')}">0</span>만원
+            </span>
+
+            <span th:if="${resume.categoryName != null}">
+              <i class="fas fa-briefcase"></i>
+              직무 <span th:text="${resume.categoryName}">백엔드</span>
+            </span>
+
+            <span th:if="${resume.regionName != null}">
+              <i class="fas fa-map-pin"></i>
+              지역 <span th:text="${resume.regionName}">서울</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 자기소개 -->
+    <div class="detail-section" th:if="${resume.selfIntro != null and !#strings.isEmpty(resume.selfIntro)}">
+      <div class="detail-section-title"><i class="fas fa-user-circle"></i> 자기소개</div>
+      <div class="self-intro-box" th:text="${resume.selfIntro}"></div>
+    </div>
+
+    <!-- 학력 -->
+    <div class="detail-section" th:if="${resume.educationList != null and !resume.educationList.isEmpty()}">
+      <div class="detail-section-title"><i class="fas fa-graduation-cap"></i> 학력</div>
+      <div th:each="edu : ${resume.educationList}" class="detail-item">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <span class="detail-item-title" th:text="${edu.schoolname}">학교명</span>
+            <span class="detail-badge badge-graduated" th:if="${edu.status == 0}">졸업</span>
+            <span class="detail-badge badge-enrolled" th:if="${edu.status == 1}">재학</span>
+            <span class="detail-badge badge-dropped" th:if="${edu.status == 2}">중퇴</span>
+            <div class="detail-item-sub">
+              <span th:if="${edu.educationLevelName != null}" th:text="${edu.educationLevelName}">학력수준</span>
+              <span th:if="${edu.major != null and !#strings.isEmpty(edu.major)}">
+                · <span th:text="${edu.major}">전공</span>
+              </span>
+            </div>
+          </div>
+          <span class="detail-period" th:if="${edu.enrolldate != null}">
+            <span th:text="${edu.enrolldate}">2020-03-01</span>
+            <span th:if="${edu.graduationdate != null}"> ~ <span th:text="${edu.graduationdate}">2024-02-01</span></span>
+            <span th:if="${edu.graduationdate == null and edu.status == 1}"> ~ 현재</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 경력 -->
+    <div class="detail-section" th:if="${resume.careerList != null and !resume.careerList.isEmpty()}">
+      <div class="detail-section-title"><i class="fas fa-briefcase"></i> 경력</div>
+      <div th:each="career : ${resume.careerList}" class="detail-item">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <span class="detail-item-title" th:text="${career.companyname}">회사명</span>
+            <div class="detail-item-sub">
+              <span th:if="${career.categoryName != null}" th:text="${career.categoryName}">직무</span>
+              <span th:if="${career.jobnameCustom != null and !#strings.isEmpty(career.jobnameCustom)}">
+                · <span th:text="${career.jobnameCustom}">직무명</span>
+              </span>
+              <span th:if="${career.position != null and !#strings.isEmpty(career.position)}">
+                · <span th:text="${career.position}">직급</span>
+              </span>
+            </div>
+            <div class="detail-item-sub" th:if="${career.jobDesc != null and !#strings.isEmpty(career.jobDesc)}"
+                 th:text="${career.jobDesc}">업무 설명</div>
+          </div>
+          <span class="detail-period" th:if="${career.joindate != null}">
+            <span th:text="${career.joindate}">2021-01-01</span>
+            <span th:if="${career.leavedate != null}"> ~ <span th:text="${career.leavedate}">2023-12-31</span></span>
+            <span th:if="${career.leavedate == null}"> ~ 재직중</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 기술스택 -->
+    <div class="detail-section" th:if="${resume.techstackList != null and !resume.techstackList.isEmpty()}">
+      <div class="detail-section-title"><i class="fas fa-code"></i> 기술스택</div>
+      <div style="display:flex; flex-wrap:wrap; gap:4px;">
+        <span th:each="tech : ${resume.techstackList}" class="skill-badge">
+          <span th:text="${tech.skillName}">기술명</span>
+          <span class="proficiency"
+                th:classappend="${tech.proficiency == 1 ? 'proficiency-1' : (tech.proficiency == 2 ? 'proficiency-2' : 'proficiency-3')}"
+                th:text="${tech.proficiency == 1 ? '초급' : (tech.proficiency == 2 ? '중급' : '고급')}">중급</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- 자격증 -->
+    <div class="detail-section" th:if="${resume.certificateList != null and !resume.certificateList.isEmpty()}">
+      <div class="detail-section-title"><i class="fas fa-certificate"></i> 자격증</div>
+      <div th:each="cert : ${resume.certificateList}" class="detail-item">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <span class="detail-item-title" th:text="${cert.certificateName}">자격증명</span>
+            <div class="detail-item-sub" th:if="${cert.issuer != null}" th:text="${cert.issuer}">발급기관</div>
+          </div>
+          <span class="detail-period" th:if="${cert.acquiredDate != null}" th:text="${cert.acquiredDate}">취득일</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 어학 -->
+    <div class="detail-section" th:if="${resume.languageList != null and !resume.languageList.isEmpty()}">
+      <div class="detail-section-title"><i class="fas fa-language"></i> 어학</div>
+      <div th:each="lang : ${resume.languageList}" class="detail-item">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <span class="detail-item-title" th:text="${lang.languageName}">언어명</span>
+            <div class="detail-item-sub">
+              <span th:text="${lang.testname}">시험명</span>
+              · <span th:text="${lang.score}">점수</span>
+            </div>
+          </div>
+          <span class="detail-period" th:if="${lang.acquiredDate != null}" th:text="${lang.acquiredDate}">취득일</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 수상 -->
+    <div class="detail-section" th:if="${resume.awardList != null and !resume.awardList.isEmpty()}">
+      <div class="detail-section-title"><i class="fas fa-trophy"></i> 수상</div>
+      <div th:each="award : ${resume.awardList}" class="detail-item">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <span class="detail-item-title" th:text="${award.awardName}">수상명</span>
+            <div class="detail-item-sub">
+              <span th:text="${award.organizationName}">수여기관</span>
+            </div>
+            <div class="detail-item-sub" th:if="${award.description != null and !#strings.isEmpty(award.description)}"
+                 th:text="${award.description}">설명</div>
+          </div>
+          <span class="detail-period" th:if="${award.awardDate != null}" th:text="${award.awardDate}">수상일</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 포트폴리오 -->
+    <div class="detail-section" th:if="${resume.portfolioList != null and !resume.portfolioList.isEmpty()}">
+      <div class="detail-section-title"><i class="fas fa-folder-open"></i> 포트폴리오</div>
+      <div style="display:flex; flex-wrap:wrap; gap:4px;">
+        <th:block th:each="port : ${resume.portfolioList}">
+          <a th:if="${port.link != null and !#strings.isEmpty(port.link)}"
+             class="portfolio-link"
+             th:href="${port.link}" target="_blank">
+            <i class="fas fa-link"></i>
+            <span th:text="${port.link}">링크</span>
+          </a>
+
+          <a th:if="${port.filepath != null and !#strings.isEmpty(port.filepath)}"
+             class="portfolio-file"
+             th:href="@{/{path}(path=${port.filepath.substring(1)})}"
+             th:download="${port.originalFilename}">
+            <i class="fas fa-download"></i>
+            <span th:text="${port.originalFilename}">파일명</span>
+          </a>
+        </th:block>
+      </div>
+    </div>
+
+    <!-- 하단 버튼 -->
+    <div class="btn-actions">
+      <a th:href="@{/company/talent(menu='talent')}" class="btn btn-outline-secondary">
+        <i class="fas fa-list"></i> 목록으로
+      </a>
+
+      <button type="button" class="btn btn-primary">
+        <i class="fas fa-paper-plane"></i> 제안서 보내기
+      </button>
+    </div>
+
+  </div>
+</section>
+</body>
+</html>

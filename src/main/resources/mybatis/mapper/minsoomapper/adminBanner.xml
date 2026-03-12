@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spring.app.admin.model.AdminBannerDAO">
+
+<!-- 확 -->
+  <select id="selectBannerList" resultType="com.spring.app.admin.domain.AdminBannerDTO">
+	  SELECT * FROM (
+	      SELECT ROWNUM AS rn, a.* FROM (
+	          SELECT b.BANNER_ID     AS bannerId,
+	                 b.FK_MEMBERID   AS fkMemberId,
+	                 b.TITLE         AS title,
+	                 b.IMAGE_FILE_ID AS imageFileId,
+	                 img.FILE_URL    AS imageFileUrl,
+	                 b.START_AT      AS startAt,
+	                 b.END_AT        AS endAt,
+	                 b.STATUS        AS status,
+	                 b.REJECT_REASON AS rejectReason,
+	                 c.COMPANY_NAME  AS companyName,
+	                 pt.created_at   AS createdAt
+	          FROM TBL_BANNER b
+	          LEFT JOIN TBL_COMPANY c ON b.FK_MEMBERID = c.FK_MEMBERID
+	          LEFT JOIN TBL_IMAGE_FILE img ON img.FILE_ID = b.IMAGE_FILE_ID
+	          LEFT JOIN (
+	              SELECT FK_BANNER_ID, MIN(CREATED_AT) AS created_at
+	              FROM TBL_POINT_TRANSACTION
+	              GROUP BY FK_BANNER_ID
+	          ) pt ON pt.FK_BANNER_ID = b.BANNER_ID
+	          ORDER BY b.BANNER_ID DESC
+	      ) a WHERE ROWNUM &lt;= #{offset} + #{limit}
+	  ) WHERE rn > #{offset}
+	</select>
+
+  <select id="selectBannerCount" resultType="int">
+    SELECT COUNT(*) FROM TBL_BANNER
+  </select>
+
+  <update id="updateBannerApprove">
+    UPDATE TBL_BANNER SET STATUS = '승인완료' WHERE BANNER_ID = #{bannerId}
+  </update>
+
+  <update id="updateBannerReject">
+    UPDATE TBL_BANNER
+    SET STATUS = '반려', REJECT_REASON = #{rejectReason}
+    WHERE BANNER_ID = #{bannerId}
+  </update>
+
+  <update id="updateBannerStopped">
+    UPDATE TBL_BANNER SET STATUS = '정지' WHERE BANNER_ID = #{bannerId}
+  </update>
+
+  <update id="updateBannerUnstopped">
+    UPDATE TBL_BANNER SET STATUS = '승인완료' WHERE BANNER_ID = #{bannerId}
+  </update>
+
+	<!-- 페이징 기법 -->
+	<select id="selectBannerCountByStatus" resultType="int">
+    SELECT COUNT(*) FROM TBL_BANNER WHERE STATUS = #{status}
+	</select>
+	
+	<!-- 배너 단건 조회 (알림용) -->
+	<select id="selectBannerById" resultType="com.spring.app.admin.domain.AdminBannerDTO">
+	    SELECT BANNER_ID   AS bannerId,
+	           FK_MEMBERID AS fkMemberId,
+	           TITLE       AS title
+	    FROM TBL_BANNER
+	    WHERE BANNER_ID = #{bannerId}
+	</select>
+	
+	<select id="selectActiveBannerList" resultType="com.spring.app.admin.domain.AdminBannerDTO">
+	    SELECT b.BANNER_ID     AS bannerId,
+	           b.FK_MEMBERID   AS fkMemberId,
+	           b.FK_JOB_ID     AS fkJobId,
+	           b.TITLE         AS title,
+	           b.IMAGE_FILE_ID AS imageFileId,
+	           img.FILE_URL    AS imageFileUrl,
+	           b.START_AT      AS startAt,
+	           b.END_AT        AS endAt,
+	           b.STATUS        AS status,
+	           c.COMPANY_NAME  AS companyName
+	    FROM TBL_BANNER b
+	    LEFT JOIN TBL_COMPANY c ON b.FK_MEMBERID = c.FK_MEMBERID
+	    LEFT JOIN TBL_IMAGE_FILE img ON img.FILE_ID = b.IMAGE_FILE_ID
+	    WHERE b.STATUS = '승인완료'
+	    AND b.START_AT &lt;= SYSDATE
+	    AND b.END_AT   &gt;= SYSDATE
+	    ORDER BY b.PRIORITY DESC
+	</select>
+</mapper>

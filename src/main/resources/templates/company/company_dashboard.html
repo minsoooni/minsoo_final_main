@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/layout_company :: layout(~{::title},~{::link},~{::style},~{::script},~{::section})}">
+
+<head>
+  <title>기업 대시보드</title>
+  <link rel="stylesheet" th:href="@{/css/company/company_dashboard.css}">
+  <style type="text/css"></style>
+  <script type="text/javascript"></script>
+</head>
+
+<body>
+<section class="dash">
+
+  <div class="dash-head">
+    <div>
+      <h2 class="dash-title">대시보드</h2>
+      <p class="dash-sub">채용 활동 현황을 한눈에 확인하세요</p>
+    </div>
+  </div>
+
+  <!-- KPI 카드 -->
+  <div class="dash-grid">
+    <div class="kpi">
+      <div class="kpi-top">
+        <span class="kpi-label">진행중인 공고</span>
+        <i class="fa-regular fa-calendar"></i>
+      </div>
+      <div class="kpi-val">
+        <span th:text="${dashboard.ongoingJobCount}">0</span> <span>건</span>
+      </div>
+    </div>
+
+    <div class="kpi">
+      <div class="kpi-top">
+        <span class="kpi-label">총 지원자</span>
+        <i class="fa-regular fa-user"></i>
+      </div>
+      <div class="kpi-val">
+        <span th:text="${dashboard.totalApplicantCount}">0</span> <span>명</span>
+      </div>
+    </div>
+
+    <div class="kpi">
+      <div class="kpi-top">
+        <span class="kpi-label">미확인 지원</span>
+        <i class="fa-regular fa-envelope"></i>
+      </div>
+      <div class="kpi-val kpi-blue">
+        <span th:text="${dashboard.unreadApplicantCount}">0</span> <span>건</span>
+      </div>
+    </div>
+
+    <div class="kpi">
+      <div class="kpi-top">
+        <span class="kpi-label">발송된 제안서</span>
+        <i class="fa-regular fa-paper-plane"></i>
+      </div>
+      <div class="kpi-val">
+        <span th:text="${dashboard.sentOfferCount}">0</span> <span>건</span>
+      </div>
+    </div>
+
+    <div class="kpi">
+      <div class="kpi-top">
+        <span class="kpi-label">포인트 잔액</span>
+        <i class="fa-solid fa-coins"></i>
+      </div>
+      <div class="kpi-val">
+        <span th:text="${#numbers.formatInteger(dashboard.pointBalance, 3, 'COMMA')}">0</span> <span>P</span>
+      </div>
+    </div>
+
+    <div class="kpi">
+      <div class="kpi-top">
+        <span class="kpi-label">등록 배너</span>
+        <i class="fa-regular fa-image"></i>
+      </div>
+      <div class="kpi-val">
+        <span th:text="${dashboard.bannerCount}">0</span> <span>건</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 최근 채용 공고 -->
+  <div class="panel card-box">
+    <div class="panel-head">
+      <h3>최근 채용 공고</h3>
+      <a class="panel-link" th:href="@{/company/job/list}">
+        전체보기 <i class="fa-solid fa-arrow-up-right-from-square"></i>
+      </a>
+    </div>
+
+    <!-- 데이터가 있을 때 -->
+    <th:block th:if="${dashboard.recentJobs != null and !#lists.isEmpty(dashboard.recentJobs)}">
+      <div class="job-row" th:each="job : ${dashboard.recentJobs}">
+        <div class="job-left">
+          <div class="job-title">
+            <span th:text="${job.title}">공고명</span>
+            <span class="badge"
+			      th:classappend="${job.status == '게시중'} ? ' badge-dark' : ' badge-light'"
+			      th:text="${job.statusText}">게시중</span>
+          </div>
+          <div class="job-meta">
+            <span th:text="${job.workTypeText}">정규직</span>
+            ·
+            마감:
+            <span th:text="${job.deadlineAt != null ? #dates.format(job.deadlineAt, 'yyyy. M. d.') : '상시채용'}">2026. 3. 16.</span>
+          </div>
+        </div>
+        <div class="job-right">
+          <span><i class="fa-regular fa-eye"></i> <span th:text="${job.viewCount}">0</span></span>
+          <span><i class="fa-regular fa-user"></i> <span th:text="${job.applicantCount}">0</span></span>
+        </div>
+      </div>
+    </th:block>
+
+    <!-- 데이터가 없을 때 -->
+    <div class="empty-box" th:if="${dashboard.recentJobs == null or #lists.isEmpty(dashboard.recentJobs)}">
+      최근 등록된 채용 공고가 없습니다.
+    </div>
+  </div>
+
+  <!-- 최근 지원자 / 최근 제안서 -->
+  <div class="two-col">
+
+    <!-- 최근 지원자 -->
+    <div class="panel">
+      <div class="panel-head">
+        <h3>최근 지원자</h3>
+        <a class="panel-link" th:href="@{/company/applicant/list}">
+          전체보기 <i class="fa-solid fa-arrow-up-right-from-square"></i>
+        </a>
+      </div>
+
+      <th:block th:if="${dashboard.recentApplicants != null and !#lists.isEmpty(dashboard.recentApplicants)}">
+        <div class="app-row" th:each="app : ${dashboard.recentApplicants}">
+          <div class="app-left">
+            <div class="app-avatar"><i class="fa-regular fa-user"></i></div>
+            <div>
+              <div class="app-name" th:text="${app.applicantName}">홍길동</div>
+              <div class="app-desc" th:text="${app.resumeTitle}">이력서 제목</div>
+            </div>
+          </div>
+          <div class="app-right">
+            <div class="app-job" th:text="${app.jobTitle}">공고명</div>
+            <div class="app-meta"
+                 th:text="${app.appliedAt != null ? #dates.format(app.appliedAt, 'yyyy. M. d.') : '-'}">2026. 2. 10.</div>
+          </div>
+          <span class="pill"
+                th:classappend="
+                  ${app.processStatus == 3} ? ' pill-dark' :
+                  (${app.processStatus == 2} ? ' pill-gray' : ' pill-light')"
+                th:text="${app.processStatusText}">합격</span>
+        </div>
+      </th:block>
+
+      <div class="empty-box" th:if="${dashboard.recentApplicants == null or #lists.isEmpty(dashboard.recentApplicants)}">
+        최근 지원자가 없습니다.
+      </div>
+    </div>
+
+    <!-- 최근 제안서 -->
+    <div class="panel">
+      <div class="panel-head">
+        <h3>최근 제안서</h3>
+        <a class="panel-link" th:href="@{/company/offer/list}">
+          전체보기 <i class="fa-solid fa-arrow-up-right-from-square"></i>
+        </a>
+      </div>
+
+      <th:block th:if="${dashboard.recentOffers != null and !#lists.isEmpty(dashboard.recentOffers)}">
+        <div class="offer-box" th:each="offer : ${dashboard.recentOffers}">
+          <div class="offer-title" th:text="${offer.title}">제안서 제목</div>
+          <div class="offer-sub" th:text="${offer.jobTitle}">공고명</div>
+          <div class="offer-stats">
+            <span class="ok">수락 <span th:text="${offer.acceptedCount}">0</span></span>
+            <span class="no">거절 <span th:text="${offer.rejectedCount}">0</span></span>
+            <span class="muted">미열람 <span th:text="${offer.unreadCount}">0</span></span>
+          </div>
+          <div class="offer-right">
+            <div>총 <span th:text="${offer.totalSentCount}">0</span>명 발송</div>
+            <div class="muted">
+              만료:
+              <span th:text="${offer.expireAt != null ? #dates.format(offer.expireAt, 'yyyy. M. d.') : '-'}">2026. 3. 2.</span>
+            </div>
+          </div>
+        </div>
+      </th:block>
+
+      <div class="empty-box" th:if="${dashboard.recentOffers == null or #lists.isEmpty(dashboard.recentOffers)}">
+        최근 발송한 제안서가 없습니다.
+      </div>
+    </div>
+  </div>
+
+</section>
+</body>
+</html>

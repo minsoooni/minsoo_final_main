@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      lang="ko"
+      th:replace="~{layout/layout_main :: layout(~{::title}, ~{::th:block[@data-slot='link']}, ~{::th:block[@data-slot='css']}, ~{::th:block[@data-slot='script']}, ~{::div#companyDetailWrap})}">
+
+<head>
+  <title th:text="${company.companyName} + ' | 잡파인더'">기업상세 | 잡파인더</title>
+
+  <!-- link slot -->
+  <th:block data-slot="link">
+  </th:block>
+
+  <!-- css slot -->
+  <th:block data-slot="css">
+    <style>
+      /* ===== 공통 ===== */
+      .gap-2 { gap: .5rem; }
+
+      /* ===== 기업 헤더 카드 ===== */
+      .co-hero {
+        background: linear-gradient(135deg, #3b9fd8 0%, #29b6f6 55%, #a8e6ff 100%);
+        padding: 36px 0 0;
+        color: #fff;
+      }
+      .co-hero__inner {
+        display: flex;
+        align-items: flex-end;
+        gap: 24px;
+      }
+      .co-hero__logo {
+        width: 96px;
+        height: 96px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, #09a3ff, #0066cc);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        font-weight: 900;
+        color: #fff;
+        flex-shrink: 0;
+        border: 3px solid rgba(255,255,255,.15);
+        box-shadow: 0 4px 20px rgba(0,0,0,.3);
+        letter-spacing: -1px;
+      }
+      .co-hero__logo-img {
+        width: 96px;
+        height: 96px;
+        border-radius: 20px;
+        object-fit: cover;
+        flex-shrink: 0;
+        border: 3px solid rgba(255,255,255,.15);
+        box-shadow: 0 4px 20px rgba(0,0,0,.3);
+      }
+      .co-hero__info { flex: 1; padding-bottom: 20px; }
+      .co-hero__name {
+        font-size: 26px;
+        font-weight: 900;
+        margin-bottom: 6px;
+      }
+      .co-hero__industry {
+        font-size: 13px;
+        opacity: .8;
+        margin-bottom: 10px;
+      }
+      .co-hero__meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        font-size: 13px;
+        opacity: .85;
+      }
+      .co-hero__meta span { display: flex; align-items: center; gap: 5px; }
+      .co-hero__meta i { opacity: .7; }
+
+      /* 팔로우 버튼 */
+      .btn-follow-hero {
+        background: transparent;
+        border: 2px solid rgba(255,255,255,.5);
+        color: #fff;
+        border-radius: 10px;
+        padding: 9px 22px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all .2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        align-self: flex-end;
+        margin-bottom: 20px;
+      }
+      .btn-follow-hero:hover { background: rgba(255,255,255,.15); border-color: #fff; }
+      .btn-follow-hero.followed {
+        background: #ef4444;
+        border-color: #ef4444;
+        color: #fff;
+      }
+
+      /* 탭 네비 */
+      .co-nav {
+        background: rgba(255,255,255,.07);
+        border-top: 1px solid rgba(255,255,255,.1);
+        margin-top: 4px;
+      }
+      .co-nav__list {
+        display: flex;
+        gap: 0;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .co-nav__item a {
+        display: block;
+        padding: 14px 22px;
+        font-size: 14px;
+        font-weight: 600;
+        color: rgba(255,255,255,.7);
+        text-decoration: none;
+        border-bottom: 3px solid transparent;
+        transition: all .2s;
+      }
+      .co-nav__item a:hover { color: #fff; text-decoration: none; }
+      .co-nav__item a.active { color: #fff; border-bottom-color: #09a3ff; }
+
+      /* ===== 본문 레이아웃 ===== */
+      .co-body { padding: 32px 0 60px; background: #f8f9fa; min-height: 60vh; }
+
+      /* ===== 공통 카드 ===== */
+      .co-section-card {
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-radius: 14px;
+        margin-bottom: 20px;
+        overflow: hidden;
+      }
+      .co-section-card__head {
+        padding: 18px 22px;
+        border-bottom: 1px solid #f1f3f5;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .co-section-card__title {
+        font-size: 16px;
+        font-weight: 800;
+        color: #111;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .co-section-card__title i { color: #09a3ff; }
+      .co-section-card__body { padding: 22px; }
+
+      /* ===== 기업 소개 ===== */
+      .co-intro-text {
+        font-size: 14px;
+        line-height: 1.85;
+        color: #374151;
+      }
+
+      /* ===== 기업 통계 4분할 ===== */
+      .co-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1px;
+        background: #f1f3f5;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 20px;
+      }
+      .co-stat-item {
+        background: #fff;
+        padding: 18px;
+        text-align: center;
+      }
+      .co-stat-item__val {
+        font-size: 22px;
+        font-weight: 900;
+        color: #09a3ff;
+        line-height: 1.1;
+        margin-bottom: 4px;
+      }
+      .co-stat-item__lbl {
+        font-size: 12px;
+        color: #6c757d;
+        font-weight: 600;
+      }
+
+      /* ===== 복리후생 뱃지 ===== */
+      .co-benefit-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+      .co-benefit {
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+        color: #0369a1;
+        border-radius: 20px;
+        padding: 5px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .co-benefit i { font-size: 12px; color: #0284c7; }
+
+      /* ===== 채용공고 리스트 ===== */
+      .co-job-item {
+        padding: 18px 22px;
+        border-bottom: 1px solid #f1f3f5;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        transition: background .15s;
+        text-decoration: none;
+        color: inherit;
+      }
+      .co-job-item:last-child { border-bottom: none; }
+      .co-job-item:hover { background: #f8f9fa; text-decoration: none; color: inherit; }
+      .co-job-item__title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #111;
+        margin-bottom: 6px;
+      }
+      .co-job-item__badges { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
+      .co-badge-outline {
+        font-size: 12px;
+        border: 1px solid #dee2e6;
+        border-radius: 20px;
+        padding: 2px 9px;
+        color: #6c757d;
+        background: #fff;
+      }
+      .co-job-item__salary { font-size: 12px; font-weight: 700; color: #111; }
+      .co-job-item__right { text-align: right; flex-shrink: 0; margin-left: 16px; }
+      .co-job-item__deadline { font-size: 12px; color: #6c757d; margin-bottom: 4px; }
+      .co-job-item__views { font-size: 12px; color: #adb5bd; }
+
+      /* D-day 배지 */
+      .co-dday {
+        font-size: 11px;
+        font-weight: 700;
+        border-radius: 5px;
+        padding: 2px 7px;
+        display: inline-block;
+        margin-bottom: 4px;
+      }
+      .co-dday-urgent { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+      .co-dday-normal { background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd; }
+
+      /* 공고 없음 */
+      .co-no-post {
+        text-align: center;
+        padding: 48px 20px;
+        color: #adb5bd;
+      }
+      .co-no-post i { font-size: 40px; display: block; margin-bottom: 12px; }
+
+      /* ===== 사이드바 ===== */
+      .co-sidebar { position: sticky; top: 80px; }
+
+      .co-info-card {
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-radius: 14px;
+        overflow: hidden;
+        margin-bottom: 16px;
+      }
+      .co-info-card__head {
+        padding: 16px 18px;
+        border-bottom: 1px solid #f1f3f5;
+        font-size: 14px;
+        font-weight: 800;
+        color: #111;
+      }
+      .co-info-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+      .co-info-table td { padding: 9px 18px; vertical-align: top; border-bottom: 1px solid #f8f9fa; }
+      .co-info-table td:first-child { color: #9ca3af; font-weight: 600; width: 70px; white-space: nowrap; }
+      .co-info-table td:last-child { color: #374151; font-weight: 600; }
+      .co-info-table tr:last-child td { border-bottom: none; }
+
+      .btn-job-all {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        background: #09a3ff;
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        padding: 11px 0;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        width: 100%;
+        text-decoration: none;
+        transition: background .2s;
+        margin: 12px 16px 0;
+        width: calc(100% - 32px);
+      }
+      .btn-job-all:hover { background: #0085d9; color: #fff; text-decoration: none; }
+
+      /* 유사 기업 */
+      .co-similar-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        border-bottom: 1px solid #f8f9fa;
+        text-decoration: none;
+        color: inherit;
+        transition: background .15s;
+      }
+      .co-similar-item:last-child { border-bottom: none; }
+      .co-similar-item:hover { background: #f8f9fa; text-decoration: none; color: inherit; }
+      .co-similar-logo {
+        width: 36px;
+        height: 36px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 800;
+        color: #fff;
+        flex-shrink: 0;
+        background: linear-gradient(135deg, #09a3ff, #0066cc);
+      }
+      .co-similar-name { font-size: 13px; font-weight: 700; color: #111; margin-bottom: 2px; }
+      .co-similar-industry { font-size: 11px; color: #6c757d; }
+      .co-similar-cnt { margin-left: auto; font-size: 12px; color: #09a3ff; font-weight: 700; flex-shrink: 0; }
+
+      /* 탭 콘텐츠 */
+      .co-tab-content { display: none; }
+      .co-tab-content.active { display: block; }
+    </style>
+  </th:block>
+
+  <!-- script slot -->
+  <th:block data-slot="script">
+    <script th:inline="javascript">
+
+      var companyMemberId = /*[[${company.memberId}]]*/ '';
+      var isFollowed = /*[[${company.isFollowed}]]*/ 0;
+
+      var contextPath = /*[[@{/}]]*/ '/';
+
+      /* ===== 업종코드 → 한글명 매핑 ===== */
+      var industryMap = {
+        'IT':  'IT·인터넷',
+        'SW':  '소프트웨어',
+        'FIN': '금융·핀테크',
+        'EDU': '교육·에듀테크',
+        'MKT': '마케팅',
+        'ETC': '기타'
+      };
+      function industryName(code) {
+        return industryMap[code] || code || '-';
+      }
+
+      $(function() {
+        // 업종코드 → 한글명 변환
+        $('.industry-code-text').each(function() {
+          $(this).text(industryName($(this).data('code')));
+        });
+
+        // 팔로우 상태 초기화
+        updateFollowUI();
+      });
+
+      function updateFollowUI() {
+        var btn = $('#followBtn');
+        var icon = $('#followIcon');
+        var txt = $('#followTxt');
+        if (isFollowed > 0) {
+          btn.addClass('followed');
+          icon.attr('class', 'fas fa-heart');
+          txt.text('팔로잉');
+        } else {
+          btn.removeClass('followed');
+          icon.attr('class', 'far fa-heart');
+          txt.text('팔로우');
+        }
+      }
+
+      // 팔로우 토글 (AJAX)
+      function toggleFollow() {
+        $.ajax({
+          url: contextPath + 'api/companyinfo/follow',
+          type: 'POST',
+          data: { companyMemberId: companyMemberId },
+          success: function(result) {
+            if (result.success) {
+              isFollowed = (result.action === 'followed') ? 1 : 0;
+              updateFollowUI();
+              $('#followerCount').text(result.followerCount.toLocaleString());
+            }
+          },
+          error: function(xhr) {
+            if (xhr.status === 401 || xhr.status === 403 || xhr.status === 302) {
+              if (confirm('로그인이 필요한 서비스입니다. 로그인 페이지로 이동할까요?')) {
+                location.href = contextPath + 'member/login';
+              }
+            }
+          },
+          statusCode: {
+            200: function(data, textStatus, xhr) {
+              // 리다이렉트된 로그인 페이지 HTML이 올 경우 처리
+              if (typeof data === 'string' || (xhr.getResponseHeader('Content-Type') && xhr.getResponseHeader('Content-Type').indexOf('text/html') !== -1)) {
+                if (confirm('로그인이 필요한 서비스입니다. 로그인 페이지로 이동할까요?')) {
+                  location.href = contextPath + 'member/login';
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // 탭 전환
+      function switchTab(tabId, el) {
+        document.querySelectorAll('.co-tab-content').forEach(function(t){ t.classList.remove('active'); });
+        document.querySelectorAll('.co-nav__item a').forEach(function(a){ a.classList.remove('active'); });
+        document.getElementById(tabId).classList.add('active');
+        el.classList.add('active');
+      }
+    </script>
+  </th:block>
+</head>
+
+<body>
+<div id="companyDetailWrap">
+
+  <!-- ===== 기업 헤더 히어로 ===== -->
+  <div class="co-hero">
+    <div class="container jp-container">
+      <div class="co-hero__inner">
+        <!-- 로고 -->
+        <img th:if="${company.logoUrl != null and company.logoUrl != ''}"
+             th:src="@{/{path}(path=${company.logoUrl})}"
+             class="co-hero__logo-img" alt="로고">
+        <div th:unless="${company.logoUrl != null and company.logoUrl != ''}"
+             class="co-hero__logo"
+             th:text="${company.logoInitial}">TI</div>
+
+        <!-- 기업 정보 -->
+        <div class="co-hero__info">
+          <h1 class="co-hero__name" th:text="${company.companyName}">기업명</h1>
+          <div class="co-hero__industry">
+            <span class="industry-code-text" th:data-code="${company.industryCode}" th:text="${company.industryCode}">업종</span>
+            <span th:if="${company.companyType != null}">
+              &nbsp;&middot;&nbsp;
+              <span th:text="${company.companyType}">규모</span>
+            </span>
+          </div>
+          <div class="co-hero__meta">
+            <span th:if="${company.addr1 != null}">
+              <i class="fas fa-map-marker-alt"></i>
+              <span th:text="${company.addr1} + (${company.addr2 != null ? ' ' + company.addr2 : ''})">주소</span>
+            </span>
+            <span th:if="${company.foundedYear != null}">
+              <i class="far fa-calendar-alt"></i>
+              설립 <span th:text="${company.foundedYear}">2010</span>년
+            </span>
+            <span th:if="${company.homepageUrl != null}">
+              <i class="fas fa-globe"></i>
+              <a th:href="${company.homepageUrl}" target="_blank"
+                 style="color:#fff; text-decoration:underline;">홈페이지</a>
+            </span>
+          </div>
+        </div>
+
+        <!-- 팔로우 버튼 -->
+        <button class="btn-follow-hero" id="followBtn" onclick="toggleFollow()">
+          <i class="far fa-heart" id="followIcon"></i>
+          <span id="followTxt">팔로우</span>
+        </button>
+      </div>
+
+      <!-- 탭 네비 -->
+      <nav class="co-nav mt-4">
+        <ul class="co-nav__list">
+          <li class="co-nav__item">
+            <a href="#" class="active" onclick="switchTab('tab-intro',this);return false;">기업소개</a>
+          </li>
+          <li class="co-nav__item">
+            <a href="#" onclick="switchTab('tab-jobs',this);return false;">
+              채용공고
+              <span class="badge badge-light ml-1" id="tabJobPostCount">0</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+
+  <!-- ===== 본문 ===== -->
+  <div class="co-body">
+    <div class="container jp-container">
+      <div class="row">
+
+        <!-- =================== 메인 콘텐츠 =================== -->
+        <div class="col-lg-8">
+
+          <!-- --- 기업소개 탭 --- -->
+          <div id="tab-intro" class="co-tab-content active">
+
+            <!-- 통계 4분할 -->
+            <div class="co-stat-grid">
+              <div class="co-stat-item">
+                <div class="co-stat-item__val" th:text="${company.activePostCount}">0</div>
+                <div class="co-stat-item__lbl">진행중 채용</div>
+              </div>
+              <div class="co-stat-item">
+                <div class="co-stat-item__val">
+                  <span id="followerCount" th:text="${company.followerCount}">0</span>
+                </div>
+                <div class="co-stat-item__lbl">팔로워</div>
+              </div>
+              <div class="co-stat-item">
+                <div class="co-stat-item__val" th:text="${company.totalPostCount}">0</div>
+                <div class="co-stat-item__lbl">전체 공고 수</div>
+              </div>
+              <div class="co-stat-item">
+                <div class="co-stat-item__val" th:text="${company.foundedYear != null ? company.foundedYear + '년' : '-'}">-</div>
+                <div class="co-stat-item__lbl">설립</div>
+              </div>
+            </div>
+
+            <!-- 회사 소개 -->
+            <div class="co-section-card" th:if="${company.introText != null and company.introText != ''}">
+              <div class="co-section-card__head">
+                <h2 class="co-section-card__title"><i class="fas fa-info-circle"></i> 회사 소개</h2>
+              </div>
+              <div class="co-section-card__body">
+                <div class="co-intro-text" th:utext="${company.introText}"></div>
+              </div>
+            </div>
+
+            <!-- 비전 -->
+            <div class="co-section-card" th:if="${company.visionText != null and company.visionText != ''}">
+              <div class="co-section-card__head">
+                <h2 class="co-section-card__title"><i class="fas fa-rocket"></i> 비전</h2>
+              </div>
+              <div class="co-section-card__body">
+                <div class="co-intro-text" th:utext="${company.visionText}"></div>
+              </div>
+            </div>
+
+            <!-- 복리후생 -->
+            <div class="co-section-card" th:if="${company.welfareText != null and company.welfareText != ''}">
+              <div class="co-section-card__head">
+                <h2 class="co-section-card__title"><i class="fas fa-gift"></i> 복리후생</h2>
+              </div>
+              <div class="co-section-card__body">
+                <div class="co-intro-text" th:utext="${company.welfareText}"></div>
+              </div>
+            </div>
+
+          </div><!-- /tab-intro -->
+
+          <!-- --- 채용공고 탭 --- -->
+          <div id="tab-jobs" class="co-tab-content">
+            <!-- 채용공고 섹션(아래 메인에도 공통으로 보임) -->
+          </div>
+
+          <!-- 진행 중인 채용공고 (AJAX 페이징) -->
+          <div class="co-section-card">
+            <div class="co-section-card__head">
+              <h2 class="co-section-card__title">
+                <i class="fas fa-briefcase"></i> 진행중인 채용공고
+              </h2>
+              <span class="badge badge-primary" id="jobPostCount">0건</span>
+            </div>
+
+            <!-- 공고 목록 (AJAX로 렌더링) -->
+            <div id="jobPostListArea">
+              <div class="co-no-post">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p class="mb-0">불러오는 중...</p>
+              </div>
+            </div>
+
+            <!-- 페이징 -->
+            <div id="jobPostPaging" class="py-3 px-3" style="display:none;">
+              <nav aria-label="채용공고 페이지">
+                <ul class="pagination pagination-sm justify-content-center mb-0" id="jobPostPageList">
+                </ul>
+              </nav>
+            </div>
+          </div>
+
+        </div><!-- /메인 -->
+
+        <!-- =================== 사이드바 =================== -->
+        <div class="col-lg-4">
+          <div class="co-sidebar">
+
+            <!-- 기업 정보 카드 -->
+            <div class="co-info-card">
+              <div class="co-info-card__head">기업 정보</div>
+              <table class="co-info-table">
+                <tr>
+                  <td>업종</td>
+                  <td><span class="industry-code-text" th:data-code="${company.industryCode}" th:text="${company.industryCode}">-</span></td>
+                </tr>
+                <tr th:if="${company.companyType != null}">
+                  <td>규모</td>
+                  <td th:text="${company.companyType}">-</td>
+                </tr>
+                <tr th:if="${company.ceoName != null}">
+                  <td>대표</td>
+                  <td th:text="${company.ceoName}">-</td>
+                </tr>
+                <tr th:if="${company.foundedYear != null}">
+                  <td>설립</td>
+                  <td th:text="${company.foundedYear} + '년'">-</td>
+                </tr>
+                <tr th:if="${company.addr1 != null}">
+                  <td>주소</td>
+                  <td>
+                    <span th:text="${company.addr1}">주소1</span>
+                    <span th:if="${company.addr2 != null}" th:text="${company.addr2}"></span>
+                  </td>
+                </tr>
+                <tr th:if="${company.homepageUrl != null}">
+                  <td>홈페이지</td>
+                  <td>
+                    <a th:href="${company.homepageUrl}" target="_blank"
+                       style="color:#09a3ff;" th:text="${company.homepageUrl}">URL</a>
+                  </td>
+                </tr>
+              </table>
+              <a th:href="@{/job/list}" class="btn-job-all mb-3">
+                <i class="fas fa-search"></i> 전체 기업 공고 보기
+              </a>
+            </div>
+
+            <!-- 유사 기업 -->
+            <div class="co-info-card"
+                 th:if="${similarCompanies != null and not #lists.isEmpty(similarCompanies)}">
+              <div class="co-info-card__head">유사 기업</div>
+              <a th:each="sim : ${similarCompanies}"
+                 th:href="@{/companyinfo/detail/{id}(id=${sim.memberId})}"
+                 class="co-similar-item">
+                <div class="co-similar-logo"
+                     th:text="${sim.logoInitial}">XX</div>
+                <div>
+                  <div class="co-similar-name" th:text="${sim.companyName}">기업명</div>
+                  <div class="co-similar-industry">
+                    <span class="industry-code-text" th:data-code="${sim.industryCode}" th:text="${sim.industryCode}">업종</span>
+                    <span th:if="${sim.companyType != null}">
+                      &middot; <span th:text="${sim.companyType}">규모</span>
+                    </span>
+                  </div>
+                </div>
+                <span class="co-similar-cnt"
+                      th:if="${sim.activePostCount > 0}"
+                      th:text="${sim.activePostCount} + '건'">0건</span>
+              </a>
+            </div>
+
+          </div>
+        </div><!-- /사이드바 -->
+
+      </div><!-- /row -->
+    </div><!-- /container -->
+  </div><!-- /co-body -->
+
+<script th:inline="javascript">
+(function() {
+  var contextPath = /*[[@{/}]]*/ '/';
+  if (contextPath.endsWith('/')) { contextPath = contextPath.slice(0, -1); }
+
+  var companyMemberId = /*[[${company.memberId}]]*/ '';
+
+  // 페이지 로드 시 1페이지 불러오기
+  loadJobPostings(1);
+
+  function loadJobPostings(page) {
+    $.ajax({
+      url: contextPath + '/companyinfo/api/jobpostings',
+      type: 'GET',
+      data: { memberId: companyMemberId, page: page },
+      dataType: 'json',
+      success: function(data) {
+        renderJobPostings(data.posts, data.totalCount);
+        renderPaging(data.currentPage, data.totalPages);
+      },
+      error: function() {
+        $('#jobPostListArea').html(
+          '<div class="co-no-post">' +
+            '<i class="fas fa-exclamation-triangle"></i>' +
+            '<p class="mb-0 font-weight-bold">채용공고를 불러오지 못했습니다.</p>' +
+          '</div>'
+        );
+      }
+    });
+  }
+
+  function renderJobPostings(posts, totalCount) {
+    // 건수 업데이트
+    $('#jobPostCount').text(totalCount + '건');
+    $('#tabJobPostCount').text(totalCount);
+
+    if (!posts || posts.length === 0) {
+      $('#jobPostListArea').html(
+        '<div class="co-no-post">' +
+          '<i class="fas fa-inbox"></i>' +
+          '<p class="mb-0 font-weight-bold">현재 진행중인 채용공고가 없습니다.</p>' +
+        '</div>'
+      );
+      $('#jobPostPaging').hide();
+      return;
+    }
+
+    var html = '';
+    posts.forEach(function(post) {
+      html += '<a href="' + contextPath + '/job/detail/' + post.jobId + '" target="_blank" class="co-job-item">';
+      html += '<div class="flex-fill">';
+      html += '<div class="co-job-item__title">' + escapeHtml(post.title) + '</div>';
+      html += '<div class="co-job-item__badges">';
+
+      // 지역
+      if (post.parentRegionName) {
+        html += '<span class="co-badge-outline"><i class="fas fa-map-marker-alt mr-1"></i>' + escapeHtml(post.parentRegionName + ' ' + (post.regionName || '')) + '</span>';
+      }
+      // 경력
+      if (post.careerType) {
+        var careerText = (post.careerType === '무관') ? '경력 무관' : post.careerType;
+        html += '<span class="co-badge-outline"><i class="fas fa-user-tie mr-1"></i>' + escapeHtml(careerText) + '</span>';
+      }
+      // 학력
+      var eduText = post.educationLevelName || '학력무관';
+      html += '<span class="co-badge-outline"><i class="fas fa-graduation-cap mr-1"></i>' + escapeHtml(eduText) + '</span>';
+      // 고용형태
+      if (post.workType) {
+        html += '<span class="co-badge-outline"><i class="fas fa-clock mr-1"></i>' + escapeHtml(post.workType) + '</span>';
+      }
+      // 기술스택
+      if (post.skillList) {
+        post.skillList.forEach(function(skill) {
+          html += '<span class="co-badge-outline">' + escapeHtml(skill) + '</span>';
+        });
+      }
+      html += '</div>'; // badges
+
+      // 연봉
+      if (post.salary && post.salary > 0) {
+        html += '<div class="co-job-item__salary">연봉 ' + numberFormat(post.salary) + '만원</div>';
+      } else {
+        html += '<div class="co-job-item__salary">회사내규 (협의)</div>';
+      }
+
+      html += '</div>'; // flex-fill
+
+      // 우측
+      html += '<div class="co-job-item__right">';
+      if (post.dDay) {
+        var ddayClass = (post.dDay.indexOf('D-') === 0) ? 'co-dday-urgent' : 'co-dday-normal';
+        html += '<span class="co-dday ' + ddayClass + '">' + escapeHtml(post.dDay) + '</span>';
+      }
+      if (post.deadlineAt) {
+        html += '<div class="co-job-item__deadline">~ ' + escapeHtml(post.deadlineAt) + '</div>';
+      }
+      html += '<div class="co-job-item__views"><i class="far fa-eye"></i> ' + (post.viewCount || 0) + '</div>';
+      html += '</div>'; // right
+
+      html += '</a>';
+    });
+
+    $('#jobPostListArea').html(html);
+  }
+
+  function renderPaging(currentPage, totalPages) {
+    if (totalPages <= 1) {
+      $('#jobPostPaging').hide();
+      return;
+    }
+
+    var html = '';
+
+    // 이전
+    if (currentPage > 1) {
+      html += '<li class="page-item"><a class="page-link" href="#" data-page="' + (currentPage - 1) + '"><i class="fas fa-chevron-left"></i></a></li>';
+    } else {
+      html += '<li class="page-item disabled"><span class="page-link"><i class="fas fa-chevron-left"></i></span></li>';
+    }
+
+    // 페이지 번호
+    for (var i = 1; i <= totalPages; i++) {
+      if (i === currentPage) {
+        html += '<li class="page-item active"><span class="page-link">' + i + '</span></li>';
+      } else {
+        html += '<li class="page-item"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>';
+      }
+    }
+
+    // 다음
+    if (currentPage < totalPages) {
+      html += '<li class="page-item"><a class="page-link" href="#" data-page="' + (currentPage + 1) + '"><i class="fas fa-chevron-right"></i></a></li>';
+    } else {
+      html += '<li class="page-item disabled"><span class="page-link"><i class="fas fa-chevron-right"></i></span></li>';
+    }
+
+    $('#jobPostPageList').html(html);
+    $('#jobPostPaging').show();
+
+    // 페이지 클릭 이벤트
+    $('#jobPostPageList').off('click', 'a.page-link').on('click', 'a.page-link', function(e) {
+      e.preventDefault();
+      var page = $(this).data('page');
+      if (page) {
+        loadJobPostings(page);
+        // 채용공고 영역으로 스크롤
+        $('html, body').animate({
+          scrollTop: $('#jobPostListArea').closest('.co-section-card').offset().top - 80
+        }, 300);
+      }
+    });
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function numberFormat(num) {
+    return String(num).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  // 전역에서 접근 가능하도록
+  window.loadJobPostings = loadJobPostings;
+
+})();
+</script>
+
+</div><!-- /#companyDetailWrap -->
+</html>

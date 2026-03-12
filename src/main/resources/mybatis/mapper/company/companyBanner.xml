@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- ==== 루트 엘리먼트 & 네임스페이스 설정(프로젝트 전체내에서 유일해야 한다.) ==== -->
+<mapper namespace="com.spring.app.company.model.CompanyBannerMapper">
+
+	<!-- 채용공고 리스트 조회하기 -->
+	<select id="getBannerPostingList" resultType="com.spring.app.company.domain.JobPostingDTO">
+	  SELECT
+	      j.job_id           AS jobId,
+	      j.fk_memberId      AS memberId,
+	      j.fk_category_id   AS categoryId,
+	      c.category_name    AS categoryName,  <!-- 직무명 추가 -->
+	      j.title            AS title,
+	      j.work_type        AS workType,
+	      j.career_type      AS careerType,
+	      j.salary           AS salary,
+	      j.deadline_at      AS deadlineAt,
+	      j.status           AS status,
+	      j.view_count       AS viewCount,
+	      j.headcount        AS headcount
+	  FROM tbl_job_posting j
+	  LEFT JOIN tbl_job_category c
+	         ON c.category_id = j.fk_category_id
+	        AND c.depth = 1              <!-- 중분류만 (안전장치) -->
+	  WHERE j.fk_memberid = #{memberId} AND j.status = '게시중'
+	  ORDER BY j.job_id DESC
+	</select>
+	
+	
+	<!-- 배너시퀀스 조회 -->
+	<select id="getBannerSeq" resultType="long">
+	    SELECT SEQ_BANNER_ID.NEXTVAL
+	    FROM dual
+	</select>
+	
+	
+	<!-- 배너 등록하기 -->
+	<insert id="insertBanner"
+        parameterType="com.spring.app.company.domain.BannerDTO">
+	    INSERT INTO tbl_banner
+	    (
+	        banner_id,
+	        fk_memberid,
+	        fk_job_id,
+	        title,
+	        start_at,
+	        end_at,
+	        status
+	    )
+	    VALUES
+	    (
+	        #{bannerId},
+	        #{fkMemberId},
+	        #{fkJobId},
+	        #{title},
+	        TO_DATE(#{startAt}, 'YYYY-MM-DD'),
+	        TO_DATE(#{endAt}, 'YYYY-MM-DD'),
+	        #{status}
+	    )
+	</insert>
+	
+	
+	<!-- 이미지테이블 시퀀스 조회 -->
+	<select id="getImageFileSeq" resultType="long">
+	    SELECT seq_image_file_id.NEXTVAL
+	    FROM dual
+	</select>
+	
+	<!-- 이미지 테이블에 이미지 정보 삽입 -->
+	<insert id="insertImageFile"
+        parameterType="com.spring.app.company.domain.ImageFileDTO">
+	    INSERT INTO tbl_image_file
+	    (
+	        file_id,
+	        target_id,
+	        target_type,
+	        filecategory,
+	        file_url,
+	        created_at,
+	        original_filename
+	    )
+	    VALUES
+	    (
+	        #{fileId},
+	        #{targetId},
+	        #{targetType},
+	        #{fileCategory},
+	        #{fileUrl},
+	        SYSDATE,
+	        #{originalFilename}
+	    )
+	</insert>
+	
+	<!-- 배너의 IMAGE_FILE_ID 업데이트 -->
+	<update id="updateBannerImageFileId">
+	    UPDATE tbl_banner
+	       SET image_file_id = #{fileId}
+	     WHERE banner_id = #{bannerId}
+	</update>
+	
+	
+	
+	
+	<select id="selectBannerListByMemberId" parameterType="string"
+        resultType="com.spring.app.company.domain.BannerListDTO">
+	    SELECT
+	        b.BANNER_ID           AS bannerId,
+	        b.FK_MEMBERID         AS fkMemberId,
+	        b.FK_JOB_ID           AS fkJobId,
+	        b.TITLE               AS title,
+	        b.IMAGE_FILE_ID       AS imageFileId,
+	        TO_CHAR(b.START_AT, 'YYYY-MM-DD HH24:MI') AS startAt,
+	        TO_CHAR(b.END_AT,   'YYYY-MM-DD HH24:MI') AS endAt,
+	        b.STATUS              AS status,
+	        b.REJECT_REASON       AS rejectReason,
+	
+	        j.TITLE               AS jobTitle,
+	        f.FILE_URL            AS fileUrl,
+	        f.ORIGINAL_FILENAME   AS originalFilename
+	
+	    FROM TBL_BANNER b
+	    LEFT JOIN TBL_JOB_POSTING j
+	           ON j.JOB_ID = b.FK_JOB_ID
+	    LEFT JOIN TBL_IMAGE_FILE f
+	           ON f.FILE_ID = b.IMAGE_FILE_ID
+	    WHERE b.FK_MEMBERID = #{memberId}
+	    ORDER BY b.BANNER_ID DESC
+	</select>
+	
+	
+	
+</mapper>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      lang="ko"
+      th:replace="~{fragment/jobseeker_bar :: jobseeker_layout(~{::div#profileContent})}">
+
+<head>
+  <title>내 프로필 | 구인구직</title>
+</head>
+
+<body>
+<div id="profileContent">
+<div class="container py-4" style="max-width: 800px;">
+
+    <!-- 성공/실패 메시지 -->
+    <div th:if="${message}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${message}"></span>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 font-weight-bold mb-0">내 프로필</h1>
+        <div>
+            <a th:href="@{/jobseeker/profile/edit}" class="btn btn-primary">
+                <i class="fas fa-edit mr-1"></i>내 정보 수정
+            </a>
+            <a th:href="@{/jobseeker/dashboard}" class="btn btn-outline-secondary ml-2">돌아가기</a>
+        </div>
+    </div>
+
+    <!-- 프로필 카드 -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body p-4">
+
+            <!-- 프로필 사진 + 기본 정보 -->
+            <div class="d-flex align-items-center mb-4">
+                <div class="mr-4">
+                    <!-- 대표이력서 사진이 있을 때 -->
+                    <img th:if="${resume != null and resume.photoPath != null and resume.photoPath != ''}"
+                         th:src="@{/{path}(path=${resume.photoPath.substring(1)})}"
+                         alt="프로필 사진"
+                         class="rounded-circle"
+                         style="width: 100px; height: 100px; object-fit: cover;">
+                    <!-- 사진이 없을 때 -->
+                    <div th:if="${resume == null or resume.photoPath == null or resume.photoPath == ''}"
+                         class="rounded-circle bg-light d-flex align-items-center justify-content-center"
+                         style="width: 100px; height: 100px;">
+                        <i class="fas fa-user text-muted" style="font-size: 2.5rem;"></i>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-weight-bold mb-1" th:text="${member.name}">이름</h4>
+                    <p class="text-muted mb-0" th:text="${member.email}">이메일</p>
+                </div>
+            </div>
+
+            <hr>
+
+            <!-- 상세 정보 -->
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="text-muted small mb-1">이름</label>
+                    <p class="font-weight-medium mb-0" th:text="${member.name}">-</p>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="text-muted small mb-1">생년월일</label>
+                    <p class="font-weight-medium mb-0"
+                       th:text="${member.birthDate != null ? #temporals.format(member.birthDate, 'yyyy-MM-dd') : '-'}">-</p>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="text-muted small mb-1">성별</label>
+                    <p class="font-weight-medium mb-0"
+                       th:text="${member.gender == 1 ? '남성' : (member.gender == 2 ? '여성' : '-')}">-</p>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="text-muted small mb-1">이메일</label>
+                    <p class="font-weight-medium mb-0" th:text="${member.email}">-</p>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="text-muted small mb-1">전화번호</label>
+                    <p class="font-weight-medium mb-0" th:text="${member.phone}">-</p>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="text-muted small mb-1">커뮤니티 인증</label>
+                    <p class="font-weight-medium mb-0">
+                        <span th:if="${member.communityCompanyName != null and member.communityCompanyName != ''}" class="text-success">
+                            <i class="fas fa-shield-alt mr-1"></i>
+                            <span th:text="${member.communityCompanyName}">회사명</span>
+                        </span>
+                        <span th:if="${member.communityCompanyName == null or member.communityCompanyName == ''}" class="text-muted">
+                            미인증
+                            <a th:href="@{/jobseeker/profile/edit}" class="ml-2 small">인증하기</a>
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 대표이력서 연동 정보 카드 -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="font-weight-bold mb-0">
+                    <i class="fas fa-file-alt text-primary mr-2"></i>대표 이력서 연동 정보
+                </h5>
+                <small class="text-muted">대표 이력서에 입력된 값이 자동 반영됩니다</small>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="text-muted small mb-1">희망 근무지역</label>
+                    <p class="font-weight-medium mb-0"
+                       th:text="${resume != null and resume.regionName != null ? resume.regionName : '대표이력서에 지역을 설정해주세요'}">-</p>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="text-muted small mb-1">희망 직무</label>
+                    <p class="font-weight-medium mb-0"
+                       th:text="${resume != null and resume.categoryName != null ? resume.categoryName : '대표이력서에 직무를 설정해주세요'}">-</p>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="text-muted small mb-1">프로필 사진</label>
+                    <p class="font-weight-medium mb-0">
+                        <span th:if="${resume != null and resume.photoPath != null and resume.photoPath != ''}" class="text-success">
+                            <i class="fas fa-check-circle mr-1"></i>등록됨
+                        </span>
+                        <span th:if="${resume == null or resume.photoPath == null or resume.photoPath == ''}" class="text-muted">
+                            대표이력서에 사진을 등록해주세요
+                        </span>
+                    </p>
+                </div>
+            </div>
+
+            <div class="alert alert-info mb-0 small">
+                <i class="fas fa-info-circle mr-1"></i>
+                프로필 사진, 희망 근무지역, 희망 직무는 대표 이력서에서 수정할 수 있습니다.
+                <a th:href="@{/jobseeker/resume/list}" class="alert-link ml-1">이력서 관리로 이동</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html th:replace="~{layout/layout_main :: layout(~{::title}, ~{::link}, ~{::style}, ~{::script}, ~{::section})}"
+      lang="ko"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8">
+  <title>접근 제한 | 잡파인더</title>
+
+  <link rel="stylesheet" th:href="@{/css/index.css}">
+
+  <!-- layout_main css 슬롯 -->
+  <style>
+    .jp-noauth-wrap {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    .jp-noauth-card {
+      background: #fff;
+      border: 1px solid rgba(0,0,0,.08);
+      border-radius: 14px;
+      padding: 28px;
+      box-shadow: 0 6px 24px rgba(0,0,0,.06);
+    }
+    .jp-noauth-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(220,53,69,.08);
+      color: #dc3545;
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 14px;
+    }
+    .jp-noauth-title {
+      font-size: 26px;
+      font-weight: 800;
+      margin: 0 0 10px;
+      letter-spacing: -0.5px;
+    }
+    .jp-noauth-desc {
+      color: #6c757d;
+      margin: 0 0 18px;
+      line-height: 1.6;
+    }
+    .jp-noauth-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+    .jp-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: 1px solid rgba(0,0,0,.12);
+      background: #fff;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .jp-btn-primary {
+      background: #0d6efd;
+      border-color: #0d6efd;
+      color: #fff;
+    }
+    .jp-btn-outline {
+      color: #212529;
+    }
+  </style>
+
+  <script></script>
+</head>
+
+<body>
+<section class="jp-section" style="background:#fff;">
+  <div class="container-fluid jp-container">
+    <div class="jp-noauth-wrap">
+
+      <div class="jp-noauth-card">
+        <div class="jp-noauth-badge">
+          접근 제한
+        </div>
+
+        <h1 class="jp-noauth-title">권한이 없는 페이지입니다.</h1>
+        <p class="jp-noauth-desc">
+          현재 계정 권한으로는 이 페이지에 접근할 수 없습니다.<br>
+          메인 화면으로 돌아가거나, 다른 계정으로 로그인해 주세요.
+        </p>
+
+        <div class="jp-noauth-actions">
+          <a class="jp-btn jp-btn-primary" th:href="@{/index}">인덱스로 돌아가기</a>
+          <a class="jp-btn jp-btn-outline" th:href="@{/member/login}">로그인 페이지</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+</body>
+</html>

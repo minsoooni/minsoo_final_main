@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spring.app.admin.model.AdminStatisticsDAO">
+
+    <!-- ────────────────────────────────────────
+         회원 가입 추이
+    ──────────────────────────────────────── -->
+    <select id="selectMemberJoinTrend" resultType="map">
+        SELECT
+            <choose>
+                <when test="period == 'monthly'">TO_CHAR(TRUNC(CREATED_AT,'MM'),'YYYY.MM')</when>
+                <when test="period == 'weekly'"> TO_CHAR(TRUNC(CREATED_AT,'IW'),'MM/DD')</when>
+                <otherwise>                      TO_CHAR(TRUNC(CREATED_AT,'DD'),'MM/DD')</otherwise>
+            </choose>
+            AS DT, COUNT(*) AS CNT
+        FROM TBL_MEMBER
+        WHERE CREATED_AT &gt;= TO_DATE(#{from},'YYYY-MM-DD')
+          AND CREATED_AT  &lt;  TO_DATE(#{to},  'YYYY-MM-DD') + 1
+        GROUP BY
+            <choose>
+                <when test="period == 'monthly'">TRUNC(CREATED_AT,'MM')</when>
+                <when test="period == 'weekly'"> TRUNC(CREATED_AT,'IW')</when>
+                <otherwise>                      TRUNC(CREATED_AT,'DD')</otherwise>
+            </choose>
+        ORDER BY
+            <choose>
+                <when test="period == 'monthly'">TRUNC(CREATED_AT,'MM')</when>
+                <when test="period == 'weekly'"> TRUNC(CREATED_AT,'IW')</when>
+                <otherwise>                      TRUNC(CREATED_AT,'DD')</otherwise>
+            </choose>
+    </select>
+
+    <!-- ────────────────────────────────────────
+         회원 탈퇴 추이 (STATUS = 2)
+    ──────────────────────────────────────── -->
+    <select id="selectMemberWithdrawTrend" resultType="map">
+        SELECT
+            <choose>
+                <when test="period == 'monthly'">TO_CHAR(TRUNC(UPDATED_AT,'MM'),'YYYY.MM')</when>
+                <when test="period == 'weekly'"> TO_CHAR(TRUNC(UPDATED_AT,'IW'),'MM/DD')</when>
+                <otherwise>                      TO_CHAR(TRUNC(UPDATED_AT,'DD'),'MM/DD')</otherwise>
+            </choose>
+            AS DT, COUNT(*) AS CNT
+        FROM TBL_MEMBER
+        WHERE STATUS = 2
+          AND UPDATED_AT &gt;= TO_DATE(#{from},'YYYY-MM-DD')
+          AND UPDATED_AT  &lt;  TO_DATE(#{to},  'YYYY-MM-DD') + 1
+        GROUP BY
+            <choose>
+                <when test="period == 'monthly'">TRUNC(UPDATED_AT,'MM')</when>
+                <when test="period == 'weekly'"> TRUNC(UPDATED_AT,'IW')</when>
+                <otherwise>                      TRUNC(UPDATED_AT,'DD')</otherwise>
+            </choose>
+        ORDER BY
+            <choose>
+                <when test="period == 'monthly'">TRUNC(UPDATED_AT,'MM')</when>
+                <when test="period == 'weekly'"> TRUNC(UPDATED_AT,'IW')</when>
+                <otherwise>                      TRUNC(UPDATED_AT,'DD')</otherwise>
+            </choose>
+    </select>
+
+    <!-- ────────────────────────────────────────
+         요일별 가입 (Oracle D: 1=일 ~ 7=토)
+    ──────────────────────────────────────── -->
+    <select id="selectJoinByDayOfWeek" resultType="map">
+        SELECT TO_NUMBER(TO_CHAR(CREATED_AT,'D')) AS DAY_NUM, COUNT(*) AS CNT
+        FROM TBL_MEMBER
+        WHERE CREATED_AT &gt;= TO_DATE(#{from},'YYYY-MM-DD')
+          AND CREATED_AT  &lt;  TO_DATE(#{to},  'YYYY-MM-DD') + 1
+        GROUP BY TO_NUMBER(TO_CHAR(CREATED_AT,'D'))
+        ORDER BY DAY_NUM
+    </select>
+
+    <!-- ────────────────────────────────────────
+         월별 가입
+    ──────────────────────────────────────── -->
+    <select id="selectJoinByMonth" resultType="map">
+        SELECT TO_NUMBER(TO_CHAR(CREATED_AT,'MM')) AS MONTH_NUM, COUNT(*) AS CNT
+        FROM TBL_MEMBER
+        WHERE CREATED_AT &gt;= TO_DATE(#{from},'YYYY-MM-DD')
+          AND CREATED_AT  &lt;  TO_DATE(#{to},  'YYYY-MM-DD') + 1
+        GROUP BY TO_NUMBER(TO_CHAR(CREATED_AT,'MM'))
+        ORDER BY MONTH_NUM
+    </select>
+
+    <!-- ────────────────────────────────────────
+         누적 회원 성장 (최근 12개월)
+    ──────────────────────────────────────── -->
+	<select id="selectMemberGrowthLast12" resultType="map">
+	SELECT
+	    TO_CHAR(TRUNC(SYSDATE,'MM') - NUMTOYMINTERVAL(12 - LV,'MONTH'),'YYYY.MM') AS DT,
+	    (
+	        SELECT COUNT(*)
+	        FROM TBL_MEMBER
+	        WHERE CREATED_AT &lt;
+	        TRUNC(SYSDATE,'MM') - NUMTOYMINTERVAL(12 - LV,'MONTH') + NUMTOYMINTERVAL(1,'MONTH')
+	    ) AS CNT
+	FROM (
+	    SELECT LEVEL AS LV
+	    FROM DUAL
+	    CONNECT BY LEVEL &lt;= 12
+	)
+	ORDER BY DT
+	</select>
+
+    <!-- ────────────────────────────────────────
+         채용공고 등록 추이
+    ──────────────────────────────────────── -->
+    <select id="selectJobRegTrend" resultType="map">
+        SELECT
+            <choose>
+                <when test="period == 'monthly'">TO_CHAR(TRUNC(CREATED_AT,'MM'),'YYYY.MM')</when>
+                <when test="period == 'weekly'"> TO_CHAR(TRUNC(CREATED_AT,'IW'),'MM/DD')</when>
+                <otherwise>                      TO_CHAR(TRUNC(CREATED_AT,'DD'),'MM/DD')</otherwise>
+            </choose>
+            AS DT, COUNT(*) AS CNT
+        FROM TBL_JOB_POSTING
+        WHERE CREATED_AT &gt;= TO_DATE(#{from},'YYYY-MM-DD')
+          AND CREATED_AT  &lt;  TO_DATE(#{to},  'YYYY-MM-DD') + 1
+        GROUP BY
+            <choose>
+                <when test="period == 'monthly'">TRUNC(CREATED_AT,'MM')</when>
+                <when test="period == 'weekly'"> TRUNC(CREATED_AT,'IW')</when>
+                <otherwise>                      TRUNC(CREATED_AT,'DD')</otherwise>
+            </choose>
+        ORDER BY
+            <choose>
+                <when test="period == 'monthly'">TRUNC(CREATED_AT,'MM')</when>
+                <when test="period == 'weekly'"> TRUNC(CREATED_AT,'IW')</when>
+                <otherwise>                      TRUNC(CREATED_AT,'DD')</otherwise>
+            </choose>
+    </select>
+
+    <!-- ────────────────────────────────────────
+         채용공고 마감 추이
+    ──────────────────────────────────────── -->
+    <select id="selectJobClosedTrend" resultType="map">
+        SELECT
+            <choose>
+                <when test="period == 'monthly'">TO_CHAR(TRUNC(CLOSED_AT,'MM'),'YYYY.MM')</when>
+                <when test="period == 'weekly'"> TO_CHAR(TRUNC(CLOSED_AT,'IW'),'MM/DD')</when>
+                <otherwise>                      TO_CHAR(TRUNC(CLOSED_AT,'DD'),'MM/DD')</otherwise>
+            </choose>
+            AS DT, COUNT(*) AS CNT
+        FROM TBL_JOB_POSTING
+        WHERE CLOSED_AT IS NOT NULL
+          AND CLOSED_AT &gt;= TO_DATE(#{from},'YYYY-MM-DD')
+          AND CLOSED_AT  &lt;  TO_DATE(#{to},  'YYYY-MM-DD') + 1
+        GROUP BY
+            <choose>
+                <when test="period == 'monthly'">TRUNC(CLOSED_AT,'MM')</when>
+                <when test="period == 'weekly'"> TRUNC(CLOSED_AT,'IW')</when>
+                <otherwise>                      TRUNC(CLOSED_AT,'DD')</otherwise>
+            </choose>
+        ORDER BY
+            <choose>
+                <when test="period == 'monthly'">TRUNC(CLOSED_AT,'MM')</when>
+                <when test="period == 'weekly'"> TRUNC(CLOSED_AT,'IW')</when>
+                <otherwise>                      TRUNC(CLOSED_AT,'DD')</otherwise>
+            </choose>
+    </select>
+
+    <!-- ────────────────────────────────────────
+         급여 구간 분포
+    ──────────────────────────────────────── -->
+    <select id="selectSalaryDistribution" resultType="map">
+        SELECT SALARY_RANGE AS LABEL, COUNT(*) AS CNT
+        FROM (
+            SELECT
+                CASE
+                    WHEN SALARY IS NULL   THEN '미정'
+                    WHEN SALARY &lt; 2000 THEN '~200'
+                    WHEN SALARY &lt; 3000 THEN '200~300'
+                    WHEN SALARY &lt; 4000 THEN '300~400'
+                    WHEN SALARY &lt; 5000 THEN '400~500'
+                    WHEN SALARY &lt; 6000 THEN '500~600'
+                    ELSE '600+'
+                END AS SALARY_RANGE
+            FROM TBL_JOB_POSTING
+            WHERE STATUS = '진행중'
+        )
+        GROUP BY SALARY_RANGE
+        ORDER BY CASE SALARY_RANGE
+            WHEN '~200'    THEN 1 WHEN '200~300' THEN 2 WHEN '300~400' THEN 3
+            WHEN '400~500' THEN 4 WHEN '500~600' THEN 5 WHEN '600+'    THEN 6 ELSE 7 END
+    </select>
+
+    <!-- ────────────────────────────────────────
+         게시글 추이
+    ──────────────────────────────────────── -->
+    <select id="selectPostTrend" resultType="map">
+        SELECT
+            <choose>
+                <when test="period == 'monthly'">TO_CHAR(TRUNC(CREATED_AT,'MM'),'YYYY.MM')</when>
+                <when test="period == 'weekly'"> TO_CHAR(TRUNC(CREATED_AT,'IW'),'MM/DD')</when>
+                <otherwise>                      TO_CHAR(TRUNC(CREATED_AT,'DD'),'MM/DD')</otherwise>
+            </choose>
+            AS DT, COUNT(*) AS CNT
+        FROM TBL_POST
+        WHERE POST_STATUS = 'ACTIVE'
+          AND CREATED_AT &gt;= TO_DATE(#{from},'YYYY-MM-DD')
+          AND CREATED_AT  &lt;  TO_DATE(#{to},  'YYYY-MM-DD') + 1
+        GROUP BY
+            <choose>
+                <when test="period == 'monthly'">TRUNC(CREATED_AT,'MM')</when>
+                <when test="period == 'weekly'"> TRUNC(CREATED_AT,'IW')</when>
+                <otherwise>                      TRUNC(CREATED_AT,'DD')</otherwise>
+            </choose>
+        ORDER BY
+            <choose>
+                <when test="period == 'monthly'">TRUNC(CREATED_AT,'MM')</when>
+                <when test="period == 'weekly'"> TRUNC(CREATED_AT,'IW')</when>
+                <otherwise>                      TRUNC(CREATED_AT,'DD')</otherwise>
+            </choose>
+    </select>
+
+    <!-- ────────────────────────────────────────
+         댓글 추이
+    ──────────────────────────────────────── -->
+    <select id="selectCommentTrend" resultType="map">
+        SELECT
+            <choose>
+                <when test="period == 'monthly'">TO_CHAR(TRUNC(CREATED_AT,'MM'),'YYYY.MM')</when>
+                <when test="period == 'weekly'"> TO_CHAR(TRUNC(CREATED_AT,'IW'),'MM/DD')</when>
+                <otherwise>                      TO_CHAR(TRUNC(CREATED_AT,'DD'),'MM/DD')</otherwise>
+            </choose>
+            AS DT, COUNT(*) AS CNT
+        FROM TBL_COMMENT
+        WHERE STATUS = 'ACTIVE'
+          AND FK_PARENT_COMMENT_ID IS NULL
+          AND CREATED_AT &gt;= TO_DATE(#{from},'YYYY-MM-DD')
+          AND CREATED_AT  &lt;  TO_DATE(#{to},  'YYYY-MM-DD') + 1
+        GROUP BY
+            <choose>
+                <when test="period == 'monthly'">TRUNC(CREATED_AT,'MM')</when>
+                <when test="period == 'weekly'"> TRUNC(CREATED_AT,'IW')</when>
+                <otherwise>                      TRUNC(CREATED_AT,'DD')</otherwise>
+            </choose>
+        ORDER BY
+            <choose>
+                <when test="period == 'monthly'">TRUNC(CREATED_AT,'MM')</when>
+                <when test="period == 'weekly'"> TRUNC(CREATED_AT,'IW')</when>
+                <otherwise>                      TRUNC(CREATED_AT,'DD')</otherwise>
+            </choose>
+    </select>
+
+</mapper>

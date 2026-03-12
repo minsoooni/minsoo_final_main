@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/layout_company :: layout(~{::title},~{::link},~{::style},~{::script},~{::section})}">
+
+<head>
+  <title>배너 등록</title>
+  <link rel="stylesheet" th:href="@{/css/company/job_banner.css}">
+  <link rel="stylesheet" th:href="@{/css/company/job_banner_write.css}">
+  <style type="text/css"></style>
+
+  <script th:inline="javascript">
+  const contextPath = /*[[@{/}]]*/ "";
+  
+  let bannerPrice = 0;
+  let pointBalance = 0;
+  
+  
+  async function loadMyJobs(){
+	const apiUrl = contextPath + "company/api/banner/jobs";
+    const select = document.querySelector("#jobSelect");
+
+    try {
+      const resp = await fetch(apiUrl, {
+        method: "GET"
+      });
+      
+      if(!resp.ok){
+        const text = await resp.text();
+        console.error("공고 목록 조회 실패:", resp.status, text);
+        alert("공고 목록을 불러오지 못했습니다.");
+        return;
+      }
+      
+      const data = await resp.json();
+      
+      if(data.result !== 1){
+        alert(data.message || "공고 목록 조회에 실패했습니다.");
+        return;
+      }
+      
+      const jobList = data.jobList || [];
+      
+      select.innerHTML = `<option value="">공고를 선택하세요</option>`;
+      
+      if(jobList.length === 0){
+        select.innerHTML = `<option value="">등록된 공고가 없습니다</option>`;
+        return;
+      }
+
+      jobList.forEach(job => {
+        const opt = document.createElement("option");
+        opt.value = job.jobId;
+        opt.dataset.title = job.title || "";
+        opt.dataset.link = `/job/detail?jobId=${job.jobId}`;
+        opt.dataset.category = job.categoryName || "";
+        opt.dataset.career = job.careerType || "";
+        opt.dataset.work = job.workType || "";
+        opt.dataset.salary = job.salary || "";
+  
+        const salaryText = job.salary ? Number(job.salary).toLocaleString("ko-KR") + "만" : "연봉 미정";
+        opt.textContent = `${job.title} (${job.categoryName || ""} · ${job.careerType || ""} · ${job.workType || ""} · ${salaryText})`;
+  
+        select.appendChild(opt);
+      });
+  
+    } catch(err){
+      console.error(err);
+      alert("공고 목록을 불러오는 중 오류가 발생했습니다.");
+    }
+  }//async function loadMyJobs(){}
+  
+  
+  //결제 정보 로드 함수
+  async function loadBannerPaymentInfo(){
+    try{
+      const resp = await fetch(contextPath + "company/api/banner/payment-info", {
+        method: "GET"
+      });
+
+      if(!resp.ok){
+        throw new Error("배너 결제 정보 조회 실패");
+      }
+
+      const data = await resp.json();
+
+      if(data.result !== 1){
+        alert(data.message || "배너 결제 정보를 불러오지 못했습니다.");
+        return;
+      }
+
+      const info = data.paymentInfo || {};
+      bannerPrice = Number(info.bannerPrice || 0);
+      pointBalance = Number(info.pointBalance || 0);
+
+      renderPointInfo();
+    }
+    catch(err){
+      console.error(err);
+      alert("배너 결제 정보를 불러오는 중 오류가 발생했습니다.");
+    }
+  }//async function loadBannerPaymentInfo(){}
+
+  function renderPointInfo(){
+    const afterBalance = pointBalance - bannerPrice;
+
+    document.querySelector("#currentPoint").textContent = pointBalance.toLocaleString("ko-KR") + " P";
+    document.querySelector("#bannerPrice").textContent = bannerPrice.toLocaleString("ko-KR") + " P";
+    document.querySelector("#afterPoint").textContent = afterBalance.toLocaleString("ko-KR") + " P";
+
+    const warn = document.querySelector("#pointWarn");
+    const submitBtn = document.querySelector("#bannerSubmitBtn");
+
+    if(pointBalance < bannerPrice){
+      warn.style.display = "block";
+      submitBtn.disabled = true;
+    } else {
+      warn.style.display = "none";
+      submitBtn.disabled = false;
+    }
+  }//function renderPointInfo(){}
+  
+  
+  
+  function fmtDate(d){
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function addDays(dateStr, days){
+    if(!dateStr) return "";
+    const d = new Date(dateStr + "T00:00:00");
+    d.setDate(d.getDate() + days);
+    return fmtDate(d);
+  }
+
+  function formatMoney(value){
+    if(value === null || value === undefined || value === "") return "";
+    return Number(value).toLocaleString("ko-KR");
+  }
+
+  function onPickJobSelect(select){
+    const opt = select.options[select.selectedIndex];
+    const jobId = opt.value;
+    const title = opt.dataset.title || "";
+    const category = opt.dataset.category || "";
+    const career = opt.dataset.career || "";
+    const work = opt.dataset.work || "";
+    const salary = opt.dataset.salary || "";
+
+    document.querySelector("#fkJobId").value = jobId;
+    document.querySelector("#title").value = title;
+
+    const preview = document.querySelector("#jobPreview");
+
+    if(jobId){
+      document.querySelector("#previewTitle").textContent = title;
+      document.querySelector("#previewCategory").textContent = category;
+      document.querySelector("#previewCareer").textContent = career;
+      document.querySelector("#previewWork").textContent = work;
+      document.querySelector("#previewSalary").textContent = salary ? (formatMoney(salary) + "만") : "연봉 미정";
+      preview.style.display = "block";
+    } else {
+      preview.style.display = "none";
+    }
+  }
+
+  //달력 시작일에 맞춰 마감일 7일 이후로 자동설정
+  function onStartAtChange(){
+    const start = document.querySelector("#startAt").value;
+    document.querySelector("#endAt").value = addDays(start, 7);
+  }
+
+  //유효성 검사
+  function validateBannerForm(){
+    const fkJobId = document.querySelector("#fkJobId").value;
+    const title = document.querySelector("#title").value.trim();
+    const startAt = document.querySelector("#startAt").value;
+    const endAt = document.querySelector("#endAt").value;
+
+    if(!fkJobId){
+      alert("연결할 공고를 선택해 주세요.");
+      return false;
+    }
+
+    if(!title){
+      alert("배너 제목을 입력해 주세요.");
+      return false;
+    }
+
+    if(!startAt){
+      alert("시작일을 선택해 주세요.");
+      return false;
+    }
+
+    if(!endAt){
+      alert("종료일이 설정되지 않았습니다.");
+      return false;
+    }
+    
+    if(pointBalance < bannerPrice){
+      alert("포인트가 부족합니다. 포인트 충전 후 다시 시도해 주세요.");
+      return false;
+    }
+
+    return true;
+  }//function validateBannerForm(){}
+
+  
+  async function submitBannerForm(e){
+    e.preventDefault();
+
+    if(!validateBannerForm()){
+      return;
+    }
+    
+    
+    const ok = confirm(
+	  `배너 등록 시 ${bannerPrice.toLocaleString("ko-KR")}P가 차감됩니다.\n등록하시겠습니까?`
+	);
+	if(!ok){
+	  return;
+	}
+    
+
+    const form = document.querySelector("#bannerForm");
+    const formData = new FormData(form);
+
+    try {
+      const resp = await fetch(`${contextPath}company/api/banner`, {
+        method: "POST",
+        body: formData
+      });
+      
+      if (!resp.ok) {
+          const text = await resp.text();
+          console.error("HTTP 오류 상태:", resp.status);
+          console.error("응답 본문:", text);
+          alert("요청 실패: " + resp.status);
+          return;
+        }
+
+      const data = await resp.json();
+
+      if(data.result === 1){
+        alert(data.message || "배너가 등록되었습니다.");
+        location.href = contextPath + "company/banner/list";
+      } else {
+        alert(data.message || "배너 등록에 실패했습니다.");
+      }
+
+    } catch(err){
+      console.error(err);
+      alert("배너 등록 중 오류가 발생했습니다.");
+    }
+  }//async function submitBannerForm(e){}
+
+  
+  window.addEventListener("DOMContentLoaded", () => {
+    const startEl = document.querySelector("#startAt");
+    const endEl = document.querySelector("#endAt");
+
+    if(startEl && !startEl.value){
+      const today = fmtDate(new Date());
+      startEl.value = today;
+      endEl.value = addDays(today, 7);
+    }
+
+    const bannerForm = document.querySelector("#bannerForm");
+    if(bannerForm){
+      bannerForm.addEventListener("submit", submitBannerForm);
+    }
+
+    loadMyJobs();
+    loadBannerPaymentInfo();
+  });//window.addEventListener("DOMContentLoaded", () => {})
+  
+  </script>
+</head>
+
+
+
+
+
+<body>
+<section class="dash">
+
+  <div class="bn-head">
+    <div>
+      <h3 class="bn-title">배너 등록</h3>
+      <div class="bn-desc">1) 공고 선택 → 2) 배너 정보 입력 → 3) 등록</div>
+    </div>
+
+    <div class="bn-actions">
+      <a class="bn-ghost" th:href="@{/company/banner/list}">
+        <i class="fa-solid fa-arrow-left"></i> 목록으로
+      </a>
+    </div>
+  </div>
+
+  <!-- 1) 공고 선택 -->
+  <div class="panel">
+    <div class="panel-head">
+      <h3>① 연결할 공고 선택</h3>
+    </div>
+
+    <div class="jb-wrap">
+	  <div class="bf-field">
+	    <div class="bf-label">공고 선택 <span class="req">*</span></div>
+	
+	    <select class="bf-input" id="jobSelect" onchange="onPickJobSelect(this)">
+	      <option value="">공고를 선택하세요</option>
+	    </select>
+	    
+	  </div>
+	
+	  <!-- 선택한 공고 간단 미리보기 -->
+	  <div class="jb-selected" id="jobPreview" style="display:none;">
+	    <div class="jb-title" id="previewTitle">공고 제목</div>
+	    <div class="jb-meta">
+	      <span id="previewCategory">직무</span>
+	      <span>·</span>
+	      <span id="previewCareer">경력</span>
+	      <span>·</span>
+	      <span id="previewWork">고용형태</span>
+	      <span>·</span>
+      	  <span id="previewSalary">연봉</span>
+	    </div>
+	  </div>
+	
+	  <div class="jb-empty" th:if="${jobList == null or #lists.isEmpty(jobList)}">
+	    등록된 공고가 없습니다. 공고를 먼저 등록해 주세요.
+	  </div>
+
+    </div>
+  </div>
+
+  <!-- 2) 배너 등록 폼 -->
+  <div class="panel">
+    <div class="panel-head">
+      <h3>② 배너 정보 입력</h3>
+    </div>
+
+    <!-- action은 추후 POST로 연결 -->
+    <!-- <form class="bf" th:action="@{/company/banner/insert}" method="post" onsubmit="return validateBannerForm()"> -->
+    <form class="bf" id="bannerForm" enctype="multipart/form-data">
+      
+      <div class="panel" style="margin-bottom:16px;">
+        <div class="panel-head">
+          <h3>배너 광고 결제 정보</h3>
+        </div>
+
+        <div style="padding:16px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+            <div>
+              <div class="bf-help">현재 보유 포인트</div>
+              <div id="currentPoint" style="font-size:20px; font-weight:700;">0 P</div>
+            </div>
+            <div>
+              <div class="bf-help">배너 광고비</div>
+              <div id="bannerPrice" style="font-size:20px; font-weight:700;">0 P</div>
+            </div>
+            <div>
+              <div class="bf-help">등록 후 예상 잔액</div>
+              <div id="afterPoint" style="font-size:20px; font-weight:700;">0 P</div>
+            </div>
+          </div>
+
+          <div id="pointWarn" style="display:none; margin-top:12px; color:#dc2626; font-weight:600;">
+            포인트가 부족합니다. 포인트 충전 후 배너를 등록해 주세요.
+          </div>
+        </div>
+      </div>
+    
+      <!-- FK_JOB_ID hidden -->
+      <input type="hidden" id="fkJobId" name="fkJobId" value="">
+
+      <div class="bf-grid">
+        <div class="bf-field bf-wide">
+          <div class="bf-label">배너 제목 (TITLE) <span class="req">*</span></div>
+          <input class="bf-input" type="text" id="title" name="title" maxlength="100"
+                 placeholder="공고 선택 시 자동 입력됩니다. 필요하면 수정하세요">
+        </div>
+
+        <div class="bf-field">
+          <div class="bf-label">시작일 (START_AT) <span class="req">*</span></div>
+          <input class="bf-input" type="date" id="startAt" name="startAt" onchange="onStartAtChange()">
+          <div class="bf-help">종료일은 시작일로부터 7일로 고정됩니다.</div>
+        </div>
+
+        <div class="bf-field">
+          <div class="bf-label">종료일 (END_AT) <span class="req">*</span></div>
+          <input class="bf-input" type="date" id="endAt" name="endAt" readonly>
+        </div>
+
+        <div class="bf-field bf-wide">
+		  <div class="bf-label">이미지 파일</div>
+		  <div class="bf-help">배너에 사용할 이미지를 업로드해 주세요.</div>
+		  <input class="bf-input" type="file" id="bannerImage" name="bannerImage" accept="image/*">
+		</div>
+
+        <!-- reject_reason은 반려일 때만 쓰는 값이라 등록 페이지에선 보통 숨김 -->
+      </div>
+
+      <div class="bf-actions">
+        <button type="submit" class="bn-primary" id="bannerSubmitBtn">
+          <i class="fa-solid fa-check"></i> 등록
+        </button>
+        <a class="bn-ghost" th:href="@{/company/banner/list}">취소</a>
+      </div>
+
+    </form>
+  </div>
+
+</section>
+</body>
+</html>

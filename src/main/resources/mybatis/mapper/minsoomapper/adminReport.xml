@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spring.app.admin.model.AdminReportDAO">
+
+    <resultMap id="reportResultMap" type="com.spring.app.admin.domain.AdminReportDTO">
+        <result property="reportId"      column="REPORTID"/>
+        <result property="targetType"    column="TARGETTYPE"/>
+        <result property="targetId"      column="TARGETID"/>
+        <result property="memberId"      column="MEMBERID"/>
+        <result property="reasonId"      column="REASONID"/>
+        <result property="reasonName"    column="REASONNAME"/>
+        <result property="reportContent" column="REPORTCONTENT"/>
+        <result property="status"        column="STATUS"/>
+        <result property="createdAt"     column="CREATEDAT"/>
+        <result property="targetTitle"   column="TARGETTITLE"/>
+        <result property="reportedMemberId" column="REPORTEDMEMBERID"/>
+		<result property="processReason"    column="PROCESSREASON"/>
+		<result property="processAt"        column="PROCESSAT"/>
+		<result property="reportCount"      column="REPORTCOUNT"/>
+   		<result property="commentPostId" column="COMMENTPOSTID"/>
+    	<result property="reporterMemberId" column="REPORTERMEMBERID"/>
+    </resultMap>
+
+    <!-- 목록 조회 -->
+	    <select id="selectPagedReports" resultMap="reportResultMap">
+	    SELECT * FROM (
+	        SELECT
+	            r.REPORT_ID       AS REPORTID,
+	            r.TARGET_TYPE     AS TARGETTYPE,
+	            r.TARGET_ID       AS TARGETID,
+	            r.FK_MEMBERID     AS MEMBERID,
+	            r.FK_REASON_ID    AS REASONID,
+	            rr.REASON_NAME    AS REASONNAME,
+	            r.REPORT_CONTENT  AS REPORTCONTENT,
+	            r.PROCESS_STATUS  AS STATUS,
+	            r.CREATED_AT      AS CREATEDAT,
+	            r.PROCESS_REASON  AS PROCESSREASON,
+	            r.PROCESS_AT      AS PROCESSAT,
+	            (SELECT COUNT(*) 
+	             FROM TBL_REPORT r2
+	             LEFT JOIN TBL_JOB_POSTING j2 ON r2.TARGET_TYPE = 1 AND r2.TARGET_ID = j2.JOB_ID
+	             LEFT JOIN TBL_POST p2        ON r2.TARGET_TYPE = 2 AND r2.TARGET_ID = p2.POST_ID
+	             LEFT JOIN TBL_COMMENT c2     ON r2.TARGET_TYPE = 3 AND r2.TARGET_ID = c2.COMMENT_ID
+	             WHERE CASE r2.TARGET_TYPE
+	                 WHEN 1 THEN j2.FK_MEMBERID
+	                 WHEN 2 THEN p2.FK_MEMBERID
+	                 WHEN 3 THEN c2.FK_MEMBERID
+	             END = CASE r.TARGET_TYPE
+	                 WHEN 1 THEN j.FK_MEMBERID
+	                 WHEN 2 THEN p.FK_MEMBERID
+	                 WHEN 3 THEN c.FK_MEMBERID
+	             END
+	            ) AS REPORTCOUNT,
+	            CASE r.TARGET_TYPE
+	                WHEN 1 THEN j.TITLE
+	                WHEN 2 THEN p.TITLE
+	                WHEN 3 THEN c.CONTENT
+	            END AS TARGETTITLE,
+	            CASE r.TARGET_TYPE
+	                WHEN 1 THEN j.FK_MEMBERID
+	                WHEN 2 THEN p.FK_MEMBERID
+	                WHEN 3 THEN c.FK_MEMBERID
+	            END AS REPORTEDMEMBERID,
+	            ROW_NUMBER() OVER (ORDER BY r.CREATED_AT DESC) AS rn
+	        FROM TBL_REPORT r
+	        LEFT JOIN TBL_REPORT_REASON rr ON r.FK_REASON_ID = rr.REASON_ID
+	        LEFT JOIN TBL_JOB_POSTING j    ON r.TARGET_TYPE = 1 AND r.TARGET_ID = j.JOB_ID
+	        LEFT JOIN TBL_POST p           ON r.TARGET_TYPE = 2 AND r.TARGET_ID = p.POST_ID
+	        LEFT JOIN TBL_COMMENT c        ON r.TARGET_TYPE = 3 AND r.TARGET_ID = c.COMMENT_ID
+	        <where>
+	            <if test="search != null and search != ''">
+	                AND r.FK_MEMBERID LIKE '%' || #{search} || '%'
+	            </if>
+	            <if test="type != null and type != ''">
+	                AND r.TARGET_TYPE = #{type}
+	            </if>
+	            <if test="reason != null and reason != ''">
+	                AND rr.REASON_NAME = #{reason}
+	            </if>
+	            <if test="status != null and status != ''">
+	                AND r.PROCESS_STATUS = #{status}
+	            </if>
+	        </where>
+	    )
+	    WHERE rn BETWEEN #{offset}+1 AND #{offset}+#{limit}
+	</select>
+
+    <!-- 전체 건수 -->
+    <select id="selectReportCount" resultType="int">
+        SELECT COUNT(*)
+        FROM TBL_REPORT r
+        LEFT JOIN TBL_REPORT_REASON rr ON r.FK_REASON_ID = rr.REASON_ID
+        <where>
+            <if test="search != null and search != ''">
+                AND r.FK_MEMBERID LIKE '%' || #{search} || '%'
+            </if>
+            <if test="type != null and type != ''">
+                AND r.TARGET_TYPE = #{type}
+            </if>
+            <if test="reason != null and reason != ''">
+                AND rr.REASON_NAME = #{reason}
+            </if>
+            <if test="status != null and status != ''">
+                AND r.PROCESS_STATUS = #{status}
+            </if>
+        </where>
+    </select>
+
+    <!-- 유형별 건수 -->
+    <select id="selectReportCountByType" resultType="int">
+        SELECT COUNT(*) FROM TBL_REPORT WHERE TARGET_TYPE = #{type}
+    </select>
+
+    <!-- 상태 변경 -->
+    <update id="updateProcessStatus">
+        UPDATE TBL_REPORT
+		SET PROCESS_STATUS = #{status},
+	    PROCESS_REASON = #{reason},
+	    PROCESS_AT     = SYSDATE
+		WHERE REPORT_ID = #{reportId}
+    </update>
+
+	<!-- 신고 단건 조회 (알림용) -->
+<select id="selectReportById" resultMap="reportResultMap">
+    SELECT
+        r.REPORT_ID   AS REPORTID,
+        r.TARGET_TYPE AS TARGETTYPE,
+        r.TARGET_ID   AS TARGETID,
+        r.FK_MEMBERID AS MEMBERID,
+        r.FK_MEMBERID AS REPORTERMEMBERID,
+        CASE r.TARGET_TYPE
+            WHEN 1 THEN j.FK_MEMBERID
+            WHEN 2 THEN p.FK_MEMBERID
+            WHEN 3 THEN c.FK_MEMBERID
+        END AS REPORTEDMEMBERID,
+        CASE r.TARGET_TYPE
+            WHEN 1 THEN j.TITLE
+            WHEN 2 THEN p.TITLE
+            WHEN 3 THEN c.CONTENT
+        END AS TARGETTITLE,
+        c.FK_POST_ID AS COMMENTPOSTID
+    FROM TBL_REPORT r
+    LEFT JOIN TBL_JOB_POSTING j ON r.TARGET_TYPE = 1 AND r.TARGET_ID = j.JOB_ID
+    LEFT JOIN TBL_POST p        ON r.TARGET_TYPE = 2 AND r.TARGET_ID = p.POST_ID
+    LEFT JOIN TBL_COMMENT c     ON r.TARGET_TYPE = 3 AND r.TARGET_ID = c.COMMENT_ID
+    WHERE r.REPORT_ID = #{reportId}
+</select>
+    
+    
+
+</mapper>

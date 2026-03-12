@@ -1,0 +1,105 @@
+
+<!--/* Fragment 코드 */-->
+
+<div xmlns:th="http://www.thymeleaf.org"
+     th:fragment="company_layout(content)"
+     class="company-wrapper">
+
+  <!-- 상단 -->
+  <header class="company-topbar">
+    <div class="topbar-left">
+      <i class="fa-regular fa-building"></i>
+      <span class="logo">JobKorea</span>
+      <span class="sub">기업 채용 관리</span>
+      
+      <!--/*메인페이지 이동[임시]*/-->
+      <a th:href="@{/index}">메인페이지[임시]</a>
+    </div>
+
+    <div class="topbar-right">
+      <i class="fa-regular fa-bell"></i>
+      <div class="profile">
+        <div class="topbar-avatar">T</div>
+        <div>
+          <div class="company-name">(주)테크이노베이션</div>
+          <div class="email">hr@techinno.co.kr</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+
+  <div class="company-body">
+
+    <!-- 사이드바 -->
+    <aside class="company-sidebar">
+	  <ul>
+	    <li th:classappend="${activeMenu}=='company_dashboard' ? ' active' : ''">
+	      <a th:href="@{/company/company_dashboard(menu='company_dashboard')}">
+	        <i class="fa-solid fa-chart-line"></i><span>대시보드</span>
+	      </a>
+	    </li>
+	
+	    <li th:classappend="${activeMenu}=='profile' ? ' active' : ''">
+	      <a th:href="@{/company/profile(tab='basic')}">
+	        <i class="fa-regular fa-building"></i><span>기업 프로필</span>
+	      </a>
+	    </li>
+	
+	    <li th:classappend="${activeMenu}=='job' ? ' active' : ''">
+	      <a th:href="@{/company/job/list}">
+	        <i class="fa-regular fa-file-lines"></i><span>채용 공고</span>
+	      </a>
+	    </li>
+	
+	    <li th:classappend="${activeMenu}=='applicant' ? ' active' : ''">
+	      <a th:href="@{/company/applicant/list}">
+	        <i class="fa-regular fa-user"></i><span>지원자 관리</span>
+	      </a>
+	    </li>
+	
+	    <li th:classappend="${activeMenu}=='offer' ? ' active' : ''">
+	      <a th:href="@{/company/offer/list}">
+	        <i class="fa-regular fa-envelope"></i><span>제안서 관리</span>
+	      </a>
+	    </li>
+	
+	    <li th:classappend="${activeMenu}=='banner' ? ' active' : ''">
+	      <a th:href="@{/company/banner/list}">
+	        <i class="fa-solid fa-bullhorn"></i><span>배너 광고</span>
+	      </a>
+	    </li>
+	
+	
+	    <li th:classappend="${activeMenu}=='wallet' ? ' active' : ''">
+	      <a th:href="@{/company/wallet(menu='wallet', tab='wallet')}">
+	        <i class="fa-solid fa-coins"></i><span>포인트 &amp; 지갑</span>
+	      </a>
+	    </li>
+	
+	    <!-- <li th:classappend="${activeMenu}=='wallet' ? ' active' : ''">
+	      <a th:href="@{/company/wallet(menu='wallet', tab='payment')}">
+	        <i class="fa-regular fa-credit-card"></i><span>결제 내역</span>
+	      </a>
+	    </li> -->
+	
+	
+	    <li th:classappend="${activeMenu}=='talent' ? ' active' : ''">
+	      <a th:href="@{/company/talent(menu='talent')}">
+	        <i class="fa-solid fa-magnifying-glass"></i><span>인재 검색</span>
+	      </a>
+	    </li>
+	
+	  </ul>
+	</aside>
+
+
+    <!-- 콘텐츠 -->
+    <div class="company-content" th:insert="${content}"></div>
+
+  </div>
+
+</div>
+
+
+

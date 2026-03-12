@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html th:replace="~{layout/layout_main :: layout(~{::title}, ~{::link}, ~{::style}, ~{::script}, ~{::section})}"
+      lang="ko"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8">
+  <title>휴면 계정 해제 | 잡파인더</title>
+
+  <!-- 로그인 화면과 동일한 스타일 사용 -->
+  <link rel="stylesheet" th:href="@{/css/index.css}">
+  <link rel="stylesheet" th:href="@{/css/member/login.css}">
+
+  <!-- layout_main의 css 슬롯용 -->
+  <style></style>
+
+  <!-- layout_main의 script 슬롯은 DOMContentLoaded로 감싸서 안전하게 만듬 -->
+  <script th:inline="javascript">
+  /*<![CDATA[*/
+    document.addEventListener("DOMContentLoaded", () => {
+
+      // 서버에서 내려준 값
+      const memberId = /*[[${memberId}]]*/ "";
+      const ctx = /*[[@{/}]]*/ "";           
+      const base = (ctx || "").replace(/\/$/, ""); 
+
+      // DOM 요소
+      const btnSendCode = document.getElementById("btnSendCode");
+      const btnVerify   = document.getElementById("btnVerify");
+      const verifyArea  = document.getElementById("verifyArea");
+      const smsMsg      = document.getElementById("smsMsg");
+      const timerEl     = document.getElementById("timer");
+      const codeEl      = document.getElementById("code");
+
+      // 요소가 없으면 스크립트가 터지지 않게 막아줌
+      if (!btnSendCode || !btnVerify || !verifyArea || !smsMsg || !timerEl || !codeEl ) {
+        console.warn("[dormant] required DOM element missing");
+        return;
+      }
+
+      let remainSec = 0;
+      let timerId = null;
+
+      function startTimer(sec) {
+        remainSec = sec;
+        if (timerId) clearInterval(timerId);
+
+        timerId = setInterval(() => {
+          const m = String(Math.floor(remainSec / 60)).padStart(2, "0");
+          const s = String(remainSec % 60).padStart(2, "0");
+          timerEl.textContent = `남은 시간 ${m}:${s}`;
+
+          remainSec--;
+          if (remainSec < 0) {
+            clearInterval(timerId);
+            timerEl.textContent = "인증코드가 만료되었습니다. 다시 발송해주세요.";
+          }
+        }, 1000);
+      }
+
+      btnSendCode.addEventListener("click", async () => {
+        smsMsg.textContent = "인증코드 발송 중...";
+        timerEl.textContent = "";
+        codeEl.value = "";
+
+        try {
+          const res = await fetch(base + "/member/dormant/send-code", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ memberId })
+          });
+
+          const text = await res.text();
+
+          if (!res.ok) {
+            smsMsg.textContent = text;
+            return;
+          }
+
+          // 성공했을 경우
+          smsMsg.textContent = "인증코드를 발송했습니다. 5분 이내 입력해주세요.";
+          verifyArea.style.display = "block";
+          startTimer(5 * 60);
+
+        } catch (e) {
+          smsMsg.textContent = "발송 중 오류가 발생했습니다.";
+          console.error(e);
+        }
+      });
+
+      btnVerify.addEventListener("click", async () => {
+    	  const code = (codeEl.value || "").trim();
+
+    	  if (code.length !== 6) {
+    	    smsMsg.textContent = "인증번호 6자리를 입력하세요.";
+    	    return;
+    	  }
+
+    	  smsMsg.textContent = "인증 확인 중...";
+
+    	  try {
+    	    // 인증코드 검증
+    	    const verifyRes = await fetch(base + "/member/dormant/verify-code", {
+    	      method: "POST",
+    	      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    	      body: new URLSearchParams({ memberId, code })
+    	    });
+
+    	    const verifyText = await verifyRes.text();
+
+    	    if (!verifyRes.ok) {
+    	      smsMsg.textContent = verifyText;
+    	      return;
+    	    }
+
+    	    smsMsg.textContent = "인증 성공! 휴면 해제 처리 중...";
+
+    	    // 휴면 해제 (세션에 인증완료가 심어져 있어야 unlock이 통과하도록)
+    	    const unlockRes = await fetch(base + "/member/dormant/unlock", {
+    	      method: "POST",
+    	      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    	      body: new URLSearchParams({ memberId })
+    	    });
+    	    // unlockDormant는 redirect를 반환할 거라서 fetch로 받으면 최종 HTML이 오거나,  리다이렉트가 따라가진 결과가 올 수 있음.
+    	    if (!unlockRes.ok) {
+    	      const unlockText = await unlockRes.text();
+    	      smsMsg.textContent = unlockText || "휴면 해제 실패";
+    	      return;
+    	    }
+    	    // 휴면 해제 성공 → 비밀번호 재설정 페이지로 이동
+    	    window.location.href = base + "/member/password/reset";
+    	  } catch (e) {
+    	    smsMsg.textContent = "처리 중 오류가 발생했습니다.";
+    	    console.error(e);
+    	  }
+    	});
+    });
+  /*]]>*/
+  </script>
+</head>
+
+<body>
+<section class="jp-login-page">
+  <section class="jp-login-hero">
+    <div class="container-fluid jp-container">
+      <h1 class="jp-login-hero__title">휴면 계정 해제</h1>
+      <div class="jp-login-hero__sub">휴면 상태를 해제한 뒤 다시 이용할 수 있습니다.</div>
+    </div>
+  </section>
+
+  <section class="jp-section" style="background:#fff;">
+    <div class="container-fluid jp-container">
+      <div class="row justify-content-center">
+
+        <div class="col-md-8 col-lg-6 mb-3">
+          <div class="jp-card jp-login-card h-100">
+
+            <div class="jp-login-card__head">
+              <div class="jp-login-card__title">휴면 상태 안내</div>
+              <div class="jp-login-card__desc">
+                휴대폰(SMS) 인증 후 휴면 해제를 진행할 수 있습니다.
+              </div>
+            </div>
+
+            <div class="jp-login-panel">
+              <!-- 안내 메시지(사유에 따라 분기처리 해줌) -->
+              <div class="text-danger mb-3" th:if="${param.reason != null}">
+                <span th:if="${param.reason[0] == 'fail5'}">
+                  로그인 5회 실패로 인해 계정이 휴면 처리되었습니다.
+                </span>
+                <span th:if="${param.reason[0] == 'memberDormant' or param.reason[0] == 'dormant'}">
+                  계정이 휴면 처리되었습니다.
+                </span>
+                <span th:if="${param.reason[0] == 'needSms'}">
+                  휴면 해제를 위해 SMS 인증이 필요합니다. 인증 후 해제할 수 있습니다.
+                </span>
+              </div>
+
+              <!-- ===================== SMS 인증 영역 시작 ===================== -->
+              <div class="mt-3">
+                <!-- 인증코드 발송 버튼 -->
+                <button type="button"
+                        id="btnSendCode"
+                        class="btn btn-outline-primary btn-block">
+                  인증코드 발송
+                </button>
+
+                <!-- 발송/인증 결과 메시지 -->
+                <div id="smsMsg" class="mt-2 text-muted" style="font-size:13px;"></div>
+
+                <!-- 인증 입력 영역 (처음에는 숨김처리) -->
+                <div id="verifyArea" class="mt-3" style="display:none;">
+                  <div class="form-group">
+                    <label for="code" style="font-weight:600;">인증번호</label>
+                    <input type="text"
+                           id="code"
+                           class="form-control"
+                           placeholder="6자리 인증번호 입력"
+                           maxlength="6" />
+                    <div class="mt-2 text-danger" id="timer" style="font-size:13px;"></div>
+                  </div>
+
+                  <button type="button" id="btnVerify" class="btn btn-primary btn-block jp-login-btn">
+                    휴면 해제
+                  </button>
+                </div>
+              </div>
+              <!-- ===================== SMS 인증 영역 끝 ===================== -->
+
+              <div class="text-muted mt-3" style="font-size:13px;">
+                휴면 해제 후 로그인 화면으로 이동합니다.
+                <a class="jp-link" th:href="@{/member/login}">로그인으로 돌아가기</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</section>
+</body>
+</html>

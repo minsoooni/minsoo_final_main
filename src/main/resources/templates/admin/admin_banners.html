@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/layout_admin :: layout(~{::title},~{::link},~{::style},~{::script},~{::section})}">
+
+<head>
+  <title>배너 관리</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #111;
+      --bg: #F7F8FA;
+      --card: #fff;
+      --border: #EAECF0;
+      --text: #111;
+      --text-muted: #888E9B;
+      --green: #16A34A;
+      --red: #DC2626;
+      --yellow: #D97706;
+      --blue: #2563EB;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    .dash { padding: 28px; width: 100%; box-sizing: border-box; }
+
+    .main-card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 18px; }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .card-title { font-size: 16px; font-weight: 700; }
+
+    .tab-filter { display: flex; gap: 8px; margin-bottom: 20px; }
+    .tab-btn { padding: 7px 16px; border: 1px solid var(--border); border-radius: 20px; font-size: 13px; font-weight: 500; font-family: inherit; background: #fff; color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
+    .tab-btn.active { background: #111; color: #fff; border-color: #111; }
+
+    .banner-list { display: flex; flex-direction: column; gap: 14px; }
+    .banner-item { border: 1px solid var(--border); border-radius: 10px; padding: 18px; display: flex; gap: 18px; align-items: flex-start; background: #fff; transition: box-shadow 0.2s; }
+    .banner-item:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.07); }
+    .banner-item.처리중  { border-left: 4px solid var(--yellow); }
+	.banner-item.승인완료 { border-left: 4px solid var(--green); }
+	.banner-item.반려    { border-left: 4px solid var(--red); }
+	.banner-item.정지    { border-left: 4px solid #6B7280; }
+
+    .banner-thumb { width: 180px; height: 100px; border-radius: 8px; background: #E5E7EB; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; color: #9CA3AF; font-size: 13px; }
+    .banner-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .banner-body { flex: 1; min-width: 0; }
+    .banner-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; }
+    .banner-title { font-size: 15px; font-weight: 700; }
+
+    .status-badge { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+    .status-badge.처리중  { background: #FEF3C7; color: var(--yellow); }
+	.status-badge.승인완료 { background: #DCFCE7; color: var(--green); }
+	.status-badge.반려    { background: #FEE2E2; color: var(--red); }
+	.status-badge.정지    { background: #F3F4F6; color: #6B7280; }
+
+    .banner-company { font-size: 13px; font-weight: 600; color: var(--blue); margin-bottom: 6px; }
+    .banner-info-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+    .banner-link { font-size: 12.5px; color: #2563EB; font-family: monospace; }
+    .banner-period { font-size: 12.5px; color: var(--text-muted); }
+    .banner-footer { display: flex; align-items: center; justify-content: space-between; }
+    .applied-date { font-size: 12px; color: var(--text-muted); }
+    .banner-actions { display: flex; gap: 8px; }
+
+    .btn-approve { padding: 7px 16px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; font-family: inherit; background: var(--green); color: #fff; cursor: pointer; }
+    .btn-approve:hover { background: #15803D; }
+    .btn-reject  { padding: 7px 16px; border: 1px solid #FECACA; border-radius: 6px; font-size: 13px; font-weight: 600; font-family: inherit; background: #fff; color: var(--red); cursor: pointer; }
+    .btn-reject:hover  { background: #FEF2F2; border-color: var(--red); }
+    .btn-stop    { padding: 7px 16px; border: 1px solid #FECACA; border-radius: 6px; font-size: 13px; font-weight: 600; font-family: inherit; background: #fff; color: var(--red); cursor: pointer; }
+    .btn-stop:hover    { background: #FEF2F2; border-color: var(--red); }
+    .btn-unstop  { padding: 7px 16px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; font-family: inherit; background: var(--green); color: #fff; cursor: pointer; }
+    .btn-unstop:hover  { background: #15803D; }
+
+    .rejected-reason { font-size: 12px; color: var(--red); background: #FEF2F2; padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
+
+    .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+    .summary-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; }
+    .summary-card .s-label { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+    .summary-card .s-value { font-size: 26px; font-weight: 700; }
+    .summary-card .s-value.yellow { color: var(--yellow); }
+    .summary-card .s-value.green  { color: var(--green); }
+    .summary-card .s-value.red    { color: var(--red); }
+
+    .table-footer { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 16px 0; margin-top: 12px; }
+    .total-count { font-size: 14px; color: #6b7280; }
+    .pagination { display: flex; gap: 4px; }
+    .pagination a { display: inline-block; padding: 8px 14px; border: 1px solid #e5e7eb; background: white; border-radius: 6px; font-size: 13px; color: #374151; text-decoration: none; transition: all 0.15s; }
+    .pagination a:hover { background: #f9fafb; }
+    .pagination a.active { background: #1f2937; color: white; border-color: #1f2937; }
+    .pagination a.disabled { color: #d1d5db; background: #f9fafb; cursor: not-allowed; pointer-events: none; }
+
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; display: none; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .confirm-modal { background: #fff; border-radius: 14px; width: 400px; padding: 28px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); animation: modalIn 0.18s ease; }
+    @keyframes modalIn { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .confirm-icon  { font-size: 36px; margin-bottom: 12px; text-align: center; }
+    .confirm-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; text-align: center; }
+    .confirm-desc  { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; line-height: 1.6; text-align: center; }
+    .form-label    { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    .form-textarea { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 7px; font-size: 13px; font-family: inherit; resize: vertical; min-height: 80px; margin-bottom: 4px; }
+    .form-textarea:focus { outline: none; border-color: #111; }
+    .form-textarea.error { border-color: var(--red); }
+    .reason-error { font-size: 12px; color: var(--red); margin-bottom: 12px; display: none; }
+    .reason-error.show { display: block; }
+    .confirm-btns  { display: flex; gap: 10px; }
+    .btn-confirm-cancel  { flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 7px; font-size: 13px; font-weight: 600; font-family: inherit; background: #fff; cursor: pointer; }
+    .btn-confirm-approve { flex: 1; padding: 10px; background: var(--green); color: #fff; border: none; border-radius: 7px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; }
+    .btn-confirm-reject  { flex: 1; padding: 10px; background: var(--red); color: #fff; border: none; border-radius: 7px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; }
+
+    .empty-state { text-align: center; padding: 48px; color: var(--text-muted); font-size: 14px; line-height: 2; }
+
+    .toast { position: fixed; bottom: 24px; right: 24px; padding: 14px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; color: white; z-index: 9999; opacity: 0; transform: translateY(10px); transition: all 0.3s ease; pointer-events: none; }
+    .toast.show    { opacity: 1; transform: translateY(0); }
+    .toast.success { background: #10b981; }
+    .toast.warning { background: #f59e0b; }
+    .toast.error   { background: #ef4444; }
+  </style>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+      let targetId   = null;
+      let targetName = null;
+
+      /* ── 탭 필터 ── */
+      window.filterBanners = function(filter, btn) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.banner-item').forEach(item => {
+          item.style.display = (filter === 'all' || item.dataset.status === filter) ? '' : 'none';
+        });
+      };
+
+      /* ── 승인 ── */
+      window.openApprove = function(id, name) {
+        targetId = id; targetName = name;
+        document.getElementById('approveDesc').textContent = '"' + name + '" 배너를 승인하면 메인 상단 슬라이드에 노출됩니다.';
+        document.getElementById('approveModal').classList.add('open');
+      };
+      window.confirmApprove = function() {
+        const id = targetId; const name = targetName;
+        fetch('/finalProject/admin/banners/' + id + '/approve', { method: 'POST' })
+          .then(res => {
+            closeModal('approveModal');
+            if (res.ok) { showToast('배너가 승인됐습니다.', 'success'); setTimeout(() => location.href = location.pathname + location.search, 1500); }
+            else showToast('처리 중 오류가 발생했습니다.', 'error');
+          });
+      };
+
+      /* ── 반려 ── */
+      window.openReject = function(id, name) {
+        targetId = id; targetName = name;
+        document.getElementById('rejectDesc').textContent = '"' + name + '" 배너를 반려합니다.';
+        document.getElementById('rejectReason').value = '';
+        document.getElementById('rejectReason').classList.remove('error');
+        document.getElementById('reasonError').classList.remove('show');
+        document.getElementById('rejectModal').classList.add('open');
+      };
+      window.confirmReject = function() {
+        const reason = document.getElementById('rejectReason').value.trim();
+        if (!reason) {
+          document.getElementById('rejectReason').classList.add('error');
+          document.getElementById('reasonError').classList.add('show');
+          return;
+        }
+        const id = targetId;
+        fetch('/finalProject/admin/banners/' + id + '/reject', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: reason })
+        }).then(res => {
+          closeModal('rejectModal');
+          if (res.ok) { showToast('배너가 반려됐습니다.', 'warning'); setTimeout(() => location.href = location.pathname + location.search, 1500); }
+          else showToast('처리 중 오류가 발생했습니다.', 'error');
+        });
+      };
+
+      /* ── 정지 ── */
+      window.openStop = function(id, name) {
+        targetId = id; targetName = name;
+        document.getElementById('stopDesc').textContent = '"' + name + '" 배너를 정지하면 노출이 즉시 중단됩니다.';
+        document.getElementById('stopModal').classList.add('open');
+      };
+      window.confirmStop = function() {
+        const id = targetId;
+        fetch('/finalProject/admin/banners/' + id + '/stopped', { method: 'POST' })
+          .then(res => {
+            closeModal('stopModal');
+            if (res.ok) { showToast('배너가 정지됐습니다.', 'warning'); setTimeout(() => location.href = location.pathname + location.search, 1500); }
+            else showToast('처리 중 오류가 발생했습니다.', 'error');
+          });
+      };
+
+      /* ── 정지해제 ── */
+      window.openUnstop = function(id, name) {
+        targetId = id; targetName = name;
+        document.getElementById('unstopDesc').textContent = '"' + name + '" 배너의 정지를 해제하면 다시 노출됩니다.';
+        document.getElementById('unstopModal').classList.add('open');
+      };
+      window.confirmUnstop = function() {
+        const id = targetId;
+        fetch('/finalProject/admin/banners/' + id + '/unstopped', { method: 'POST' })
+          .then(res => {
+            closeModal('unstopModal');
+            if (res.ok) { showToast('배너 정지가 해제됐습니다.', 'success'); setTimeout(() => location.href = location.pathname + location.search, 1500); }
+            else showToast('처리 중 오류가 발생했습니다.', 'error');
+          });
+      };
+
+      /* ── 공통 ── */
+      window.closeModal = function(id) {
+        document.getElementById(id).classList.remove('open');
+        targetId = null; targetName = null;
+      };
+      ['approveModal','rejectModal','stopModal','unstopModal'].forEach(id => {
+        document.getElementById(id).addEventListener('click', e => {
+          if (e.target === document.getElementById(id)) closeModal(id);
+        });
+      });
+
+      document.getElementById('rejectReason').addEventListener('input', function() {
+        if (this.value.trim()) {
+          this.classList.remove('error');
+          document.getElementById('reasonError').classList.remove('show');
+        }
+      });
+
+      window.showToast = function(msg, type = 'success') {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.className = 'toast ' + type;
+        setTimeout(() => toast.classList.add('show'), 10);
+        setTimeout(() => toast.classList.remove('show'), 3000);
+      };
+    });
+  </script>
+</head>
+
+<body>
+<section class="dash">
+
+  <!-- 요약 통계 -->
+  <div class="summary-grid">
+    <div class="summary-card"><div class="s-label">전체 신청</div><div class="s-value"        th:text="${totalCount}">0</div></div>
+    <div class="summary-card"><div class="s-label">승인 대기</div><div class="s-value yellow"  th:text="${pendingCount}">0</div></div>
+    <div class="summary-card"><div class="s-label">승인 완료</div><div class="s-value green"   th:text="${activeCount}">0</div></div>
+    <div class="summary-card"><div class="s-label">반려</div>     <div class="s-value red"     th:text="${rejectedCount}">0</div></div>
+  </div>
+
+  <!-- 배너 목록 -->
+  <div class="main-card">
+    <div class="card-header">
+      <span class="card-title">배너 신청 관리</span>
+    </div>
+
+    <div class="tab-filter">
+      <button class="tab-btn active" onclick="filterBanners('all',      this)">전체</button>
+      <button class="tab-btn"        onclick="filterBanners('처리중',  this)">승인 대기</button>
+      <button class="tab-btn"        onclick="filterBanners('승인완료',   this)">승인 완료</button>
+      <button class="tab-btn"        onclick="filterBanners('반려', this)">반려</button>
+      <button class="tab-btn"        onclick="filterBanners('정지',  this)">정지</button>
+    </div>
+
+    <div class="banner-list">
+
+      <div th:if="${#lists.isEmpty(banners)}" class="empty-state">
+        등록된 배너 신청이 없습니다.
+      </div>
+
+      <div th:each="banner : ${banners}"
+           class="banner-item"
+           th:classappend="${banner.status}"
+           th:attr="data-status=${banner.status}">
+
+        <div class="banner-thumb">
+         <img th:if="${banner.imageFileUrl != null}"
+		     th:src="@{${banner.imageFileUrl}}" alt="배너 이미지">
+		<span th:if="${banner.imageFileUrl == null}">이미지 없음</span>
+        </div>
+
+        <div class="banner-body">
+          <div class="banner-top">
+            <span class="banner-title" th:text="${banner.title}"></span>
+            <span class="status-badge"
+                  th:classappend="${banner.status}"
+                  th:text="${banner.status == '처리중'}  ? '승인 대기' :
+                            (${banner.status == '승인완료'}   ? '승인 완료' :
+                            (${banner.status == '반려'} ? '반려' : '정지'))">
+            </span>
+          </div>
+
+          <div class="banner-company">🏢 <span th:text="${banner.companyName}"></span></div>
+
+          <div class="banner-info-row">
+            <span class="banner-period">
+              노출 기간:
+              <span th:text="${#temporals.format(banner.startAt, 'yyyy-MM-dd')}"></span>
+              ~
+              <span th:text="${#temporals.format(banner.endAt, 'yyyy-MM-dd')}"></span>
+            </span>
+          </div>
+
+          <div th:if="${banner.status == '반려' and banner.rejectReason != null}"
+               class="rejected-reason"
+               th:text="'반려 사유: ' + ${banner.rejectReason}">
+          </div>
+
+          <div class="banner-footer">
+            <span class="applied-date">
+		    신청일: <span th:text="${banner.createdAt != null} ? ${#temporals.format(banner.createdAt, 'yyyy-MM-dd')} : '-'"></span>
+		</span>
+            <div class="banner-actions">
+              <th:block th:if="${banner.status == '처리중'}">
+                <button type="button" class="btn-approve"
+                        th:attr="data-id=${banner.bannerId}, data-name=${banner.title}"
+                        onclick="openApprove(this.dataset.id, this.dataset.name)">✓ 승인</button>
+                <button type="button" class="btn-reject"
+                        th:attr="data-id=${banner.bannerId}, data-name=${banner.title}"
+                        onclick="openReject(this.dataset.id, this.dataset.name)">✕ 반려</button>
+              </th:block>
+              <th:block th:if="${banner.status == '승인완료'}">
+                <button type="button" class="btn-stop"
+                        th:attr="data-id=${banner.bannerId}, data-name=${banner.title}"
+                        onclick="openStop(this.dataset.id, this.dataset.name)">⊘ 정지</button>
+              </th:block>
+              <th:block th:if="${banner.status == '정지'}">
+                <button type="button" class="btn-unstop"
+                        th:attr="data-id=${banner.bannerId}, data-name=${banner.title}"
+                        onclick="openUnstop(this.dataset.id, this.dataset.name)">↩ 정지해제</button>
+              </th:block>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 페이지바 -->
+    <div class="table-footer">
+
+      <span class="total-count">
+        총 <span th:text="${totalCount}"></span>개의 배너
+      </span>
+
+      <div class="pagination">
+
+        <a th:href="@{/admin/banners(page=1)}"
+           th:classappend="${currentPage == 1} ? 'disabled'">«</a>
+
+        <a th:href="@{/admin/banners(page=${currentPage > 1 ? currentPage-1 : 1})}"
+           th:classappend="${currentPage == 1} ? 'disabled'">이전</a>
+
+        <span th:each="i : ${#numbers.sequence(1, totalPages)}">
+          <a th:href="@{/admin/banners(page=${i})}"
+             th:text="${i}"
+             th:classappend="${i == currentPage} ? 'active'">
+          </a>
+        </span>
+
+        <a th:href="@{/admin/banners(page=${currentPage < totalPages ? currentPage+1 : totalPages})}"
+           th:classappend="${currentPage == totalPages} ? 'disabled'">다음</a>
+
+        <a th:href="@{/admin/banners(page=${totalPages})}"
+           th:classappend="${currentPage == totalPages} ? 'disabled'">»</a>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 승인 모달 -->
+  <div class="modal-overlay" id="approveModal">
+    <div class="confirm-modal">
+      <div class="confirm-icon">✅</div>
+      <div class="confirm-title">배너를 승인할까요?</div>
+      <div class="confirm-desc" id="approveDesc"></div>
+      <div class="confirm-btns">
+        <button class="btn-confirm-cancel"  onclick="closeModal('approveModal')">취소</button>
+        <button class="btn-confirm-approve" onclick="confirmApprove()">승인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 반려 모달 -->
+  <div class="modal-overlay" id="rejectModal">
+    <div class="confirm-modal">
+      <div class="confirm-icon">❌</div>
+      <div class="confirm-title">배너를 반려할까요?</div>
+      <div class="confirm-desc" id="rejectDesc"></div>
+      <label class="form-label">반려 사유 <span style="color:var(--red)">*</span></label>
+      <textarea class="form-textarea" id="rejectReason" placeholder="반려 사유를 입력하세요..."></textarea>
+      <div class="reason-error" id="reasonError">반려 사유를 입력해주세요.</div>
+      <div class="confirm-btns">
+        <button class="btn-confirm-cancel" onclick="closeModal('rejectModal')">취소</button>
+        <button class="btn-confirm-reject" onclick="confirmReject()">반려</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 정지 모달 -->
+  <div class="modal-overlay" id="stopModal">
+    <div class="confirm-modal">
+      <div class="confirm-icon">⛔</div>
+      <div class="confirm-title">배너를 정지할까요?</div>
+      <div class="confirm-desc" id="stopDesc"></div>
+      <div class="confirm-btns">
+        <button class="btn-confirm-cancel" onclick="closeModal('stopModal')">취소</button>
+        <button class="btn-confirm-reject" onclick="confirmStop()">정지</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 정지해제 모달 -->
+  <div class="modal-overlay" id="unstopModal">
+    <div class="confirm-modal">
+      <div class="confirm-icon">✅</div>
+      <div class="confirm-title">정지를 해제할까요?</div>
+      <div class="confirm-desc" id="unstopDesc"></div>
+      <div class="confirm-btns">
+        <button class="btn-confirm-cancel"  onclick="closeModal('unstopModal')">취소</button>
+        <button class="btn-confirm-approve" onclick="confirmUnstop()">정지해제</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+</section>
+</body>
+</html>

@@ -1,0 +1,230 @@
+@charset "UTF-8";
+
+
+/* ===== job_banner.css ===== */
+/* ===== page only ===== */
+.bn-head{
+  display:flex; align-items:flex-start; justify-content:space-between;
+  margin-bottom:14px;
+  /* border: solid 2px red; */
+}
+.bn-title{ font-size:18px; font-weight:900; margin:0; }
+.bn-desc{ color:#6b7280; font-size:13px; margin-top:6px; }
+
+.bn-primary{
+  background:#0b1524; color:#fff; border:0;
+  border-radius:10px; padding:10px 14px;
+  font-size:13px; font-weight:900;
+  display:inline-flex; align-items:center; gap:8px;
+  white-space:nowrap;
+}
+
+.bn-preview-wrap{ padding:14px; background:#fff; border:1px solid #eee; border-radius:14px; }
+.bn-preview-title{ font-size:13px; font-weight:900; margin:0 0 12px; }
+
+.bn-preview{
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:18px 18px;
+  background:#fff;
+  cursor:pointer;
+  transition: all .12s ease;
+}
+.bn-preview + .bn-preview{ margin-top:12px; }
+
+.bn-preview.active{
+  border-color:#2563eb;
+  background:#eef4ff;
+  box-shadow: 0 0 0 2px rgba(37,99,235,.12) inset;
+}
+
+.bn-chip{
+  display:inline-flex; align-items:center;
+  padding:4px 10px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:900;
+  border:1px solid #e5e7eb;
+  background:#111827;
+  color:#fff;
+  margin-right:8px;
+}
+.bn-price{
+  font-size:12px; color:#6b7280; font-weight:900;
+}
+
+.bn-preview h4{
+  margin:10px 0 6px;
+  font-size:14px;
+  font-weight:900;
+  color:#111;
+}
+.bn-preview p{
+  margin:0;
+  color:#6b7280;
+  font-size:12px;
+}
+
+.bn-table th{
+  font-size:12px; color:#6b7280; font-weight:900;
+  border-top:0;
+  white-space:nowrap;
+}
+.bn-table td{
+  font-size:13px;
+  vertical-align:middle;
+  white-space:nowrap;
+}
+
+.bn-pill{
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:4px 10px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:900;
+  border:1px solid #e5e7eb;
+  background:#f3f4f6;
+  color:#111;
+}
+.bn-pill.on{ background:#eafff1; border-color:#bbf7d0; color:#16a34a; }
+.bn-pill.wait{ background:#f3f4f6; color:#374151; }
+
+.bn-rank{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:22px; height:22px;
+  border-radius:999px;
+  background:#eef2f7;
+  border:1px solid #e5e7eb;
+  font-size:12px;
+  font-weight:900;
+  color:#111;
+}
+
+.bn-link{
+  border:0;
+  background:transparent;
+  color:#111;
+  font-weight:900;
+  font-size:13px;
+  cursor:pointer;
+  padding:0;
+}
+.bn-link:hover{ text-decoration:underline; }
+
+.bn-guide ul{
+  margin:0;
+  padding-left:18px;
+  color:#111;
+  font-size:13px;
+}
+.bn-guide li{ margin:8px 0; }
+.bn-guide b{ font-weight:900; }
+
+@media (max-width: 992px){
+  .bn-head{ gap:10px; flex-direction:column; align-items:flex-start; }
+}
+
+
+
+
+
+.jb-selected{
+  margin-top:12px;
+  padding:14px;
+  border:1px solid #dbeafe;
+  background:#eff6ff;
+  border-radius:12px;
+}
+
+.jb-selected .jb-title{
+  font-weight:900;
+  font-size:14px;
+  color:#111;
+}
+
+.jb-selected .jb-meta{
+  margin-top:6px;
+  font-size:12px;
+  color:#6b7280;
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+}
+
+
+.bf-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:14px;
+}
+
+
+.bf-wide{
+  grid-column: 1 / -1;
+}
+
+
+
+
+
+.bn-thumb{
+  width:90px;
+  height:56px;
+  object-fit:cover;
+  border-radius:8px;
+  border:1px solid #e5e7eb;
+  background:#f9fafb;
+  display:block;
+}
+
+.bn-thumb-empty{
+  width:90px;
+  height:56px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:8px;
+  border:1px solid #e5e7eb;
+  background:#f9fafb;
+  color:#9ca3af;
+  font-size:12px;
+  font-weight:700;
+}
+
+.bn-title-cell{
+  font-weight:900;
+  color:#111827;
+}
+
+.bn-job-title{
+  white-space:normal !important;
+  line-height:1.4;
+  max-width:220px;
+}
+
+.bn-reject{
+  color:#dc2626;
+  font-size:12px;
+  white-space:normal !important;
+  line-height:1.4;
+  max-width:220px;
+}
+
+.bn-date{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+}
+
+.bn-empty{
+  text-align:center;
+  padding:32px 0 !important;
+  color:#6b7280;
+  font-size:13px;
+}
+
+.bn-pill.off{
+  background:#fff1f2;
+  border-color:#fecdd3;
+  color:#dc2626;
+}

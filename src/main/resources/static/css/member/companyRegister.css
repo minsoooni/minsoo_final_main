@@ -1,0 +1,125 @@
+@charset "UTF-8";
+/* 기업 회원가입 전용 */
+
+.jp-join-hero{
+  padding: 38px 0 12px;
+  background: #fff;
+}
+
+.jp-join-hero__title{
+  font-size: 28px;
+  font-weight: 900;
+  margin: 0;
+}
+
+.jp-join-hero__sub{
+  margin-top: 6px;
+  font-size: 14px;
+  color: rgba(17,17,17,.65);
+}
+
+.jp-join-card{
+  border-radius: 18px;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 12px 40px rgba(0,0,0,.06);
+}
+
+.jp-join-card__title{
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.jp-join-card__desc{
+  font-size: 13px;
+  color: rgba(17,17,17,.65);
+}
+
+.jp-form-section__title{
+  font-size: 15px;
+  font-weight: 900;
+  margin: 6px 0 12px;
+}
+
+.jp-label{
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color:#111;
+}
+
+.jp-input{
+  height: 46px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 10px 12px;
+}
+
+.jp-input:focus{
+  border-color:#111;
+  box-shadow:none;
+}
+
+.jp-textarea{
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+.jp-join-btn{
+  height: 46px;
+  border-radius: 12px;
+  font-weight: 900;
+}
+
+.jp-outline-btn{
+  height: 46px;
+  border-radius: 12px;
+  font-weight: 800;
+}
+
+.jp-join-steps{
+  display: grid;
+  gap: 12px;
+}
+
+.jp-step{
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.jp-step__badge{
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  background: #111;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 13px;
+}
+
+.jp-step__title{
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.jp-step__desc{
+  font-size: 13px;
+  color: rgba(17,17,17,.65);
+  margin-top: 2px;
+}
+
+.jp-step__hint{
+  font-size: 12.5px;
+  color: rgba(17,17,17,.55);
+  margin-top: 3px;
+  line-height: 1.45;
+}
+
+.jp-step--final .jp-step__badge{
+  opacity: .9;
+}

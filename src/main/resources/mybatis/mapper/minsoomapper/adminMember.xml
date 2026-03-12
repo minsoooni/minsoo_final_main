@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring.app.admin.model.AdminMemberDAO">
+
+    <select id="selectMemberList" resultType="com.spring.app.admin.domain.AdminMemberDTO">
+        SELECT
+            MEMBERID      AS memberId,
+            NAME          AS name,
+            EMAIL         AS email,
+            STATUS        AS status,
+            CREATED_AT    AS createdAt,
+            LAST_LOGIN_AT AS lastLoginAt
+        FROM TBL_MEMBER
+        <where>
+            TYPE = 0
+            <if test="search != null and search != ''">
+                AND (
+                    NAME  LIKE '%' || #{search} || '%'
+                    OR EMAIL LIKE '%' || #{search} || '%'
+                )
+            </if>
+            <if test="status != null and status != ''">
+                AND STATUS = #{status}
+            </if>
+        </where>
+        ORDER BY CREATED_AT DESC
+    </select>
+
+    <update id="updateMemberStatus">
+        UPDATE TBL_MEMBER
+        SET STATUS     = CASE #{status}
+                            WHEN 'ACTIVE'    THEN 1
+                            WHEN 'SUSPENDED' THEN 0
+                         END,
+            UPDATED_AT = SYSDATE
+        WHERE MEMBERID = #{memberId}
+    </update>
+
+    <!-- 페이징 10개 단위 기능 -->
+    <select id="selectPagedMemberList" resultType="com.spring.app.admin.domain.AdminMemberDTO">
+        SELECT * FROM (
+            SELECT ROWNUM AS rn, a.*
+            FROM (
+                SELECT
+                    MEMBERID      AS memberId,
+                    NAME          AS name,
+                    EMAIL         AS email,
+                    STATUS        AS status,
+                    CREATED_AT    AS createdAt,
+                    LAST_LOGIN_AT AS lastLoginAt
+                FROM TBL_MEMBER
+                <where>
+                    TYPE = 0
+                    <if test="search != null and search != ''">
+                        AND (
+                            NAME  LIKE '%' || #{search} || '%'
+                            OR EMAIL LIKE '%' || #{search} || '%'
+                        )
+                    </if>
+                    <if test="status != null and status != ''">
+                        AND STATUS = #{status}
+                    </if>
+                </where>
+                ORDER BY CREATED_AT DESC
+            ) a
+            WHERE ROWNUM &lt;= #{endRow}
+        )
+        WHERE rn &gt; #{offset}
+    </select>
+
+    <!-- 전체 개수를 세는것 -->
+    <select id="selectMemberCount" resultType="int">
+        SELECT COUNT(*)
+        FROM TBL_MEMBER
+        <where>
+            TYPE = 0
+            <if test="search != null and search != ''">
+                AND (
+                    NAME  LIKE '%' || #{search} || '%'
+                    OR EMAIL LIKE '%' || #{search} || '%'
+                )
+            </if>
+            <if test="status != null and status != ''">
+                AND STATUS = #{status}
+            </if>
+        </where>
+    </select>
+
+    <!-- 단건 조회 (상세 모달용) -->
+    <select id="selectMemberById" resultType="com.spring.app.admin.domain.AdminMemberDTO">
+        SELECT MEMBERID      AS memberId,
+               NAME          AS name,
+               EMAIL         AS email,
+               PHONE         AS phone,
+               STATUS        AS status,
+               GENDER        AS gender,
+               TYPE          AS type,
+               BIRTH_DATE    AS birthDate,
+               CREATED_AT    AS createdAt,
+               LAST_LOGIN_AT AS lastLoginAt,
+               DORMANT_AT    AS dormantAt
+        FROM TBL_MEMBER
+        WHERE MEMBERID = #{memberId}
+    </select>
+
+</mapper>

@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/layout_company :: layout(~{::title},~{::link},~{::style},~{::script},~{::section})}">
+
+<head>
+  <title>기업 대시보드</title>
+  <link rel="stylesheet" th:href="@{/css/company/job_write.css}">
+  <style type="text/css"></style>
+
+  <script th:inline="javascript">
+  const contextPath = /*[[@{/}]]*/ "";
+
+  // ===== util =====
+  function $(id){ return document.getElementById(id); }
+
+  // ===== preview sync =====
+  function syncPreview(){
+    setReq("req_title", !!$("jp_title")?.value?.trim());
+    setReq("req_category", !!$("jp_categoryId")?.value);
+    setReq("req_location", !!$("jp_regionCode")?.value?.trim());
+  }
+
+  function setReq(id, ok){
+    const el = $(id);
+    if(!el) return;
+    el.textContent = ok ? "✓" : "X";
+    el.className = ok ? "" : "jp-x";
+  }
+
+  // ===== chip toggle =====
+  function toggleChipFromCheckbox(cb){
+    const chip = cb.closest(".jp-chip");
+    if(!chip) return;
+    chip.classList.toggle("is-on", cb.checked);
+  }
+
+  // ===== 마감일 토글 =====
+  function toggleDeadlineInput(){
+    const selected = document.querySelector("input[name='deadlineType']:checked")?.value;
+    const wrap = $("jp_deadline_date_wrap");
+    if(!wrap) return;
+
+    if(selected === "date"){
+      wrap.classList.remove("jp-hidden");
+    } else {
+      wrap.classList.add("jp-hidden");
+      const d = document.querySelector("input[name='deadlineAt']");
+      if(d) d.value = "";
+    }
+  }
+
+  // ===== fetch =====
+  async function fetchJobCategoryChildren(parentId){
+    const res = await fetch(`${contextPath}company/api/job/categories/children?parentId=${encodeURIComponent(parentId)}`);
+    if(!res.ok) return [];
+    return await res.json();
+  }
+
+  async function fetchRegionChildren(parentCode){
+    const res = await fetch(`${contextPath}company/api/region/children?parentCode=${encodeURIComponent(parentCode)}`);
+    if(!res.ok) return [];
+    return await res.json();
+  }
+
+  // ===== validation util =====
+  function parseDateValue(value){
+    if(!value) return null;
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  
+  
+  // ===== 게시하기용 필수값 검증(임시저장/게시하기 모두 공콩) =====
+  function validateBasicRequiredFields(){
+    const title = $("jp_title")?.value?.trim() || "";
+    const categoryId = $("jp_categoryId")?.value || "";
+    const regionCode = $("jp_regionCode")?.value || "";
+  
+    if(!title){
+      alert("공고 제목을 입력하세요.");
+      $("jp_title")?.focus();
+      return false;
+    }
+  
+    if(!categoryId){
+      alert("직무 분류(중분류)를 선택하세요.");
+      $("jp_cat1")?.focus();
+      return false;
+    }
+  
+    if(!regionCode){
+      alert("근무 지역을 선택하세요.");
+      $("jp_region1")?.focus();
+      return false;
+    }
+  
+    return true;
+  }
+
+  // ==== 게시하기일 때는 모든 입력값을 겅증 ====
+  function validatePublishRequiredFields(){
+    const workType = $("jp_work_type")?.value || "";
+    const careerType = $("jp_career_type")?.value || "";
+    const eduCode = document.querySelector("[name='eduCode']")?.value || "";
+    const headcountValue = document.querySelector("[name='headcount']")?.value || "";
+    const salaryValue = document.querySelector("[name='salary']")?.value || "";
+    const content = document.querySelector("[name='content']")?.value?.trim() || "";
+  
+    if(!workType){
+      alert("고용 형태를 선택하세요.");
+      $("jp_work_type")?.focus();
+      return false;
+    }
+  
+    if(!careerType){
+      alert("경력 구분을 선택하세요.");
+      $("jp_career_type")?.focus();
+      return false;
+    }
+  
+    if(!eduCode){
+      alert("학력을 선택하세요.");
+      document.querySelector("[name='eduCode']")?.focus();
+      return false;
+    }
+  
+    if(headcountValue === ""){
+      alert("채용 인원을 입력하세요.");
+      document.querySelector("[name='headcount']")?.focus();
+      return false;
+    }
+  
+    if(Number(headcountValue) < 1){
+      alert("채용 인원은 1명 이상이어야 합니다.");
+      document.querySelector("[name='headcount']")?.focus();
+      return false;
+    }
+  
+    if(salaryValue === ""){
+      alert("연봉을 입력하세요.");
+      document.querySelector("[name='salary']")?.focus();
+      return false;
+    }
+  
+    if(Number(salaryValue) < 0){
+      alert("연봉은 0 이상이어야 합니다.");
+      document.querySelector("[name='salary']")?.focus();
+      return false;
+    }
+  
+    if(!content){
+      alert("공고 내용을 입력하세요.");
+      document.querySelector("[name='content']")?.focus();
+      return false;
+    }
+  
+    return true;
+  }
+  
+
+
+
+
+
+
+  // ===== 게시 기간 검증 =====
+  function validateDateRange(){
+    const openedAtValue = document.querySelector("input[name='openedAt']")?.value || "";
+    const closedAtValue = document.querySelector("input[name='closedAt']")?.value || "";
+
+    // 둘 다 있어야 비교
+    if(!openedAtValue || !closedAtValue){
+      return true;
+    }
+
+    const openedAtDate = parseDateValue(openedAtValue);
+    const closedAtDate = parseDateValue(closedAtValue);
+
+    if(!openedAtDate || !closedAtDate){
+      alert("게시 기간 날짜 형식이 올바르지 않습니다.");
+      return false;
+    }
+
+    if(openedAtDate > closedAtDate){
+      alert("게시 시작일은 게시 종료일보다 늦을 수 없습니다.");
+      document.querySelector("input[name='openedAt']")?.focus();
+      return false;
+    }
+
+    return true;
+  }
+
+  // ===== 마감일 검증 =====
+  function validateDeadlineFields(isPublish){
+    const deadlineType = document.querySelector("input[name='deadlineType']:checked")?.value || "";
+    const deadlineAtValue = document.querySelector("input[name='deadlineAt']")?.value || "";
+    const openedAtValue = document.querySelector("input[name='openedAt']")?.value || "";
+    const closedAtValue = document.querySelector("input[name='closedAt']")?.value || "";
+
+    // 상시모집이면 통과
+    if(deadlineType !== "date"){
+      return true;
+    }
+
+    // 게시하기일 때는 마감일 필수
+    if(isPublish && !deadlineAtValue){
+      alert("마감일을 입력하세요.");
+      document.querySelector("input[name='deadlineAt']")?.focus();
+      return false;
+    }
+
+    // 임시저장인데 비어있으면 그냥 통과
+    if(!deadlineAtValue){
+      return true;
+    }
+
+    const now = new Date();
+    const deadlineAtDate = parseDateValue(deadlineAtValue);
+    const openedAtDate = parseDateValue(openedAtValue);
+    const closedAtDate = parseDateValue(closedAtValue);
+
+    if(!deadlineAtDate){
+      alert("마감일 형식이 올바르지 않습니다.");
+      document.querySelector("input[name='deadlineAt']")?.focus();
+      return false;
+    }
+
+    if(deadlineAtDate < now){
+      alert("마감일은 현재 시각보다 과거일 수 없습니다.");
+      document.querySelector("input[name='deadlineAt']")?.focus();
+      return false;
+    }
+
+    if(openedAtDate && deadlineAtDate < openedAtDate){
+      alert("마감일은 게시 시작일보다 빠를 수 없습니다.");
+      document.querySelector("input[name='deadlineAt']")?.focus();
+      return false;
+    }
+
+    if(closedAtDate && deadlineAtDate > closedAtDate){
+      alert("마감일은 게시 종료일보다 늦을 수 없습니다.");
+      document.querySelector("input[name='deadlineAt']")?.focus();
+      return false;
+    }
+
+    return true;
+  }
+
+  // ===== DOM =====
+  document.addEventListener("DOMContentLoaded", () => {
+
+    const $jobCat1   = $("jp_cat1");
+    const $jobCat2   = $("jp_cat2");
+    const $jobCatHid = $("jp_categoryId");
+
+    function resetJobCat2(){
+      if(!$jobCat2) return;
+      $jobCat2.innerHTML = `<option value="">중분류</option>`;
+      $jobCat2.disabled = true;
+    }
+
+    if($jobCat1 && $jobCat2 && $jobCatHid){
+      resetJobCat2();
+      $jobCatHid.value = "";
+
+      $jobCat1.addEventListener("change", async () => {
+        const parentId = $jobCat1.value;
+
+        resetJobCat2();
+        $jobCatHid.value = "";
+
+        if(!parentId){
+          syncPreview();
+          return;
+        }
+
+        const children = await fetchJobCategoryChildren(parentId);
+
+        children.forEach(c => {
+          const opt = document.createElement("option");
+          opt.value = c.categoryId;
+          opt.textContent = c.categoryName;
+          $jobCat2.appendChild(opt);
+        });
+
+        $jobCat2.disabled = (children.length === 0);
+        syncPreview();
+      });
+
+      $jobCat2.addEventListener("change", () => {
+        $jobCatHid.value = $jobCat2.value || "";
+        syncPreview();
+      });
+    }
+
+    const $regionLv1 = $("jp_region1");
+    const $regionLv2 = $("jp_region2");
+    const $regionLv3 = $("jp_region3");
+    const $regionHid = $("jp_regionCode");
+
+    function resetRegionSelect($sel, placeholder){
+      if(!$sel) return;
+      $sel.innerHTML = `<option value="">${placeholder}</option>`;
+      $sel.disabled = true;
+    }
+
+    if($regionLv1 && $regionLv2 && $regionLv3 && $regionHid){
+      resetRegionSelect($regionLv2, "시/군/구 선택");
+      resetRegionSelect($regionLv3, "상세 지역 선택");
+      $regionHid.value = "";
+
+      $regionLv1.addEventListener("change", async () => {
+        const code1 = $regionLv1.value;
+
+        resetRegionSelect($regionLv2, "시/군/구 선택");
+        resetRegionSelect($regionLv3, "상세 지역 선택");
+        $regionHid.value = "";
+
+        if(!code1){
+          syncPreview();
+          return;
+        }
+
+        const lv2List = await fetchRegionChildren(code1);
+
+        lv2List.forEach(r => {
+          const opt = document.createElement("option");
+          opt.value = r.regionCode;
+          opt.textContent = r.regionName;
+          $regionLv2.appendChild(opt);
+        });
+
+        $regionLv2.disabled = (lv2List.length === 0);
+
+        if(lv2List.length === 0){
+          $regionHid.value = code1;
+        }
+
+        syncPreview();
+      });
+
+      $regionLv2.addEventListener("change", async () => {
+        const code2 = $regionLv2.value;
+
+        resetRegionSelect($regionLv3, "상세 지역 선택");
+        $regionHid.value = code2 || ($regionLv1.value || "");
+
+        if(!code2){
+          syncPreview();
+          return;
+        }
+
+        const lv3List = await fetchRegionChildren(code2);
+
+        lv3List.forEach(r => {
+          const opt = document.createElement("option");
+          opt.value = r.regionCode;
+          opt.textContent = r.regionName;
+          $regionLv3.appendChild(opt);
+        });
+
+        $regionLv3.disabled = (lv3List.length === 0);
+
+        if(lv3List.length === 0){
+          $regionHid.value = code2;
+        }
+
+        syncPreview();
+      });
+
+      $regionLv3.addEventListener("change", () => {
+        const code3 = $regionLv3.value;
+        $regionHid.value = code3 || ($regionLv2.value || $regionLv1.value || "");
+        syncPreview();
+      });
+    }
+
+    document.addEventListener("input", syncPreview);
+    document.addEventListener("change", syncPreview);
+    document.addEventListener("change", toggleDeadlineInput);
+
+    syncPreview();
+    toggleDeadlineInput();
+  });
+
+  // ===== payload =====
+  function buildCreatePayload(statusValue){
+    const isPublish = (statusValue === "진행중");
+  
+    if(!validateBasicRequiredFields()) return null;
+    if(isPublish && !validatePublishRequiredFields()) return null;
+    if(!validateDateRange()) return null;
+    if(!validateDeadlineFields(isPublish)) return null;
+  
+    const categoryId = $("jp_categoryId")?.value || "";
+    const regionCode = $("jp_regionCode")?.value || "";
+  
+    const deadlineType = document.querySelector("input[name='deadlineType']:checked")?.value || null;
+  
+    let deadlineAt = document.querySelector("input[name='deadlineAt']")?.value || null;
+    if(deadlineType === "always") deadlineAt = null;
+  
+    const openedAt = document.querySelector("input[name='openedAt']")?.value || null;
+    const closedAt = document.querySelector("input[name='closedAt']")?.value || null;
+  
+    const skillIds = Array.from(document.querySelectorAll("input[name='skillIds']:checked"))
+      .map(cb => Number(cb.value))
+      .filter(v => Number.isFinite(v));
+  
+    const job = {
+      title: $("jp_title")?.value?.trim() || null,
+      categoryId: categoryId ? Number(categoryId) : null,
+      regionCode: regionCode ? String(regionCode) : null,
+      workType: $("jp_work_type")?.value || null,
+      careerType: $("jp_career_type")?.value || null,
+      eduCode: document.querySelector("[name='eduCode']")?.value || null,
+      headcount: Number(document.querySelector("[name='headcount']")?.value || "") || null,
+      salary: Number(document.querySelector("[name='salary']")?.value || "") || null,
+      content: document.querySelector("[name='content']")?.value || null,
+      deadlineType,
+      deadlineAt,
+      openedAt,
+      closedAt,
+      status: statusValue
+    };
+  
+    return { job, skillIds };
+  }//function buildCreatePayload(statusValue){}
+
+	  
+	  
+	  
+  // ===== submit =====
+  async function submitCreate(statusValue){
+    const payload = buildCreatePayload(statusValue);
+    if(!payload) return;
+
+    try{
+      const res = await fetch(`${contextPath}company/api/jobs`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if(!res.ok){
+        const text = await res.text();
+        console.error("Create failed:", res.status, text);
+        alert("등록에 실패했습니다. (서버 로그 확인)");
+        return;
+      }
+
+      const data = await res.json().catch(() => ({}));
+      if(data.success){
+        alert("등록되었습니다.");
+        location.replace(`${contextPath}company/job/list`);
+      } else {
+        alert("등록에 실패했습니다.");
+      }
+    } catch(err){
+      console.error(err);
+      alert("요청 중 오류가 발생했습니다.");
+    }
+  }//async function submitCreate(statusValue){
+
+	  
+	  
+  function goTempSave(){
+    submitCreate("임시저장");
+  }
+
+  function goPublish(){
+    submitCreate("진행중");
+  }
+
+  function goReset(){
+    if(!confirm("입력값을 초기화할까요?")) return;
+
+    const form = document.getElementById("addFrm");
+    if(form) form.reset();
+
+    const cat2 = $("jp_cat2");
+    if(cat2){
+      cat2.innerHTML = `<option value="">중분류</option>`;
+      cat2.disabled = true;
+    }
+    const fin = $("jp_categoryId");
+    if(fin) fin.value = "";
+
+    const r2 = $("jp_region2");
+    const r3 = $("jp_region3");
+    if(r2){
+      r2.innerHTML = `<option value="">시/군/구 선택</option>`;
+      r2.disabled = true;
+    }
+    if(r3){
+      r3.innerHTML = `<option value="">상세 지역 선택</option>`;
+      r3.disabled = true;
+    }
+    const rh = $("jp_regionCode");
+    if(rh) rh.value = "";
+
+    document.querySelectorAll("input[name='skillIds']").forEach(cb => cb.checked = false);
+    document.querySelectorAll(".jp-chip.is-on").forEach(ch => ch.classList.remove("is-on"));
+
+    syncPreview();
+    toggleDeadlineInput();
+  }//function goReset(){}
+  </script>
+</head>
+
+
+
+
+
+<body>
+<section class="dash">
+
+<!-- 폼태그 시작 -->
+<form name="addFrm" id="addFrm" method="post" th:action="@{/company/job/job_write}">
+  <!-- 직무 분류: 최종 선택값을 categoryId로 보내기 -->
+  <input type="hidden" name="status" value="임시저장" />
+
+  <!-- Top bar -->
+  <div class="jp-top">
+    <div class="jp-top-left">
+      <button type="button" class="jp-back" onclick="history.back()">
+        <i class="fa-solid fa-arrow-left"></i>
+      </button>
+      <h3 class="jp-title">채용 공고 등록</h3>
+    </div>
+
+  </div>
+
+  <div class="jp-grid">
+    <!-- LEFT: form -->
+    <div>
+      <!-- 기본 정보 -->
+      <div class="panel">
+        <div class="panel-head">
+          <h3>공고 작성</h3>
+        </div>
+		
+        <div class="jp-section">
+          <div class="jp-field">
+            <div class="jp-label">공고 제목 <span class="req">*</span></div>
+            <input id="jp_title" name="title" class="jp-input" type="text" placeholder="예: 시니어 프론트엔드 개발자 모집">
+            <div class="jp-help">명확하고 구체적인 제목을 작성해주세요</div>
+          </div>
+
+
+
+          <div class="jp-field">
+            <div class="jp-label">직무 분류 <span class="req">*</span></div>
+
+			<!-- 직무 분류 태그 -->
+            <div class="jp-row-3">
+              <!-- 대분류 -->
+			  <select id="jp_cat1" class="jp-select">
+			    <option value="">대분류</option>
+			    <option th:each="c : ${cat1List}"
+			            th:value="${c.categoryId}"
+			            th:text="${c.categoryName}">
+			    </option>
+			  </select>
+			
+			  <!-- 중분류 -->
+			  <select id="jp_cat2" class="jp-select" disabled>
+			    <option value="">중분류</option>
+			  </select>
+              
+            </div>
+            
+            <!-- 최종 중분류 id -->
+			<input type="hidden" id="jp_categoryId" name="categoryId">
+          </div>
+
+
+		  <!-- 기술스택 분류 태그 -->
+          <div class="jp-field">
+            <div class="jp-label">기술 스택 및 도구</div>
+            
+            <!-- DB 기반 렌더링 -->
+		    <div th:each="cat : ${skillCategoryList}">
+		      <div class="jp-help" style="margin-bottom:8px; font-weight:900;"
+		           th:text="${cat.categoryName}">카테고리명</div>
+		    
+		      <div class="jp-chip-group" style="margin-bottom:10px;">
+		        <!-- label로 감싸면 클릭 시 체크가 자연스러움 -->
+		        <label class="jp-chip" th:each="s : ${cat.skills}">
+		          <input type="checkbox" name="skillIds"
+		                 th:value="${s.skillId}"
+		                 style="display:none;"
+		                 onchange="toggleChipFromCheckbox(this)">
+		          <span th:text="${s.skillName}">Skill</span>
+		        </label>
+		      </div>
+		    </div>
+            
+          </div>
+          
+        </div>
+      </div>
+
+
+
+      <!-- 채용 상세 -->
+      <div class="panel">
+        <div class="panel-head">
+          <h3>채용 상세</h3>
+        </div>
+
+        <div class="jp-section">
+          <div class="jp-row">
+            <div class="jp-field">
+              <div class="jp-label">고용 형태 <span class="req">*</span></div>
+              <select id="jp_work_type" name="workType" class="jp-select">
+                <option>정규직</option>
+                <option>계약직</option>
+                <option>인턴</option>
+                <option>프리랜서</option>
+              </select>
+            </div>
+
+            <div class="jp-field">
+              <div class="jp-label">경력 구분 <span class="req">*</span></div>
+              <select id="jp_career_type" name="careerType" class="jp-select">
+                <option>무관</option>
+                <option>신입</option>
+                <option>경력 1년 ↑</option>
+                <option>경력 2년 ↑</option>
+                <option>경력 3년 ↑</option>
+                <option>경력 5년 ↑</option>
+                <option>경력 10년 ↑</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="jp-row">
+            <div class="jp-field">
+			  <div class="jp-label">학력</div>
+			
+			  <select class="jp-select" name="eduCode" required>
+  			    <!-- 학력 무관이 우선적으로 뜨게 하기 -->
+			    <option th:each="edu : ${eduDtoList}"
+			            th:if="${edu.eduCode == 'EDU_NONE'}"
+			            th:value="${edu.eduCode}"
+			            th:text="${edu.eduName}">
+			    </option>
+			    <option th:each="edu : ${eduDtoList}"
+			    		th:if="${edu.eduCode != 'EDU_NONE'}"
+			            th:value="${edu.eduCode}"
+			            th:text="${edu.eduName}">
+			    </option>
+			  </select>
+			</div>
+
+            <div class="jp-field">
+              <div class="jp-label">채용 인원 <span class="req">*</span></div>
+              <input class="jp-input" name="headcount" type="number" min="1" value="1">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 급여 및 근무 조건 -->
+      <div class="panel">
+        <div class="panel-head">
+          <h3>급여 및 근무 조건</h3>
+        </div>
+
+        <div class="jp-section">
+          <div class="jp-row">
+
+            <div class="jp-field">
+              <div class="jp-label">최소 연봉</div>
+              <input class="jp-input" name="salary" type="number" min="0" placeholder="예: 3500">
+            </div>
+          </div>
+
+		  <!-- 
+          <div class="jp-field">
+            <div class="jp-label">근무 시간</div>
+            <input class="jp-input" type="text" placeholder="예: 주 5일 (09:00~18:00)">
+          </div>
+           -->
+
+          <div class="jp-field">
+            <div class="jp-label">근무 지역 <span class="req">*</span></div>
+            
+            <div class="jp-row-3">
+		    <!-- 레벨1: 시/도 -->
+		    <select id="jp_region1" class="jp-select">
+		      <option value="">시/도 선택</option>
+		      <option th:each="r : ${region1List}"
+		              th:value="${r.regionCode}"
+		              th:text="${r.regionName}">
+		      </option>
+		    </select>
+
+		    <!-- 레벨2: 시/군/구 -->
+		    <select id="jp_region2" class="jp-select" disabled>
+		      <option value="">시/군/구 선택</option>
+		    </select>
+
+		    <!-- 레벨3: 구/읍/면/동(있는 곳만) -->
+		    <select id="jp_region3" class="jp-select" disabled>
+		      <option value="">상세 지역 선택</option>
+		    </select>
+		  </div>
+
+		  <!-- 최종 region_code 저장 (DTO regionCode로 바인딩) -->
+		  <input type="hidden" id="jp_regionCode" name="regionCode">
+          </div>
+        </div>
+      </div>
+
+      <!-- 공고 기간 및 마감일 -->
+      <div class="panel">
+        <div class="panel-head">
+          <h3>공고 기간 및 마감일</h3>
+        </div>
+
+        <div class="jp-section">
+          <div class="jp-field">
+            <div class="jp-label">마감일 설정</div>
+            <div class="jp-radio">
+              <label><input type="radio" name="deadlineType" value="always" checked> 상시 모집</label>
+              <label><input type="radio" name="deadlineType" value="date"> 마감일 지정</label>
+            </div>
+          </div>
+          
+          <!-- 마감일 입력 영역 (처음엔 숨김) -->
+		  <div id="jp_deadline_date_wrap" class="jp-field jp-hidden">
+  		    <div class="jp-label">마감일</div>
+		    <input type="datetime-local" name="deadlineAt" class="jp-input" step="3600">
+		  </div>
+
+          <div class="jp-divider"></div>
+
+          <div class="jp-help" style="font-weight:900; margin-bottom:8px;">게시 기간 (선택사항)</div>
+          <div class="jp-row">
+            <div class="jp-field">
+              <div class="jp-label">게시 시작일</div>
+              <input class="jp-input" name="openedAt" type="datetime-local" step="3600">
+              <div class="jp-help">게시 기간을 설정하지 않으면 공고 게시 즉시 노출됩니다</div>
+            </div>
+            <div class="jp-field">
+              <div class="jp-label">게시 종료일</div>
+              <input class="jp-input" name="closedAt" type="datetime-local" step="3600">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 공고작성 상세 설명 -->
+      <div class="panel">
+        <div class="panel-head">
+          <h3>상세 설명</h3>
+        </div>
+
+        <div class="jp-section">
+          <div class="jp-field">
+            <div class="jp-label">공고 내용</div>
+            <textarea class="jp-textarea" name="content" placeholder="전형절차, 지원방법, 주요 업무, 자격 요건, 우대 사항, 복리후생 등을 상세히 작성해주세요"></textarea>
+            <div class="jp-help">상세하고 명확한 설명은 적합한 지원자 유입에 도움이 됩니다</div>
+          </div>
+
+          <div class="jp-tip">
+            <div class="jp-tip-title"><i class="fa-regular fa-lightbulb"></i> 작성 팁</div>
+            <ul>
+              <li>주요 업무: 실제 업무 내용을 구체적으로 설명하세요</li>
+              <li>자격 요건: 필수 요구사항을 명확히 작성하세요</li>
+              <li>우대 사항: 있으면 좋은 스킬이나 경험을 추가하세요</li>
+              <li>복리후생: 회사만의 장점을 어필하세요</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+
+    <!-- ✅ RIGHT: sticky side (buttons + preview) -->
+    <div class="jp-side">
+
+      <!-- 오른쪽에도 버튼이 같이 따라오게 -->
+      <div class="jp-side-actions" style="margin-top: 15px">
+        <!-- 왼쪽 -->
+	    <button type="button" class="jp-btn jp-btn--ghost jp-btn-reset" onclick="goReset()">
+	      <i class="fa-solid fa-rotate-right"></i> 초기화
+	    </button>
+	    
+	    <!-- 오른쪽 그룹 -->
+	    <div class="jp-right-actions">
+	      <button type="button" class="jp-btn jp-btn--ghost" onclick="goTempSave()">
+	        <i class="fa-regular fa-file"></i> 임시저장
+	      </button>
+	      <button type="button" class="jp-btn jp-btn--dark" onclick="goPublish()">
+	        <i class="fa-solid fa-paper-plane"></i> 게시하기
+	      </button>
+	    </div>
+	    
+      </div>
+
+	  <!-- 오른쪽 카드항목 -->
+      <div class="jp-preview">
+        <div class="panel">
+          <div class="panel-head">
+            <h3>미리보기</h3>
+          </div>
+
+          <div class="jp-preview-card">
+          
+            <!-- <div class="jp-prev-box">
+              <p id="pv_title" class="jp-prev-title">공고 제목을 입력하세요</p>
+              <div class="jp-prev-company">(주)테크이노베이션</div>
+
+              <div class="jp-prev-pills">
+                <span id="pv_workType" class="jp-pill">정규직</span>
+                <span id="pv_careerType" class="jp-pill">경력</span>
+              </div>
+
+              <div class="jp-prev-meta">
+                <i class="fa-regular fa-clock"></i>
+                <span id="pv_deadline">상시 모집</span>
+              </div>
+            </div> -->
+
+            <div class="jp-state">
+              <div class="jp-state-row">
+                <div style="font-weight:900;">현재 상태</div>
+                <span class="jp-badge">임시저장</span>
+              </div>
+              <div class="jp-state-help">
+                임시 저장 상태입니다. 게시하기 버튼을 눌러 공고를 게시하세요.
+              </div>
+            </div>
+
+            <div class="jp-required">
+              <p class="jp-required-title">필수 입력 항목</p>
+              <div class="jp-req-item">
+                <span>공고 제목</span>
+                <span id="req_title" class="jp-x">X</span>
+              </div>
+              <div class="jp-req-item">
+                <span>직무 분류</span>
+                <span id="req_category" class="jp-x">X</span>
+              </div>
+              <div class="jp-req-item">
+                <span>근무 지역</span>
+                <span id="req_location" class="jp-x">X</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+  
+</form>
+</section>
+
+
+</body>
+</html>

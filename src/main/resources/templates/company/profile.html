@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/layout_company :: layout(~{::title},~{::link},~{::style},~{::script},~{::section})}">
+
+<head>
+  <title>기업 프로필 관리</title>
+
+  <!-- 페이지 전용 CSS -->
+  <link rel="stylesheet" th:href="@{/css/company/profile.css}">
+
+  <!-- 페이지 전용 style -->
+  <style type="text/css"></style>
+
+  <!-- 페이지 전용 script -->
+  <script th:inline="javascript">
+
+  // 탭 이동
+  function goTab(tab){
+    const baseUrl = /*[[@{/company/profile}]]*/ "";
+    location.href = baseUrl + "?tab=" + tab;
+  }
+
+
+  // =========================
+  // 프로필 저장
+  // =========================
+  async function saveProfileByTab() {
+
+    const activeTab = document.getElementById("activeTabValue").value;
+    const contextPath = /*[[@{/}]]*/ "";
+
+    let formId = "";
+    let apiUrl = "";
+
+    if (activeTab === "basic") {
+      formId = "basicProfileForm";
+      apiUrl = contextPath + "company/profile/api/update/basic";
+    }
+    else if (activeTab === "address") {
+      formId = "addressProfileForm";
+      apiUrl = contextPath + "company/profile/api/update/address";
+    }
+    else if (activeTab === "intro") {
+      formId = "introProfileForm";
+      apiUrl = contextPath + "company/profile/api/update/intro";
+    }
+    else {
+      alert("현재 탭은 저장 대상이 아닙니다.");
+      return;
+    }
+
+    const form = document.getElementById(formId);
+
+    if (!form) {
+      alert("저장할 폼을 찾을 수 없습니다.");
+      return;
+    }
+
+    const formData = new FormData(form);
+    const payload = {};
+
+    formData.forEach((value, key) => {
+      payload[key] = value;
+    });
+
+    try {
+
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(data.message || "저장되었습니다.");
+        location.reload();
+      } 
+      else {
+        alert(data.message || "저장에 실패했습니다.");
+      }
+
+    } 
+    catch (e) {
+      console.error(e);
+      alert("저장 중 오류가 발생했습니다.");
+    }
+  }
+
+
+  // =========================
+  // 기업 로고 업로드
+  // =========================
+  async function uploadCompanyLogo() {
+
+    const contextPath = /*[[@{/}]]*/ "";
+    const fileInput = document.getElementById("logoFileInput");
+
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+      alert("업로드할 로고 이미지를 선택하세요.");
+      return;
+    }
+
+    const file = fileInput.files[0];
+
+    // 파일 크기 체크 (2MB)
+    const maxSize = 2 * 1024 * 1024;
+
+    if (file.size > maxSize) {
+      alert("파일 크기는 2MB 이하만 가능합니다.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("logoFile", file);
+
+    try {
+
+      const response = await fetch(contextPath + "company/profile/api/logo", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+
+        alert(data.message || "기업 로고가 등록되었습니다.");
+
+        // 미리보기 업데이트
+        if (data.logoPath) {
+
+          const previewBox = document.getElementById("logoPreviewBox");
+          const oldIcon = document.getElementById("logoDefaultIcon");
+          let img = document.getElementById("logoPreviewImg");
+
+          if (oldIcon) {
+            oldIcon.remove();
+          }
+
+          if (!img) {
+            img = document.createElement("img");
+            img.id = "logoPreviewImg";
+            img.alt = "기업 로고";
+            previewBox.appendChild(img);
+          }
+
+          img.src = contextPath + data.logoPath + "?t=" + new Date().getTime();
+        }
+
+        fileInput.value = "";
+      } 
+      else {
+        alert(data.message || "기업 로고 등록에 실패했습니다.");
+      }
+
+    } 
+    catch (e) {
+      console.error(e);
+      alert("기업 로고 등록 중 오류가 발생했습니다.");
+    }
+  }
+
+
+  // =========================
+  // 이벤트 등록
+  // =========================
+  document.addEventListener("DOMContentLoaded", function() {
+
+    // 저장 버튼
+    const saveBtn = document.getElementById("saveProfileBtn");
+    if (saveBtn) {
+      saveBtn.addEventListener("click", saveProfileByTab);
+    }
+
+    // 로고 업로드 버튼
+    const uploadBtn = document.getElementById("uploadLogoBtn");
+    if (uploadBtn) {
+      uploadBtn.addEventListener("click", uploadCompanyLogo);
+    }
+    
+ 	// 파일 선택 시 미리보기
+    const logoFileInput = document.getElementById("logoFileInput");
+    if (logoFileInput) {
+      logoFileInput.addEventListener("change", function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const previewBox = document.getElementById("logoPreviewBox");
+        const oldIcon = document.getElementById("logoDefaultIcon");
+        let img = document.getElementById("logoPreviewImg");
+
+        if (oldIcon) {
+          oldIcon.remove();
+        }
+
+        if (!img) {
+          img = document.createElement("img");
+          img.id = "logoPreviewImg";
+          img.alt = "기업 로고";
+          previewBox.appendChild(img);
+        }
+
+        img.src = URL.createObjectURL(file);
+      });
+    }
+
+  });
+  </script>
+</head>
+
+
+
+
+<body>
+<section class="dash cp-page">
+  <input type="hidden" id="activeTabValue" th:value="${activeTab}">
+
+
+  <!-- 상단 헤더 -->
+  <div class="panel cp-top-panel">
+    <div class="panel-head cp-top-head">
+      <div>
+        <h3 class="cp-page-title">기업 프로필 관리</h3>
+        <div class="cp-page-desc">
+          기업 정보를 관리하고 구직자에게 보여질 내용을 편집하세요
+        </div>
+      </div>
+
+      <button type="button" id="saveProfileBtn" class="btn btn-dark cp-save-btn">
+        변경사항 저장
+      </button>
+    </div>
+
+    <!-- 탭 -->
+    <div class="cp-tab-wrap">
+      <button type="button"
+              class="btn btn-sm cp-tab-btn"
+              th:classappend="${activeTab}=='basic' ? ' btn-dark active' : ' btn-light'"
+              onclick="goTab('basic')">기본 정보</button>
+
+      <button type="button"
+              class="btn btn-sm cp-tab-btn"
+              th:classappend="${activeTab}=='contact' ? ' btn-dark active' : ' btn-light'"
+              onclick="goTab('contact')">연락처 정보</button>
+
+      <button type="button"
+              class="btn btn-sm cp-tab-btn"
+              th:classappend="${activeTab}=='address' ? ' btn-dark active' : ' btn-light'"
+              onclick="goTab('address')">주소 정보</button>
+
+      <button type="button"
+              class="btn btn-sm cp-tab-btn"
+              th:classappend="${activeTab}=='intro' ? ' btn-dark active' : ' btn-light'"
+              onclick="goTab('intro')">기업 소개</button>
+    </div>
+  </div>
+
+
+  <!-- =========================
+       기본 정보 탭
+  ========================== -->
+  <div class="panel card-box cp-card" th:if="${activeTab}=='basic'">
+    <div class="panel-head cp-section-head">
+      <h3>기본 정보</h3>
+    </div>
+
+    <form class="cp-form" id="basicProfileForm">
+      <!-- 로고 업로드 -->
+      <div class="cp-logo-section">
+       <div class="cp-label-title">기업 로고</div>
+     
+       <div class="cp-logo-row">
+         <div class="cp-logo-preview" id="logoPreviewBox">
+     
+           <!-- 로고가 있으면 출력 -->
+           <img id="logoPreviewImg"
+                th:if="${profile != null and profile.logoPath != null and !#strings.isEmpty(profile.logoPath)}"
+                th:src="@{'/' + ${profile.logoPath}}"
+                alt="기업 로고">
+     
+           <!-- 로고가 없으면 기본 아이콘 -->
+           <i id="logoDefaultIcon"
+              th:if="${profile == null or profile.logoPath == null or #strings.isEmpty(profile.logoPath)}"
+              class="fa-regular fa-building"></i>
+         </div>
+     
+         <div class="cp-logo-info">
+           <label class="btn btn-light btn-sm cp-upload-btn">
+             <i class="fa-solid fa-upload"></i>&nbsp; 파일 선택
+             <input type="file"
+                    id="logoFileInput"
+                    name="logoFile"
+                    class="cp-hidden-file"
+                    accept="image/*">
+           </label>
+     
+           <button type="button" id="uploadLogoBtn" class="btn btn-dark btn-sm cp-upload-submit-btn">
+             로고 등록
+           </button>
+     
+           <div class="cp-hint">
+             권장 크기: 200x200px, 최대 2MB
+           </div>
+         </div>
+       </div>
+     </div>
+
+      <div class="form-group cp-form-group">
+        <label class="cp-form-label">기업명 *</label>
+        <input type="text"
+               name="companyName"
+               class="form-control cp-input"
+               th:value="${profile != null ? profile.companyName : ''}">
+      </div>
+
+      <div class="form-group cp-form-group">
+        <label class="cp-form-label">사업자등록번호 *</label>
+        <div class="cp-inline-group">
+          <input type="text"
+                 name="bizNo"
+                 class="form-control cp-input"
+                 th:value="${profile != null ? profile.bizNo : ''}"
+                 readonly="readonly">
+          <button type="button" class="btn btn-dark cp-inline-btn">
+            인증완료
+          </button>
+        </div>
+      </div>
+
+      <div class="form-group cp-form-group">
+        <label class="cp-form-label">대표자명</label>
+        <input type="text"
+               name="ceoName"
+               class="form-control cp-input"
+               th:value="${profile != null ? profile.ceoName : ''}">
+      </div>
+
+      <div class="form-group cp-form-group">
+        <label class="cp-form-label">업종</label>
+	    <!-- <input type="text"
+	     name="industryCode"
+	     class="form-control cp-input"
+	     th:value="${profile != null ? profile.industryCode : ''}"
+	     placeholder="예: IT, SW, FIN, EDU, MKT, ETC"> -->
+	     <select name="industryCode" class="form-control cp-input">
+		  <option value="">선택하세요</option>
+		  <option value="IT"  th:selected="${profile != null and profile.industryCode == 'IT'}">IT·인터넷</option>
+		  <option value="SW"  th:selected="${profile != null and profile.industryCode == 'SW'}">소프트웨어</option>
+		  <option value="FIN" th:selected="${profile != null and profile.industryCode == 'FIN'}">금융·핀테크</option>
+		  <option value="EDU" th:selected="${profile != null and profile.industryCode == 'EDU'}">교육·에듀테크</option>
+		  <option value="MKT" th:selected="${profile != null and profile.industryCode == 'MKT'}">마케팅</option>
+		  <option value="ETC" th:selected="${profile != null and profile.industryCode == 'ETC'}">기타</option>
+		</select>
+      </div>
+
+      <div class="form-group cp-form-group">
+        <label class="cp-form-label">직원수</label>
+        <input type="text"
+               class="form-control cp-input"
+               value=""
+               placeholder="직원수 컬럼 연결 전">
+      </div>
+
+      <div class="form-group cp-form-group">
+        <label class="cp-form-label">설립연도</label>
+        <input type="text"
+               name="openYear"
+               class="form-control cp-input"
+               th:value="${profile != null and profile.openDate != null ? #dates.format(profile.openDate, 'yyyy') : ''}">
+      </div>
+
+      <div class="form-group cp-form-group cp-last-group">
+        <label class="cp-form-label">홈페이지</label>
+        <input type="text"
+               name="homepageUrl"
+               class="form-control cp-input"
+               th:value="${profile != null ? profile.homepageUrl : ''}">
+      </div>
+    </form>
+  </div>
+
+
+  <!-- =========================
+       연락처 정보 탭
+  ========================== -->
+  <div class="panel cp-card" th:if="${activeTab}=='contact'">
+    <div class="panel-head cp-section-head">
+      <h3>연락처 정보</h3>
+    </div>
+
+    <div class="cp-empty-box">
+      <div class="cp-empty-text">
+        담당자명 / 이메일 / 전화번호 컬럼은 현재 제공된
+        TBL_COMPANY, TBL_COMPANY_INTRO 테이블에 없어
+        추후 회원 테이블 또는 담당자 테이블과 연동해서 구현해야 합니다.
+      </div>
+    </div>
+  </div>
+
+
+  <!-- =========================
+       주소 정보 탭
+  ========================== -->
+  <div class="panel cp-card" th:if="${activeTab}=='address'">
+    <div class="panel-head cp-section-head">
+      <h3>주소 정보</h3>
+    </div>
+
+    <form class="cp-form" id="addressProfileForm">
+      <div class="form-group cp-form-group">
+        <label class="cp-form-label">우편번호</label>
+        <input type="text"
+               name="zipCode"
+               class="form-control cp-input"
+               th:value="${profile != null ? profile.zipCode : ''}">
+      </div>
+
+      <div class="form-group cp-form-group">
+        <label class="cp-form-label">기본주소</label>
+        <input type="text"
+               name="addr1"
+               class="form-control cp-input"
+               th:value="${profile != null ? profile.addr1 : ''}">
+      </div>
+
+      <div class="form-group cp-form-group cp-last-group">
+        <label class="cp-form-label">상세주소</label>
+        <input type="text"
+               name="addr2"
+               class="form-control cp-input"
+               th:value="${profile != null ? profile.addr2 : ''}">
+      </div>
+    </form>
+  </div>
+
+
+  <!-- =========================
+       기업 소개 탭
+  ========================== -->
+  <div class="panel cp-card" th:if="${activeTab}=='intro'">
+    <div class="panel-head cp-section-head">
+      <h3>기업 소개</h3>
+    </div>
+
+    <form class="cp-form" id="introProfileForm">
+      <div class="form-group cp-form-group">
+        <label class="cp-form-label">회사형태</label>
+        <input type="text"
+               name="companyType"
+               class="form-control cp-input"
+               th:value="${profile != null ? profile.companyType : ''}">
+      </div>
+
+      <div class="form-group cp-form-group">
+        <label class="cp-form-label">기업 소개</label>
+        <textarea name="introText"
+                  class="form-control cp-textarea"
+                  th:text="${profile != null ? profile.introText : ''}"></textarea>
+      </div>
+
+      <div class="form-group cp-form-group">
+        <label class="cp-form-label">복지 소개</label>
+        <textarea name="welfareText"
+                  class="form-control cp-textarea"
+                  th:text="${profile != null ? profile.welfareText : ''}"></textarea>
+      </div>
+
+      <div class="form-group cp-form-group cp-last-group">
+        <label class="cp-form-label">비전</label>
+        <textarea name="visionText"
+                  class="form-control cp-textarea"
+                  th:text="${profile != null ? profile.visionText : ''}"></textarea>
+      </div>
+    </form>
+  </div>
+
+</section>
+</body>
+</html>

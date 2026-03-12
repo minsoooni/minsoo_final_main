@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring.app.admin.model.AdminJobPostDAO">
+
+  <!-- 페이징 + 검색/필터 -->
+  <select id="selectPagedJobList"
+          resultType="com.spring.app.admin.domain.AdminJobPostDTO">
+    SELECT *
+    FROM (
+        SELECT
+            j.JOB_ID            AS jobId,
+            c.COMPANY_NAME      AS companyName,
+            j.TITLE             AS title,
+            j.FK_REGION_CODE    AS location,
+            j.SALARY            AS salary,
+            j.VIEW_COUNT        AS viewCount,
+            CASE 
+		    WHEN j.IS_HIDDEN = 2 THEN '마감'
+		    WHEN j.IS_HIDDEN = 1 THEN '숨김'
+		    ELSE '활성'
+		END AS status,
+			
+            j.CREATED_AT        AS createdAt,
+            j.IS_HIDDEN 		AS isHidden,
+            j.DEADLINE_AT AS deadlineAt,
+			j.UPDATED_AT  AS updatedAt,
+            jc.CATEGORY_NAME    AS jobCategory,     
+            (SELECT LISTAGG(s.SKILL_NAME, ', ') WITHIN GROUP (ORDER BY s.SKILL_ID)
+             FROM TBL_JOB_POSTING_SKILL jps
+             JOIN TBL_SKILL s ON jps.FK_SKILL_ID = s.SKILL_ID
+             WHERE jps.FK_JOB_ID = j.JOB_ID) AS skills,
+            (SELECT COUNT(*)
+             FROM TBL_JOB_APPLICATION a
+             WHERE a.FK_JOB_ID = j.JOB_ID) AS applicantCount,
+            ROW_NUMBER() OVER (ORDER BY j.CREATED_AT DESC) AS rn
+        FROM TBL_JOB_POSTING j
+        JOIN TBL_MEMBER m ON j.FK_MEMBERID = m.MEMBERID
+        JOIN TBL_COMPANY c ON m.MEMBERID = c.FK_MEMBERID
+        LEFT JOIN TBL_JOB_CATEGORY jc ON j.FK_CATEGORY_ID = jc.CATEGORY_ID
+        <where>
+            <if test="search != null and search != ''">
+                AND (
+                    c.COMPANY_NAME LIKE '%' || #{search} || '%'
+                    OR j.TITLE LIKE '%' || #{search} || '%'
+                )
+            </if>
+           <if test="status != null and status != ''">
+		    <choose>
+		       <when test="status == 'closed'">
+				    AND j.IS_HIDDEN = 2
+				</when>
+				<when test="status == 'active'">
+				    AND j.IS_HIDDEN = 0
+				</when>
+				<when test="status == 'hidden'">
+				    AND j.IS_HIDDEN = 1
+				</when>
+		    </choose>
+		</if>
+        </where>
+    )
+    WHERE rn BETWEEN #{offset}+1 AND #{offset}+#{limit}
+  </select>
+
+  <!-- 전체 건수 (검색/필터 적용) -->
+<select id="selectJobCount" resultType="int">
+    SELECT COUNT(*)
+    FROM TBL_JOB_POSTING j
+    JOIN TBL_MEMBER m ON j.FK_MEMBERID = m.MEMBERID
+    JOIN TBL_COMPANY c ON m.MEMBERID = c.FK_MEMBERID
+    <where>
+        <if test="search != null and search != ''">
+            AND (
+                c.COMPANY_NAME LIKE '%' || #{search} || '%'
+                OR j.TITLE LIKE '%' || #{search} || '%'
+            )
+        </if>
+        <if test="status != null and status != ''">
+            <choose>
+               <when test="status == 'active'">
+				    AND j.IS_HIDDEN = 0
+				</when>
+				<when test="status == 'hidden'">
+				    AND j.IS_HIDDEN = 1
+				</when>
+				<when test="status == 'closed'">
+				    AND j.IS_HIDDEN = 2
+				</when>
+            </choose>
+        </if>
+    </where>
+</select>
+
+<!-- 상태별 전체 건수 (통계 카드용) -->
+<select id="selectJobCountByStatus" resultType="int">
+    SELECT COUNT(*) FROM TBL_JOB_POSTING
+    <choose>
+        <when test="status == 'active'">
+		    WHERE IS_HIDDEN = 0
+		</when>
+		<when test="status == 'hidden'">
+		    WHERE IS_HIDDEN = 1
+		</when>
+		<when test="status == 'closed'">
+		    WHERE IS_HIDDEN = 2
+		</when>
+    </choose>
+</select>
+ 
+	<update id="updateJobHidden">
+    UPDATE TBL_JOB_POSTING
+    SET IS_HIDDEN = #{isHidden},
+       UPDATED_AT = SYSDATE
+    WHERE JOB_ID = #{jobId}
+	</update>
+	
+	<update id="updateExpiredJobsClosed">
+    UPDATE TBL_JOB_POSTING
+    SET IS_HIDDEN = 2,
+        UPDATED_AT = SYSDATE
+    WHERE DEADLINE_AT IS NOT NULL 
+    AND DEADLINE_AT &lt; SYSDATE
+    AND IS_HIDDEN != 2
+</update>
+ 
+
+</mapper>

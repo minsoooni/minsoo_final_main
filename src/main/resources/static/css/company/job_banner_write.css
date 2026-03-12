@@ -1,0 +1,121 @@
+@charset "UTF-8";
+
+/* write page only */
+.bn-actions{ display:flex; gap:10px; align-items:center; }
+
+.bn-ghost{
+  display:inline-flex; align-items:center; gap:8px;
+  border:1px solid #e5e7eb;
+  background:#fff;
+  color:#111;
+  border-radius:10px;
+  padding:10px 14px;
+  font-size:13px;
+  font-weight:900;
+  text-decoration:none;
+}
+.bn-ghost:hover{ background:#f9fafb; }
+
+/* 공고 선택 리스트 */
+.jb-wrap{
+  padding:14px;
+  background:#fff;
+  border:1px solid #eee;
+  border-radius:14px;
+}
+
+.jb-row{
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:12px 12px;
+  background:#fff;
+  transition: all .12s ease;
+}
+.jb-row + .jb-row{ margin-top:10px; }
+
+.jb-row.active{
+  border-color:#2563eb;
+  background:#eef4ff;
+  box-shadow: 0 0 0 2px rgba(37,99,235,.12) inset;
+}
+
+.jb-item{
+  display:flex;
+  gap:12px;
+  align-items:flex-start;
+  cursor:pointer;
+  margin:0;
+}
+
+.jb-item input[type="radio"]{
+  margin-top:4px;
+}
+
+.jb-title{
+  font-weight:900;
+  font-size:14px;
+  color:#111;
+}
+.jb-meta{
+  margin-top:6px;
+  font-size:12px;
+  color:#6b7280;
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+}
+
+.jb-empty{
+  padding:14px;
+  color:#6b7280;
+  font-size:13px;
+}
+
+/* 배너 폼 */
+.bf{ padding:14px; }
+
+.bf-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:14px;
+}
+
+.bf-field{ display:flex; flex-direction:column; gap:8px; }
+.bf-wide{ grid-column: 1 / -1; }
+
+.bf-label{
+  font-size:12px;
+  font-weight:900;
+  color:#111;
+}
+.req{ color:#ef4444; }
+
+.bf-input{
+  border:1px solid #e5e7eb;
+  border-radius:10px;
+  padding:10px 12px;
+  font-size:13px;
+  outline:none;
+  background:#fff;
+}
+.bf-input:focus{
+  border-color:#2563eb;
+  box-shadow: 0 0 0 2px rgba(37,99,235,.12);
+}
+
+.bf-help{
+  font-size:12px;
+  color:#6b7280;
+}
+
+.bf-actions{
+  margin-top:14px;
+  display:flex;
+  gap:10px;
+  justify-content:flex-end;
+}
+
+@media (max-width: 992px){
+  .bf-grid{ grid-template-columns: 1fr; }
+  .bf-actions{ justify-content:stretch; flex-direction:column; }
+}

@@ -1,0 +1,56 @@
+.jp-find-subtabs {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+      margin-bottom: 20px;
+    }
+
+    .jp-find-subtab {
+      flex: 1;
+      border: 1px solid #d9d9d9;
+      background: #fff;
+      border-radius: 12px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: all .2s ease;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .jp-find-subtab.active {
+      border-color: #0d6efd;
+      background: #f3f8ff;
+      color: #0d6efd;
+    }
+
+    .jp-find-result-box {
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      font-size: 14px;
+    }
+
+    .jp-find-help-links {
+      margin-top: 14px;
+      font-size: 13px;
+      color: #6c757d;
+    }
+
+    .jp-find-help-links a {
+      text-decoration: none;
+    }
+
+    .jp-radio-group {
+      display: flex;
+      gap: 16px;
+      margin-top: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .jp-radio-group label {
+      font-size: 14px;
+      cursor: pointer;
+    }

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html th:replace="~{layout/layout_main :: layout(~{::title}, ~{::link}, ~{::style}, ~{::script}, ~{::section})}"
+      lang="ko"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8">
+  <title>로그인 | 잡파인더</title>
+  <link rel="stylesheet" th:href="@{/css/index.css}">
+  <link rel="stylesheet" th:href="@{/css/member/login.css}">
+
+  <style></style>
+
+  <script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+
+      const gatewayPrefix = '/user-service/';
+      const authLoginUrl = gatewayPrefix + 'auth/login';
+      const indexUrl = gatewayPrefix + 'index';
+      const dormantUrl = gatewayPrefix + 'member/dormant';
+      const passwordChangeUrl = gatewayPrefix + 'member/password/change';
+
+      const tabs = document.querySelectorAll('.jp-login-tab');
+      const panelCompany = document.getElementById('panel-company');
+      const panelMember = document.getElementById('panel-member');
+
+      const title = document.getElementById('loginPanelTitle');
+      const desc = document.getElementById('loginPanelDesc');
+
+      const companyLoginForm = document.getElementById('companyLoginForm');
+      const memberLoginForm = document.getElementById('memberLoginForm');
+
+      const companyErrorBox = document.getElementById('companyLoginError');
+      const memberErrorBox = document.getElementById('memberLoginError');
+
+      function activate(target) {
+        tabs.forEach(t => t.classList.remove('active'));
+        document.querySelector(`.jp-login-tab[data-target="${target}"]`)?.classList.add('active');
+
+        if (target === 'company') {
+          panelCompany.classList.remove('d-none');
+          panelMember.classList.add('d-none');
+          title.textContent = '기업 회원 로그인';
+          desc.textContent = '기업 계정으로 로그인합니다.';
+        } else {
+          panelMember.classList.remove('d-none');
+          panelCompany.classList.add('d-none');
+          title.textContent = '개인 회원 로그인';
+          desc.textContent = '개인 계정으로 로그인합니다.';
+        }
+      }
+
+      function clearErrors() {
+        if (companyErrorBox) companyErrorBox.innerHTML = '';
+        if (memberErrorBox) memberErrorBox.innerHTML = '';
+      }
+
+      function showError(target, message) {
+        clearErrors();
+
+        if (target === 'company') {
+          if (companyErrorBox) companyErrorBox.innerHTML = message || '';
+        } else {
+          if (memberErrorBox) memberErrorBox.innerHTML = message || '';
+        }
+      }
+
+      async function requestJwtLogin(form, target) {
+        clearErrors();
+
+        const formData = new FormData(form);
+        const params = new URLSearchParams(formData);
+
+        try {
+          const response = await fetch(authLoginUrl + '?' + params.toString(), {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json'
+            }
+          });
+
+          const contentType = response.headers.get('content-type') || '';
+          const data = contentType.includes('application/json') ? await response.json() : null;
+
+          if (response.ok && data) {
+            if (data.accessToken) {
+              sessionStorage.setItem('accessToken', data.accessToken);
+            }
+
+
+            const loginUser = {
+            		  memberid: formData.get('memberid') || '',
+            		  name: formData.get('memberid') || '',
+            		  grantType: data.grantType || 'Bearer',
+            		  accessToken: data.accessToken || '',
+            		  accessTokenExpiresIn: data.accessTokenExpiresIn || ''
+            		};
+            
+            
+            localStorage.setItem('loginUser', JSON.stringify(loginUser));
+
+            window.location.href = indexUrl;
+            return;
+          }
+
+          if (data && data.error) {
+            if (target === 'company') {
+              if (data.error === 'NOT_APPROVED') {
+                showError('company', '아직 관리자 승인이 완료되지 않은 기업 계정입니다. 승인 완료 후 로그인해 주세요.');
+                return;
+              }
+
+              if (data.error === 'REJECT_APPROVED') {
+                showError('company', '관리자 승인이 반려된 기업 계정입니다.');
+                return;
+              }
+
+              showError('company', '기업 아이디 또는 비밀번호가 올바르지 않습니다.');
+              return;
+            }
+
+            if (target === 'member') {
+              if (data.error === 'MEMBER_SUSPENDED') {
+                showError('member', '정지된 계정입니다. 고객센터에 문의해 주세요.');
+                return;
+              }
+
+              if (data.error === 'MEMBER_WITHDRAWN') {
+                showError('member', '탈퇴 처리된 계정입니다. 다른 계정으로 로그인해 주세요.');
+                return;
+              }
+
+              if (data.error === 'MEMBER_DORMANT') {
+                const memberId = formData.get('memberid') || '';
+                window.location.href = dormantUrl + '?memberId=' + encodeURIComponent(memberId) + '&reason=memberDormant';
+                return;
+              }
+
+              if (data.error === 'MUST_CHANGE_PASSWORD') {
+                window.location.href = passwordChangeUrl;
+                return;
+              }
+
+              showError('member', '아이디 또는 비밀번호가 올바르지 않습니다.');
+              return;
+            }
+          }
+
+          showError(target, '로그인 처리 중 오류가 발생했습니다.');
+        } catch (error) {
+          showError(target, '서버 통신 중 오류가 발생했습니다.');
+        }
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab');
+
+      if (tab === 'member') activate('member');
+      else activate('company');
+
+      tabs.forEach(btn => {
+        btn.addEventListener('click', function () {
+          clearErrors();
+          activate(btn.dataset.target);
+        });
+      });
+
+      if (companyLoginForm) {
+        companyLoginForm.addEventListener('submit', function (event) {
+          event.preventDefault();
+          requestJwtLogin(companyLoginForm, 'company');
+        });
+      }
+
+      if (memberLoginForm) {
+        memberLoginForm.addEventListener('submit', function (event) {
+          event.preventDefault();
+          requestJwtLogin(memberLoginForm, 'member');
+        });
+      }
+    });
+  </script>
+</head>
+
+<body>
+<section class="jp-login-page">
+
+  <section class="jp-login-hero">
+    <div class="container-fluid jp-container">
+      <h1 class="jp-login-hero__title">로그인</h1>
+      <div class="jp-login-hero__sub">기업 회원 / 개인 회원 중 선택 후 로그인하세요.</div>
+      <br>계정이 있으신가요?
+      <a class="jp-link" href="http://localhost:8000/user-service/member/findAccount">계정찾기</a>
+    </div>
+  </section>
+
+  <section class="jp-section" style="background:#fff;">
+    <div class="container-fluid jp-container">
+      <div class="row">
+
+        <div class="col-md-6 mb-3">
+          <div class="jp-login-card__head">
+            <div class="jp-login-card__title">회원 유형 선택</div>
+            <div class="jp-login-card__desc">로그인할 계정 유형을 선택하세요.</div>
+          </div>
+
+          <div class="jp-login-tabs mt-3">
+            <button type="button" class="jp-login-tab active" data-target="company">
+              <div class="jp-login-tab__big">기업 회원</div>
+              <div class="jp-login-tab__small">공고 등록 · 지원자 관리</div>
+            </button>
+
+            <button type="button" class="jp-login-tab" data-target="member">
+              <div class="jp-login-tab__big">개인 회원</div>
+              <div class="jp-login-tab__small">이력서 · 지원 관리 · 취업 정보</div>
+            </button>
+          </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+          <div class="jp-card jp-login-card h-100">
+
+            <div class="jp-login-card__head">
+              <div class="jp-login-card__title" id="loginPanelTitle">기업 회원 로그인</div>
+              <div class="jp-login-card__desc" id="loginPanelDesc">기업 계정으로 로그인합니다.</div>
+
+              <div class="alert alert-success"
+                   th:if="${param.unlock != null and param.unlock[0] == 'success'}"
+                   style="margin-bottom:15px;">
+                휴면 계정이 정상적으로 해제되었습니다. 다시 로그인해 주세요.
+              </div>
+            </div>
+
+            <div id="panel-company" class="jp-login-panel">
+              <form id="companyLoginForm" action="#" method="post" novalidate>
+
+                <input type="hidden" name="loginType" value="company">
+                <input type="hidden" name="tab" value="company">
+
+                <div class="form-group">
+                  <label class="jp-label">기업 아이디</label>
+                  <input type="text" name="memberid" class="form-control jp-input" placeholder="기업 아이디 입력">
+                </div>
+
+                <div class="form-group">
+                  <label class="jp-label">비밀번호</label>
+                  <input type="password" name="passwd" class="form-control jp-input mt-2" placeholder="비밀번호 입력">
+                </div>
+
+                <div id="companyLoginError" class="text-danger mb-2">
+                  <span th:if="${param.error != null and param.tab != null and param.tab[0] == 'company' and param.reason != null and param.reason[0] == 'notApproved'}">
+                    아직 관리자 승인이 완료되지 않은 기업 계정입니다. 승인 완료 후 로그인해 주세요.
+                  </span>
+
+                  <span th:if="${param.error != null and param.tab != null and param.tab[0] == 'company' and param.reason != null and param.reason[0] == 'rejectApproved'}">
+                    관리자 승인이 반려된 기업 계정입니다.<br/>
+                    <b>반려 사유:</b>
+                    <span th:text="${session.rejectReason != null ? session.rejectReason : '반려 사유가 등록되어 있지 않습니다.'}">반려 사유</span>
+                  </span>
+
+                  <span th:if="${param.error != null and param.tab != null and param.tab[0] == 'company' and param.reason == null}">
+                    기업 아이디 또는 비밀번호가 올바르지 않습니다.
+                  </span>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block jp-login-btn mt-3">기업 로그인</button>
+
+                <div class="text-muted mt-2" style="font-size:13px;">
+                  아직 기업회원이 아니신가요?
+                  <a class="jp-link" href="http://localhost:8000/user-service/member/registerCompanyMember">기업 회원가입</a>
+                </div>
+
+              </form>
+            </div>
+
+            <div id="panel-member" class="jp-login-panel d-none">
+              <form id="memberLoginForm" action="#" method="post" novalidate>
+
+                <input type="hidden" name="loginType" value="member">
+                <input type="hidden" name="tab" value="member">
+
+                <div class="form-group">
+                  <label class="jp-label">개인 아이디</label>
+                  <input type="text" id="memberId" name="memberid" class="form-control jp-input" placeholder="아이디 입력" autocomplete="username">
+                </div>
+
+                <div class="form-group">
+                  <label class="jp-label">비밀번호</label>
+                  <input type="password" id="password" name="passwd" class="form-control jp-input" placeholder="비밀번호 입력" autocomplete="current-password">
+                </div>
+
+                <div id="memberLoginError" class="text-danger mb-2">
+
+                  <span th:if="${param.error != null and param.tab != null and param.tab[0] == 'member' and param.reason != null and param.reason[0] == 'memberSuspended'}">
+                    정지된 계정입니다. 고객센터에 문의해 주세요.
+                  </span>
+
+                  <span th:if="${param.error != null and param.tab != null and param.tab[0] == 'member' and param.reason != null and param.reason[0] == 'memberWithdrawn'}">
+                    탈퇴 처리된 계정입니다. 다른 계정으로 로그인해 주세요.
+                  </span>
+
+                  <span th:if="${param.error != null and param.tab != null and param.tab[0] == 'member' and param.reason != null and param.reason[0] == 'memberDormant'}">
+                    휴면 계정입니다. 휴면 해제 후 로그인해 주세요.
+                  </span>
+
+                  <span th:if="${param.error != null and param.tab != null and param.tab[0] == 'member' and param.reason == null}">
+                    아이디 또는 비밀번호가 올바르지 않습니다.
+                  </span>
+
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block jp-login-btn">
+                  개인 로그인
+                </button>
+
+                <div class="text-muted mt-2" style="font-size:13px;">
+                  아직 개인회원이 아니신가요?
+                  <a class="jp-link" href="http://localhost:8000/user-service/member/registerMember">개인 회원가입</a>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+</section>
+</body>
+</html>

@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/layout_admin :: layout(~{::title},~{::link},~{::style},~{::script},~{::section})}">
+<!-- 뷰 경로: templates/admin/admin_stats.html | 접근 URL: /admin/stats -->
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>통계</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --border: #EAECF0; --text: #111111; --text-muted: #888E9B; --bg: #F7F8FA;
+      --green: #16A34A; --red: #DC2626; --blue: #2563EB; --yellow: #D97706; --purple: #7C3AED;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); }
+
+    .dash { padding: 24px 28px; width: 100%; box-sizing: border-box; }
+
+    .page-header { margin-bottom: 22px; }
+    .page-header h1 { font-size: 20px; font-weight: 700; }
+    .page-header p  { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+    /* 탭 */
+    .report-nav { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 24px; }
+    .report-nav-tab {
+      padding: 10px 22px; font-size: 14px; font-weight: 600; color: var(--text-muted);
+      cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px;
+      transition: all 0.15s; background: none; border-top: none; border-left: none;
+      border-right: none; font-family: inherit;
+    }
+    .report-nav-tab.active  { color: #111; border-bottom-color: #111; }
+    .report-nav-tab:hover:not(.active) { color: var(--text); }
+
+    .report-section        { display: none; }
+    .report-section.active { display: block; }
+
+    /* KPI */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    .kpi-card {
+      background: #fff; border: 1px solid var(--border); border-radius: 12px;
+      padding: 18px 20px; position: relative; overflow: hidden; transition: box-shadow 0.2s;
+    }
+    .kpi-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
+    .kpi-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 3px; background: var(--card-accent, #111);
+    }
+    .kpi-label {
+      font-size: 12px; color: var(--text-muted); font-weight: 500; margin-bottom: 8px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .kpi-badge  { font-size: 11px; padding: 2px 7px; border-radius: 20px; font-weight: 600; }
+    .kpi-badge.up      { background: #E8F8F0; color: var(--green); }
+    .kpi-badge.down    { background: #FDECEA; color: var(--red); }
+    .kpi-badge.neutral { background: #EEF2FF; color: #5C6BC0; }
+    .kpi-value { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.1; }
+    .kpi-sub   { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+
+    /* 차트 레이아웃 */
+    .chart-row     { display: grid; gap: 14px; margin-bottom: 14px; }
+    .chart-row.col-2  { grid-template-columns: 1fr 1fr; }
+    .chart-row.col-13 { grid-template-columns: 1.7fr 1fr; }
+
+    /* ✅ chart-card: min-height 제거 → 내용물 기준으로 자연스럽게 높이 결정 */
+    .chart-card {
+      background: #fff; border: 1px solid var(--border); border-radius: 12px;
+      padding: 20px 22px; transition: box-shadow 0.2s;
+    }
+    .chart-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
+    .chart-card-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
+    }
+    .chart-card-title  { font-size: 13.5px; font-weight: 600; }
+    .chart-card-sub    { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .chart-legend { display: flex; gap: 14px; }
+    .legend-item  { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-muted); }
+    .legend-dot   { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ✅ 라인/바 차트 wrap: 고정 높이 + position relative (Chart.js 필수) */
+    .chart-wrap {
+      position: relative;
+      width: 100%;
+      height: 260px;
+    }
+
+    /* ✅ 도넛 차트 wrap: flex 중앙 정렬 + 고정 높이 */
+    .chart-wrap.center {
+      height: 260px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    /* 도넛 캔버스는 wrapper 안에서 크기 자동 결정하도록 max 제약 완화 */
+    .chart-wrap.center canvas {
+      max-height: 230px;
+      max-width:  230px;
+    }
+
+    /* 태그 */
+    .tag        { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .tag.active { background: #E8F8F0; color: var(--green); }
+    .tag.closed { background: #F0F0F0; color: #888; }
+    .tag.report { background: #FDECEA; color: var(--red); }
+
+    /* 테이블 */
+    .data-table    { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .data-table th {
+      background: var(--bg); padding: 10px 14px; text-align: left;
+      font-size: 12px; font-weight: 600; color: var(--text-muted); border-bottom: 1px solid var(--border);
+    }
+    .data-table td { padding: 11px 14px; border-bottom: 1px solid var(--border); color: var(--text); }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: #FAFBFF; }
+    .rank {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 22px; height: 22px; border-radius: 50%; font-size: 11px; font-weight: 700;
+    }
+    .rank.r1 { background: #FFF3CD; color: #D68910; }
+    .rank.r2 { background: #F0F0F0; color: #666; }
+    .rank.r3 { background: #FDEBD0; color: #CA6F1E; }
+    .rank.rn { background: var(--bg); color: var(--text-muted); }
+
+    /* ✅ 반응형 */
+    @media (max-width: 1280px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .chart-row.col-13 { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 900px) {
+      .chart-row.col-2 { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .dash { padding: 16px; }
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+      .report-nav-tab { padding: 8px 12px; font-size: 13px; }
+    }
+    @media (max-width: 420px) {
+      .kpi-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+
+  <script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+
+      /* ─── 공통 차트 옵션 ─── */
+      const chartOpts = {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: true }, ticks: { font: { size: 11 }, color: '#8892A4', maxTicksLimit: 8 } },
+          y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { size: 11 }, color: '#8892A4' }, beginAtZero: false }
+        }
+      };
+
+      /* ─── DB에서 넘어온 실제 데이터 ─── */
+      const joinData     = /*[[${joinJson}]]*/     [];
+      const withdrawData = /*[[${withdrawJson}]]*/ [];
+
+      const labels30    = joinData.map(d => d.day);
+      const joinArr     = joinData.map(d => d.count);
+      const withdrawArr = withdrawData.map(d => d.count);
+
+      /* ─── 회원 가입/탈퇴 추이 차트 ─── */
+      new Chart(document.getElementById('memberTrendChart'), {
+        type: 'line',
+        data: {
+          labels: labels30,
+          datasets: [
+            { label: '신규 가입', data: joinArr,
+              borderColor: '#2563EB', backgroundColor: 'rgba(37,99,235,0.08)',
+              fill: true, tension: 0.4, pointRadius: 2 },
+            { label: '탈퇴',     data: withdrawArr,
+              borderColor: '#DC2626', backgroundColor: 'rgba(220,38,38,0.06)',
+              fill: true, tension: 0.4, pointRadius: 2, borderDash: [4, 3] }
+          ]
+        },
+        options: chartOpts
+      });
+
+      /* ─── 회원 유형 비율 차트 ─── */
+      new Chart(document.getElementById('memberTypeChart'), {
+        type: 'doughnut',
+        data: {
+          labels: ['구직자', '기업 회원'],
+          datasets: [{
+            data: [ /*[[${jobSeeker}]]*/ 0, /*[[${companyMember}]]*/ 0 ],
+            backgroundColor: ['#111', '#94A3B8'],
+            borderWidth: 0, hoverOffset: 6
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: true,
+          plugins: { legend: { display: true, position: 'bottom',
+            labels: { font: { size: 12 }, padding: 14, usePointStyle: true } } },
+          cutout: '65%'
+        }
+      });
+
+      /* ─── 채용공고 추이 차트 ─── */
+      const dailyJobReg    = /*[[${dailyJobReg}]]*/    [];
+      const dailyJobClosed = /*[[${dailyJobClosed}]]*/ [];
+      const jobLabels      = dailyJobReg.map(d => d.day);
+      const jobRegArr      = dailyJobReg.map(d => d.count);
+      const jobClosedArr   = dailyJobClosed.map(d => d.count);
+
+      new Chart(document.getElementById('jobTrendChart'), {
+        type: 'bar',
+        data: {
+          labels: jobLabels,
+          datasets: [
+            { label: '등록',    data: jobRegArr,    backgroundColor: '#2563EB', borderRadius: 3 },
+            { label: '마감예정', data: jobClosedArr, backgroundColor: '#94A3B8', borderRadius: 3 }
+          ]
+        },
+        options: chartOpts
+      });
+
+      /* ─── 채용 상태 도넛 ─── */
+      const jobCountActive = /*[[${jobCountActive}]]*/ 0;
+      const jobCountHidden = /*[[${jobCountHidden}]]*/ 0;
+      const jobCountClosed = /*[[${jobCountClosed}]]*/ 0;
+
+      new Chart(document.getElementById('jobStatusChart'), {
+        type: 'doughnut',
+        data: {
+          labels: ['활성', '숨김', '마감'],
+          datasets: [{ data: [jobCountActive, jobCountHidden, jobCountClosed],
+            backgroundColor: ['#111', '#2563EB', '#94A3B8'],
+            borderWidth: 0, hoverOffset: 6 }]
+        },
+        options: { responsive: true, maintainAspectRatio: true,
+          plugins: { legend: { display: true, position: 'bottom',
+            labels: { font: { size: 12 }, padding: 12, usePointStyle: true } } }, cutout: '65%' }
+      });
+
+      /* ─── 게시판 추이 차트 ─── */
+      const dailyPost  = /*[[${dailyPost}]]*/  [];
+      const postLabels = dailyPost.map(d => d.day);
+      const postArr    = dailyPost.map(d => d.count);
+
+      new Chart(document.getElementById('boardTrendChart'), {
+        type: 'line',
+        data: {
+          labels: postLabels,
+          datasets: [
+            { label: '게시글', data: postArr,
+              borderColor: '#16A34A', backgroundColor: 'rgba(22,163,74,0.08)',
+              fill: true, tension: 0.4, pointRadius: 2 }
+          ]
+        },
+        options: chartOpts
+      });
+
+      /* ─── 게시판별 비율 도넛 ─── */
+      const postByBoard = /*[[${postByBoard}]]*/ [];
+      const boardLabels = postByBoard.map(d => 'Board ' + d.boardId);
+      const boardCounts = postByBoard.map(d => d.count);
+      const boardColors = ['#111','#16A34A','#2563EB','#D97706','#7C3AED','#DC2626'];
+
+      new Chart(document.getElementById('boardTypeChart'), {
+        type: 'doughnut',
+        data: {
+          labels: boardLabels,
+          datasets: [{ data: boardCounts,
+            backgroundColor: boardColors.slice(0, boardLabels.length),
+            borderWidth: 0, hoverOffset: 6 }]
+        },
+        options: { responsive: true, maintainAspectRatio: true,
+          plugins: { legend: { display: true, position: 'bottom',
+            labels: { font: { size: 12 }, padding: 12, usePointStyle: true } } }, cutout: '60%' }
+      });
+
+      /* ─── 탭 전환 ─── */
+      window.switchSection = function (el, sec) {
+        document.querySelectorAll('.report-nav-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.report-section').forEach(s => s.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('sec-' + sec).classList.add('active');
+      };
+    });
+  </script>
+</head>
+
+<body>
+<section class="dash">
+
+  <div class="page-header">
+    <h1>통계</h1>
+    <p>회원, 채용공고, 커뮤니티 현황을 한눈에 확인하세요</p>
+  </div>
+
+  <!-- 탭 -->
+  <div class="report-nav">
+    <button class="report-nav-tab active" onclick="switchSection(this,'member')">📈 회원 통계</button>
+    <button class="report-nav-tab"        onclick="switchSection(this,'job')"   >💼 채용공고 통계</button>
+    <button class="report-nav-tab"        onclick="switchSection(this,'board')" >📝 게시판 통계</button>
+  </div>
+
+  <!-- ════════════════ 회원 통계 ════════════════ -->
+  <div class="report-section active" id="sec-member">
+    <div class="kpi-grid">
+      <div class="kpi-card" style="--card-accent:#2563EB">
+        <div class="kpi-label">총 회원 수</div>
+        <div class="kpi-value" th:text="${#numbers.formatInteger(totalCount, 0, 'COMMA')}">0</div>
+        <div class="kpi-sub">
+          구직자 <span th:text="${#numbers.formatInteger(jobSeeker, 0, 'COMMA')}">0</span>
+          / 기업 <span th:text="${#numbers.formatInteger(companyMember, 0, 'COMMA')}">0</span>
+        </div>
+      </div>
+      <div class="kpi-card" style="--card-accent:#16A34A">
+        <div class="kpi-label">이번 달 신규 가입</div>
+        <div class="kpi-value" th:text="${#numbers.formatInteger(joinCount, 0, 'COMMA')}">0</div>
+        <div class="kpi-sub">CREATED_AT 기준</div>
+      </div>
+      <div class="kpi-card" style="--card-accent:#DC2626">
+        <div class="kpi-label">이번 달 탈퇴</div>
+        <div class="kpi-value" th:text="${#numbers.formatInteger(withdrawCount, 0, 'COMMA')}">0</div>
+        <div class="kpi-sub">STATUS=2 기준</div>
+      </div>
+      <div class="kpi-card" style="--card-accent:#D97706">
+        <div class="kpi-label">순증 회원 수</div>
+        <div class="kpi-value" th:text="${#numbers.formatInteger(netCount, 0, 'COMMA')}">0</div>
+        <div class="kpi-sub">신규 - 탈퇴</div>
+      </div>
+    </div>
+
+    <div class="chart-row col-13">
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-card-title">일별 회원 가입 / 탈퇴 추이</div>
+            <div class="chart-card-sub">최근 30일</div>
+          </div>
+          <div class="chart-legend">
+            <span class="legend-item"><span class="legend-dot" style="background:#2563EB"></span>신규 가입</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#DC2626"></span>탈퇴</span>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="memberTrendChart"></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-card-title">회원 유형 비율</div>
+            <div class="chart-card-sub">구직자 vs 기업</div>
+          </div>
+        </div>
+        <div class="chart-wrap center">
+          <canvas id="memberTypeChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════ 채용공고 통계 ════════════════ -->
+  <div class="report-section" id="sec-job">
+    <div class="kpi-grid">
+      <div class="kpi-card" style="--card-accent:#2563EB">
+        <div class="kpi-label">활성 채용공고</div>
+        <div class="kpi-value" th:text="${#numbers.formatInteger(activeJobCount, 0, 'COMMA')}">0</div>
+        <div class="kpi-sub">STATUS=ACTIVE 기준</div>
+      </div>
+      <div class="kpi-card" style="--card-accent:#16A34A">
+        <div class="kpi-label">이번 달 신규 등록</div>
+        <div class="kpi-value" th:text="${#numbers.formatInteger(thisMonthJobCount, 0, 'COMMA')}">0</div>
+        <div class="kpi-sub">CREATED_AT 기준</div>
+      </div>
+      <div class="kpi-card" style="--card-accent:#7C3AED">
+        <div class="kpi-label">이번 달 마감</div>
+        <div class="kpi-value" th:text="${#numbers.formatInteger(thisMonthClosedJob, 0, 'COMMA')}">0</div>
+        <div class="kpi-sub">DEADLINE_AT 기준</div>
+      </div>
+      <div class="kpi-card" style="--card-accent:#DC2626">
+        <div class="kpi-label">숨김 처리 공고</div>
+        <div class="kpi-value" th:text="${#numbers.formatInteger(jobCountHidden, 0, 'COMMA')}">0</div>
+        <div class="kpi-sub">IS_HIDDEN 기준</div>
+      </div>
+    </div>
+    <div class="chart-row col-2">
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-card-title">채용공고 등록 / 마감 추이</div>
+            <div class="chart-card-sub">최근 30일</div>
+          </div>
+          <div class="chart-legend">
+            <span class="legend-item"><span class="legend-dot" style="background:#2563EB"></span>등록</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#94A3B8"></span>마감예정</span>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="jobTrendChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-card-title">채용 상태 분포</div>
+            <div class="chart-card-sub">전체 공고 기준</div>
+          </div>
+        </div>
+        <div class="chart-wrap center"><canvas id="jobStatusChart"></canvas></div>
+      </div>
+    </div>
+    
+  </div>
+
+  <!-- ════════════════ 게시판 통계 ════════════════ -->
+  <div class="report-section" id="sec-board">
+    <div class="kpi-grid">
+      <div class="kpi-card" style="--card-accent:#16A34A">
+        <div class="kpi-label">전체 게시글 수</div>
+        <div class="kpi-value" th:text="${#numbers.formatInteger(totalPostCount, 0, 'COMMA')}">0</div>
+        <div class="kpi-sub">삭제/숨김 제외</div>
+      </div>
+      <div class="kpi-card" style="--card-accent:#D97706">
+        <div class="kpi-label">이번 달 신규 게시글</div>
+        <div class="kpi-value" th:text="${#numbers.formatInteger(thisMonthPostCount, 0, 'COMMA')}">0</div>
+        <div class="kpi-sub">CREATED_AT 기준</div>
+      </div>
+      <div class="kpi-card" style="--card-accent:#DC2626">
+        <div class="kpi-label">숨김 처리 게시글</div>
+        <div class="kpi-value" th:text="${#numbers.formatInteger(hiddenPostCount, 0, 'COMMA')}">0</div>
+        <div class="kpi-sub">IS_HIDDEN=1 기준</div>
+      </div>
+      <div class="kpi-card" style="--card-accent:#7C3AED">
+        <div class="kpi-label">게시판 수</div>
+        <div class="kpi-value" th:text="${#lists.size(postByBoard)}">0</div>
+        <div class="kpi-sub">활성 게시판 기준</div>
+      </div>
+    </div>
+    <div class="chart-row col-2">
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-card-title">게시글 작성 추이</div>
+            <div class="chart-card-sub">최근 30일</div>
+          </div>
+          <div class="chart-legend">
+            <span class="legend-item"><span class="legend-dot" style="background:#16A34A"></span>게시글</span>
+          </div>
+        </div>
+        <!-- ✅ 누락된 canvas 추가 -->
+        <div class="chart-wrap"><canvas id="boardTrendChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-card-title">게시판별 활동 비율</div>
+            <div class="chart-card-sub">전체 게시글 기준</div>
+          </div>
+        </div>
+        <div class="chart-wrap center"><canvas id="boardTypeChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+</section>
+</body>
+</html>

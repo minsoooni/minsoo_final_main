@@ -1,0 +1,117 @@
+@charset "UTF-8";
+
+/*
+  company_common.css
+  - 회사(기업) 영역에서 여러 화면이 함께 쓰는 “공통 컴포넌트/페이지” 스타일
+  - 레이아웃(Topbar/Sidebar)은 company.css에 두고,
+    카드/패널/페이지 폭/뱃지/필 등 화면 공통 요소는 여기로 모은다.
+*/
+
+/* ===== 콘텐츠 영역(우측 본문) 공통 ===== */
+.company-content {
+  flex: 1;
+  padding: 30px;
+  background: #f5f6f8;
+  overflow-y: auto;
+}
+
+/* ===== 페이지 컨테이너(대시보드/인재검색 등) ===== */
+.dash {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+/* 대시보드 스타일을 다른 페이지에서도 재사용(헤더 영역) */
+.dash-head { margin-bottom: 18px; }
+.dash-title { font-size: 22px; font-weight: 800; margin: 0; }
+.dash-sub { margin: 6px 0 0; color:#6b7280; font-size: 14px; }
+
+/* ===== 카드(공통) 그림자 효과===== */
+.panel {
+  border: solid 2px red;
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* ===== 페이지 헤더(공통) ===== */
+.page-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.page-title {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0;
+}
+.page-desc {
+  margin: 6px 0 0;
+  color: #777;
+  font-size: 13px;
+}
+.page-actions .btn {
+  border-radius: 10px;
+}
+
+/* ===== Pill(라벨) 공통 ===== */
+.pill {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  white-space: nowrap;
+}
+.pill-dark {
+  background: #0b1524;
+  color: #fff;
+  border-color: #0b1524;
+}
+.pill-gray {
+  background: #f3f4f6;
+  color: #111;
+}
+
+/* ===== Panel(섹션 박스) 공통 ===== */
+.panel {
+  background: #fff;
+  border: 1px solid #ececec;
+  border-radius: 16px;
+  padding: 16px;
+  margin-top: 18px;
+}
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.panel-head h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+}
+.panel-link {
+  color: #111;
+  text-decoration: none;
+  font-size: 13px;
+}
+.panel-link:hover {
+  text-decoration: underline;
+}
+
+/* ===== 반응형 ===== */
+@media (max-width: 768px) {
+  .company-content {
+    padding: 18px;
+  }
+
+  .page-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

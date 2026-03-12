@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- ==== 루트 엘리먼트 & 네임스페이스 설정(프로젝트 전체내에서 유일해야 한다.) ==== -->
+<mapper namespace="com.spring.app.company.model.CompanyTalentMapper">
+
+	<!-- 직무분야 목록 조회
+         depth=2(소분류)만 노출하는 방식
+         ex) 백엔드, 프론트엔드, DevOps 등 -->
+    <select id="selectJobCategoryList"
+            resultType="com.spring.app.common.domain.JobCategoryDTO">
+        SELECT
+            CATEGORY_ID    AS categoryId,
+            FK_PARENT_ID   AS fkParentId,
+            CATEGORY_NAME  AS categoryName,
+            DEPTH          AS depth
+        FROM TBL_JOB_CATEGORY
+        WHERE DEPTH = 1
+        ORDER BY CATEGORY_NAME ASC
+    </select>
+	
+	
+	
+	<!-- 기술 카테고리 조회 -->
+    <select id="selectSkillCategoryList"
+            resultType="com.spring.app.common.domain.SkillCategoryDTO">
+        SELECT
+            SKILL_CATEGORY_ID AS skillCategoryId,
+            CATEGORY_NAME     AS categoryName
+        FROM TBL_SKILL_CATEGORY
+        ORDER BY SKILL_CATEGORY_ID ASC
+    </select>
+    
+    
+    
+    <!-- 기술 목록 조회 -->
+    <select id="selectSkillList"
+            resultType="com.spring.app.common.domain.SkillDTO">
+        SELECT
+            SKILL_ID               AS skillId,
+            FK_SKILL_CATEGORY_ID   AS fkSkillCategoryId,
+            SKILL_NAME             AS skillName
+        FROM TBL_SKILL
+        ORDER BY FK_SKILL_CATEGORY_ID ASC, SKILL_NAME ASC
+    </select>
+	
+	
+	
+	<!-- 목록 조회용 -->
+	<select id="selectPublicPrimaryResumeList"
+	        parameterType="com.spring.app.company.domain.TalentSearchConditionDTO"
+	        resultType="com.spring.app.company.domain.TalentResumeDTO">
+	
+	    SELECT
+	        r.RESUME_ID          AS resumeId,
+	        r.FK_MEMBERID        AS memberId,
+	        m.NAME               AS name,
+	        r.TITLE              AS resumeTitle,
+	        r.FK_CATEGORY_ID     AS categoryId,
+	        jc.CATEGORY_NAME     AS categoryName,
+	        r.FK_REGION_CODE     AS regionCode,
+	        rg.REGION_NAME       AS regionName,
+	        r.ADDRESS            AS address,
+	        r.SELF_INTRO         AS selfIntro,
+	        r.PHOTO_PATH         AS photoPath,
+	        r.DESIRED_SALARY     AS desiredSalary,
+	        r.UPLOADED_AT        AS uploadedAt,
+	        r.IS_PRIMARY         AS isPrimary,
+	        r.ALLOW_SCOUT        AS allowScout,
+	        r.IS_DELETED         AS isDeleted
+	    FROM TBL_RESUME r
+	    JOIN TBL_MEMBER m
+	      ON m.MEMBERID = r.FK_MEMBERID
+	    LEFT JOIN TBL_JOB_CATEGORY jc
+	      ON jc.CATEGORY_ID = r.FK_CATEGORY_ID
+	    LEFT JOIN TBL_REGION rg
+	      ON rg.REGION_CODE = r.FK_REGION_CODE
+	    WHERE r.IS_PRIMARY = 1
+	      AND r.IS_DELETED = 0
+	      AND r.ALLOW_SCOUT = 1
+	
+	    <if test="keyword != null and keyword != ''">
+	      AND (
+	            LOWER(m.NAME) LIKE '%' || LOWER(#{keyword}) || '%'
+	         OR LOWER(r.TITLE) LIKE '%' || LOWER(#{keyword}) || '%'
+	         OR LOWER(jc.CATEGORY_NAME) LIKE '%' || LOWER(#{keyword}) || '%'
+	      )
+	    </if>
+	
+	    <if test="jobCategoryIds != null and jobCategoryIds.size() > 0">
+	      AND r.FK_CATEGORY_ID IN
+	      <foreach collection="jobCategoryIds" item="categoryId" open="(" separator="," close=")">
+	        #{categoryId}
+	      </foreach>
+	    </if>
+	
+	    <if test="regionCode != null and regionCode != ''">
+	      AND r.FK_REGION_CODE = #{regionCode}
+	    </if>
+	
+	    <if test="salaryMin != null">
+	      AND r.DESIRED_SALARY <![CDATA[>=]]> #{salaryMin}
+	    </if>
+	
+	    <if test="salaryMax != null">
+	      AND r.DESIRED_SALARY <![CDATA[<=]]> #{salaryMax}
+	    </if>
+	
+	    <choose>
+	      <when test="sort == 'salary'">
+	        ORDER BY r.DESIRED_SALARY DESC NULLS LAST, r.UPLOADED_AT DESC
+	      </when>
+	      <when test="sort == 'oldest'">
+	        ORDER BY r.UPLOADED_AT ASC
+	      </when>
+	      <otherwise>
+	        ORDER BY r.UPLOADED_AT DESC
+	      </otherwise>
+	    </choose>
+	
+	</select>
+	
+	
+	<!-- 목록 개수 조회 -->
+	<select id="selectPublicPrimaryResumeCount"
+	        parameterType="com.spring.app.company.domain.TalentSearchConditionDTO"
+	        resultType="int">
+	
+	    SELECT COUNT(*)
+	    FROM TBL_RESUME r
+	    JOIN TBL_MEMBER m
+	      ON m.MEMBERID = r.FK_MEMBERID
+	    LEFT JOIN TBL_JOB_CATEGORY jc
+	      ON jc.CATEGORY_ID = r.FK_CATEGORY_ID
+	    WHERE r.IS_PRIMARY = 1
+	      AND r.IS_DELETED = 0
+	      AND r.ALLOW_SCOUT = 1
+	
+	    <if test="keyword != null and keyword != ''">
+	      AND (
+	            LOWER(m.NAME) LIKE '%' || LOWER(#{keyword}) || '%'
+	         OR LOWER(r.TITLE) LIKE '%' || LOWER(#{keyword}) || '%'
+	         OR LOWER(jc.CATEGORY_NAME) LIKE '%' || LOWER(#{keyword}) || '%'
+	      )
+	    </if>
+	
+	    <if test="jobCategoryIds != null and jobCategoryIds.size() > 0">
+	      AND r.FK_CATEGORY_ID IN
+	      <foreach collection="jobCategoryIds" item="categoryId" open="(" separator="," close=")">
+	        #{categoryId}
+	      </foreach>
+	    </if>
+	
+	    <if test="regionCode != null and regionCode != ''">
+	      AND r.FK_REGION_CODE = #{regionCode}
+	    </if>
+	
+	    <if test="salaryMin != null">
+	      AND r.DESIRED_SALARY <![CDATA[>=]]> #{salaryMin}
+	    </if>
+	
+	    <if test="salaryMax != null">
+	      AND r.DESIRED_SALARY <![CDATA[<=]]> #{salaryMax}
+	    </if>
+	
+	</select>
+	
+	
+	
+	
+	
+	<!-- 이력서 상세 조회 -->
+	<select id="selectPublicPrimaryResumeDetail"
+	        parameterType="long"
+	        resultType="com.spring.app.company.domain.TalentResumeDetailDTO">
+	    SELECT
+	           R.resume_id       AS resumeId,
+	           R.fk_memberid     AS memberid,
+	           R.fk_category_id  AS categoryId,
+	           R.fk_region_code  AS regionCode,
+	           R.title           AS title,
+	           R.address         AS address,
+	           R.self_intro      AS selfIntro,
+	           R.desired_salary  AS desiredSalary,
+	           R.photo_path      AS photoPath,
+	           R.write_status    AS writeStatus,
+	           R.is_primary      AS isPrimary,
+	           R.allow_scout     AS allowScout,
+	           TO_CHAR(R.uploaded_at, 'YYYY-MM-DD') AS uploadedAt,
+	           R.is_deleted      AS isDeleted,
+	           M.name            AS memberName,
+	           M.email           AS memberEmail,
+	           M.phone           AS memberPhone,
+	           TO_CHAR(M.birth_date, 'YYYY-MM-DD') AS memberBirthDate,
+	           M.gender          AS memberGender,
+	           JC.category_name  AS categoryName,
+	           RG.region_name    AS regionName
+	           
+	    FROM tbl_resume R
+	    JOIN tbl_member M
+	      ON R.fk_memberid = M.memberid
+	    LEFT JOIN tbl_job_category JC
+	      ON R.fk_category_id = JC.category_id
+	    LEFT JOIN tbl_region RG
+	      ON R.fk_region_code = RG.region_code
+	      
+	    WHERE R.resume_id = #{resumeId}
+	      AND R.is_deleted = 0
+	      AND R.is_primary = 1
+	      AND R.allow_scout = 1
+	</select>	
+
+
+
+	<!-- 학력 리스트 조회 -->
+	<select id="selectTalentEducationList"
+	        parameterType="long"
+	        resultType="com.spring.app.jobseeker.domain.ResumeEducationDTO">
+	
+	    SELECT E.education_id       AS educationId,
+	           E.fk_resume_id       AS resumeId,
+	           E.schoolname,
+	           E.major,
+	           E.fk_edu_level_code  AS educationLevelCode,
+	           TO_CHAR(E.enrolldate, 'YYYY-MM-DD') AS enrolldate,
+	           TO_CHAR(E.graduationdate, 'YYYY-MM-DD') AS graduationdate,
+	           E.status,
+	           E.sort,
+	           EL.edu_level_name    AS educationLevelName
+	    FROM tbl_resume_education E
+	    LEFT JOIN tbl_education_level EL
+	      ON E.fk_edu_level_code = EL.edu_level_code
+	    WHERE E.fk_resume_id = #{resumeId}
+	    ORDER BY E.sort ASC, E.enrolldate DESC NULLS LAST
+	</select>
+
+
+	<!-- 경력 리스트 -->
+	<select id="selectTalentCareerList"
+	        parameterType="long"
+	        resultType="com.spring.app.jobseeker.domain.ResumeCareerDTO">
+	
+	    SELECT C.career_id        AS careerId,
+	           C.fk_resume_id     AS resumeId,
+	           C.companyname,
+	           C.fk_category_id   AS categoryId,
+	           C.jobname_custom   AS jobnameCustom,
+	           C.position,
+	           TO_CHAR(C.joindate, 'YYYY-MM-DD') AS joindate,
+	           TO_CHAR(C.leavedate, 'YYYY-MM-DD') AS leavedate,
+	           C.job_desc         AS jobDesc,
+	           C.sort,
+	           JC.category_name   AS categoryName
+	    FROM tbl_resume_career C
+	    LEFT JOIN tbl_job_category JC
+	      ON C.fk_category_id = JC.category_id
+	    WHERE C.fk_resume_id = #{resumeId}
+	    ORDER BY C.sort ASC, C.joindate DESC NULLS LAST
+	</select>
+
+
+	<!-- 어학 리스트 -->
+	<select id="selectTalentLanguageList"
+	        parameterType="long"
+	        resultType="com.spring.app.jobseeker.domain.ResumeLanguageDTO">
+	
+	    SELECT L.language_id      AS languageId,
+	           L.fk_resume_id     AS resumeId,
+	           L.language_name    AS languageName,
+	           L.testname,
+	           L.score,
+	           TO_CHAR(L.acquired_date, 'YYYY-MM-DD') AS acquiredDate
+	    FROM tbl_resume_language L
+	    WHERE L.fk_resume_id = #{resumeId}
+	    ORDER BY L.acquired_date DESC NULLS LAST
+	</select>
+
+
+	<!-- 자격증 리스트 -->
+	<select id="selectTalentCertificateList"
+	        parameterType="long"
+	        resultType="com.spring.app.jobseeker.domain.ResumeCertificateDTO">
+	
+	    SELECT RC.cert_id               AS certId,
+	           RC.fk_resume_id          AS resumeId,
+	           RC.fk_certificate_code   AS certificateCode,
+	           TO_CHAR(RC.acquired_date, 'YYYY-MM-DD') AS acquiredDate,
+	           C.certificate_name       AS certificateName,
+	           C.issuer                 AS issuer
+	    FROM tbl_resume_certificate RC
+	    JOIN tbl_certificate C
+	      ON RC.fk_certificate_code = C.certificate_code
+	    WHERE RC.fk_resume_id = #{resumeId}
+	    ORDER BY RC.acquired_date DESC NULLS LAST
+	</select>
+
+
+	<!-- 포트폴리오 리스트 -->
+	<select id="selectTalentPortfolioList"
+	        parameterType="long"
+	        resultType="com.spring.app.jobseeker.domain.ResumePortfolioDTO">
+	
+	    SELECT portfolio_id       AS portfolioId,
+	           fk_resume_id       AS resumeId,
+	           portfolio_type     AS portfolioType,
+	           link,
+	           filepath,
+	           original_filename  AS originalFilename,
+	           TO_CHAR(created_at, 'YYYY-MM-DD') AS createdAt
+	    FROM tbl_resume_portfolio
+	    WHERE fk_resume_id = #{resumeId}
+	    ORDER BY created_at DESC
+	</select>
+
+
+	<!-- 수상 리스트 -->
+	<select id="selectTalentAwardList"
+	        parameterType="long"
+	        resultType="com.spring.app.jobseeker.domain.ResumeAwardDTO">
+	
+	    SELECT award_id           AS awardId,
+	           fk_resume_id       AS resumeId,
+	           award_name         AS awardName,
+	           organization_name  AS organizationName,
+	           TO_CHAR(award_date, 'YYYY-MM-DD') AS awardDate,
+	           description
+	    FROM tbl_resume_award
+	    WHERE fk_resume_id = #{resumeId}
+	    ORDER BY award_date DESC
+	</select>
+
+
+	<!-- 기술 스택 리스트 -->
+	<select id="selectTalentTechstackList"
+	        parameterType="long"
+	        resultType="com.spring.app.jobseeker.domain.ResumeTechstackDTO">
+	
+	    SELECT RT.fk_resume_id      AS resumeId,
+	           RT.fk_skill_id       AS skillId,
+	           RT.proficiency,
+	           S.skill_name         AS skillName,
+	           SC.category_name     AS categoryName
+	    FROM tbl_resume_techstack RT
+	    JOIN tbl_skill S
+	      ON RT.fk_skill_id = S.skill_id
+	    LEFT JOIN tbl_skill_category SC
+	      ON S.fk_skill_category_id = SC.skill_category_id
+	    WHERE RT.fk_resume_id = #{resumeId}
+	    ORDER BY SC.skill_category_id ASC, S.skill_name ASC
+	</select>
+	
+	
+	
+	
+	
+	
+	
+	
+</mapper>

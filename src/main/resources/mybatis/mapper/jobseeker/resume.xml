@@ -1,0 +1,468 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- namespace 는 @Mapper 인터페이스의 full path 와 일치시킨다 -->
+<mapper namespace="com.spring.app.jobseeker.model.ResumeDAO">
+
+    <!-- ================================================================ -->
+    <!--  이력서 기본 CRUD                                                  -->
+    <!-- ================================================================ -->
+
+    <!-- 이력서 등록 (selectKey로 시퀀스 값을 resumeId에 세팅) -->
+    <insert id="insertResume" parameterType="com.spring.app.jobseeker.domain.ResumeDTO">
+        <selectKey keyProperty="resumeId" resultType="long" order="BEFORE">
+            SELECT seq_resume_id.nextval FROM dual
+        </selectKey>
+        INSERT INTO tbl_resume
+            (resume_id, fk_memberid, fk_category_id, fk_region_code,
+             title, address, self_intro, desired_salary, photo_path,
+             write_status, is_primary, allow_scout, uploaded_at, is_deleted)
+        VALUES
+            (#{resumeId}, #{memberid}, #{categoryId, jdbcType=NUMERIC}, #{regionCode, jdbcType=VARCHAR},
+             #{title}, #{address, jdbcType=VARCHAR}, #{selfIntro, jdbcType=VARCHAR}, #{desiredSalary, jdbcType=NUMERIC}, #{photoPath, jdbcType=VARCHAR},
+             #{writeStatus}, #{isPrimary}, #{allowScout}, SYSDATE, 0)
+    </insert>
+
+    <!-- 이력서 수정 -->
+    <update id="updateResume" parameterType="com.spring.app.jobseeker.domain.ResumeDTO">
+        UPDATE tbl_resume
+        SET title          = #{title},
+            fk_category_id = #{categoryId, jdbcType=NUMERIC},
+            fk_region_code = #{regionCode, jdbcType=VARCHAR},
+            address        = #{address, jdbcType=VARCHAR},
+            self_intro     = #{selfIntro, jdbcType=VARCHAR},
+            desired_salary = #{desiredSalary, jdbcType=NUMERIC},
+            photo_path     = #{photoPath, jdbcType=VARCHAR},
+            write_status   = #{writeStatus},
+            is_primary     = #{isPrimary},
+            allow_scout    = #{allowScout},
+            uploaded_at    = SYSDATE
+        WHERE resume_id   = #{resumeId}
+          AND fk_memberid = #{memberid}
+          AND is_deleted   = 0
+    </update>
+
+    <!-- 이력서 소프트 삭제 -->
+    <update id="deleteResume">
+        UPDATE tbl_resume
+        SET is_deleted = 1,
+            is_primary = 0,
+            allow_scout = 0
+        WHERE resume_id   = #{resumeId}
+          AND fk_memberid = #{memberid}
+          AND is_deleted   = 0
+    </update>
+
+    <!-- 이력서 1건 상세 조회 -->
+    <select id="selectResumeOne" parameterType="long"
+            resultType="com.spring.app.jobseeker.domain.ResumeDTO">
+        SELECT R.resume_id       AS resumeId,
+               R.fk_memberid     AS memberid,
+               R.fk_category_id  AS categoryId,
+               R.fk_region_code  AS regionCode,
+               R.title,
+               R.address,
+               R.self_intro      AS selfIntro,
+               R.desired_salary  AS desiredSalary,
+               R.photo_path      AS photoPath,
+               R.write_status    AS writeStatus,
+               R.is_primary      AS isPrimary,
+               R.allow_scout     AS allowScout,
+               TO_CHAR(R.uploaded_at, 'YYYY.MM.DD HH24:MI') AS uploadedAt,
+               R.is_deleted      AS isDeleted,
+               M.name            AS memberName,
+               M.email           AS memberEmail,
+               M.phone           AS memberPhone,
+               TO_CHAR(M.birth_date, 'YYYY-MM-DD') AS memberBirthDate,
+               M.gender          AS memberGender,
+               JC.category_name  AS categoryName,
+               RG.region_name    AS regionName
+        FROM tbl_resume R
+        JOIN tbl_member M ON R.fk_memberid = M.memberid
+        LEFT JOIN tbl_job_category JC ON R.fk_category_id = JC.category_id
+        LEFT JOIN tbl_region RG ON R.fk_region_code = RG.region_code
+        WHERE R.resume_id = #{resumeId}
+          AND R.is_deleted = 0
+    </select>
+
+    <!-- 특정 회원의 이력서 목록 조회 -->
+    <select id="selectResumeListByMember" parameterType="String"
+            resultType="com.spring.app.jobseeker.domain.ResumeDTO">
+        SELECT R.resume_id       AS resumeId,
+               R.fk_memberid     AS memberid,
+               R.fk_category_id  AS categoryId,
+               R.fk_region_code  AS regionCode,
+               R.title,
+               R.self_intro      AS selfIntro,
+               R.write_status    AS writeStatus,
+               R.is_primary      AS isPrimary,
+               R.allow_scout     AS allowScout,
+               R.photo_path      AS photoPath,
+               TO_CHAR(R.uploaded_at, 'YYYY.MM.DD HH24:MI') AS uploadedAt,
+               JC.category_name  AS categoryName,
+               RG.region_name    AS regionName,
+               (SELECT schoolname || ' ' || NVL(major, '')
+                FROM (SELECT E.schoolname, E.major
+                      FROM tbl_resume_education E
+                      WHERE E.fk_resume_id = R.resume_id
+                      ORDER BY E.sort)
+                WHERE ROWNUM = 1) AS educationSummary,
+               (SELECT MIN(companyname) ||
+                       CASE WHEN COUNT(*) > 1 THEN ' (' || TO_CHAR(COUNT(*)) || '건)' ELSE '' END
+                FROM tbl_resume_career
+                WHERE fk_resume_id = R.resume_id) AS careerSummary,
+               (SELECT LISTAGG(S.skill_name, ', ') WITHIN GROUP (ORDER BY S.skill_name)
+                FROM tbl_resume_techstack RT
+                JOIN tbl_skill S ON RT.fk_skill_id = S.skill_id
+                WHERE RT.fk_resume_id = R.resume_id) AS techSummary,
+               (SELECT COUNT(*) FROM tbl_resume_certificate WHERE fk_resume_id = R.resume_id) AS certificateCount,
+               (SELECT COUNT(*) FROM tbl_resume_portfolio WHERE fk_resume_id = R.resume_id) AS portfolioCount,
+               (SELECT COUNT(*) FROM tbl_resume_language WHERE fk_resume_id = R.resume_id) AS languageCount,
+               (SELECT FLOOR(SUM(MONTHS_BETWEEN(NVL(C.leavedate, SYSDATE), C.joindate)))
+                FROM tbl_resume_career C
+                WHERE C.fk_resume_id = R.resume_id) AS careerMonths,
+               (SELECT category_name
+                FROM (SELECT JC2.category_name
+                      FROM tbl_resume_career C2
+                      JOIN tbl_job_category JC2 ON C2.fk_category_id = JC2.category_id
+                      WHERE C2.fk_resume_id = R.resume_id
+                        AND C2.fk_category_id IS NOT NULL
+                      ORDER BY C2.sort)
+                WHERE ROWNUM = 1) AS careerCategoryName,
+               (SELECT EL.edu_level_name
+                FROM (SELECT E2.fk_edu_level_code
+                      FROM tbl_resume_education E2
+                      WHERE E2.fk_resume_id = R.resume_id
+                      ORDER BY E2.sort)
+                JOIN tbl_education_level EL ON fk_edu_level_code = EL.edu_level_code
+                WHERE ROWNUM = 1) AS educationLevelName
+        FROM tbl_resume R
+        LEFT JOIN tbl_job_category JC ON R.fk_category_id = JC.category_id
+        LEFT JOIN tbl_region RG ON R.fk_region_code = RG.region_code
+        WHERE R.fk_memberid = #{memberid}
+          AND R.is_deleted = 0
+        ORDER BY R.is_primary DESC, R.uploaded_at DESC
+    </select>
+
+    <!-- 대표 이력서 해제 -->
+    <update id="clearPrimaryResume">
+        UPDATE tbl_resume
+        SET is_primary = 0,
+            allow_scout = 0
+        WHERE fk_memberid = #{memberid}
+          AND is_deleted = 0
+    </update>
+
+    <!-- 대표 이력서 설정 -->
+    <update id="setPrimaryResume">
+        UPDATE tbl_resume
+        SET is_primary = 1
+        WHERE resume_id   = #{resumeId}
+          AND fk_memberid = #{memberid}
+          AND is_deleted   = 0
+    </update>
+
+    <update id="updateAllowScout">
+        UPDATE tbl_resume
+        SET allow_scout = #{allowScout}
+        WHERE resume_id   = #{resumeId}
+          AND fk_memberid = #{memberid}
+          AND is_primary  = 1
+          AND is_deleted  = 0
+    </update>
+
+    <!-- 특정 회원의 이력서 개수 조회 -->
+    <select id="selectResumeCountByMember" parameterType="String" resultType="int">
+        SELECT COUNT(*)
+        FROM tbl_resume
+        WHERE fk_memberid = #{memberid}
+          AND is_deleted = 0
+    </select>
+
+    <!-- 이력서 작성용 회원 프로필 조회 (이름, 생년월일, 성별, 이메일, 전화번호) -->
+    <select id="selectMemberProfile" parameterType="String" resultType="java.util.HashMap">
+        SELECT name          AS "name",
+               email         AS "email",
+               phone         AS "phone",
+               TO_CHAR(birth_date, 'YYYY-MM-DD') AS "birthDate",
+               gender        AS "gender"
+        FROM tbl_member
+        WHERE memberid = #{memberid}
+    </select>
+
+    <!-- ================================================================ -->
+    <!--  학력                                                              -->
+    <!-- ================================================================ -->
+
+    <insert id="insertEducation" parameterType="com.spring.app.jobseeker.domain.ResumeEducationDTO">
+        INSERT INTO tbl_resume_education
+            (education_id, fk_resume_id, schoolname, major, fk_edu_level_code,
+             enrolldate, graduationdate, status, sort)
+        VALUES
+            (seq_resume_education_id.nextval, #{resumeId}, #{schoolname, jdbcType=VARCHAR}, #{major, jdbcType=VARCHAR}, #{educationLevelCode, jdbcType=VARCHAR},
+             TO_DATE(#{enrolldate, jdbcType=VARCHAR}, 'YYYY-MM-DD'), TO_DATE(#{graduationdate, jdbcType=VARCHAR}, 'YYYY-MM-DD'), #{status, jdbcType=VARCHAR}, #{sort})
+    </insert>
+
+    <delete id="deleteEducationByResumeId">
+        DELETE FROM tbl_resume_education WHERE fk_resume_id = #{resumeId}
+    </delete>
+
+    <select id="selectEducationList" parameterType="long"
+            resultType="com.spring.app.jobseeker.domain.ResumeEducationDTO">
+        SELECT E.education_id       AS educationId,
+               E.fk_resume_id       AS resumeId,
+               E.schoolname,
+               E.major,
+               E.fk_edu_level_code  AS educationLevelCode,
+               TO_CHAR(E.enrolldate, 'YYYY-MM-DD') AS enrolldate,
+               TO_CHAR(E.graduationdate, 'YYYY-MM-DD') AS graduationdate,
+               E.status,
+               E.sort,
+               EL.edu_level_name    AS educationLevelName
+        FROM tbl_resume_education E
+        LEFT JOIN tbl_education_level EL ON E.fk_edu_level_code = EL.edu_level_code
+        WHERE E.fk_resume_id = #{resumeId}
+        ORDER BY E.sort ASC, E.enrolldate DESC NULLS LAST
+    </select>
+
+    <!-- ================================================================ -->
+    <!--  경력                                                              -->
+    <!-- ================================================================ -->
+
+    <insert id="insertCareer" parameterType="com.spring.app.jobseeker.domain.ResumeCareerDTO">
+        INSERT INTO tbl_resume_career
+            (career_id, fk_resume_id, companyname, fk_category_id, jobname_custom,
+             position, joindate, leavedate, job_desc, sort)
+        VALUES
+            (seq_resume_career_id.nextval, #{resumeId}, #{companyname}, #{categoryId, jdbcType=NUMERIC}, #{jobnameCustom, jdbcType=VARCHAR},
+             #{position, jdbcType=VARCHAR}, TO_DATE(#{joindate, jdbcType=VARCHAR}, 'YYYY-MM-DD'), TO_DATE(#{leavedate, jdbcType=VARCHAR}, 'YYYY-MM-DD'), #{jobDesc, jdbcType=VARCHAR}, #{sort})
+    </insert>
+
+    <delete id="deleteCareerByResumeId">
+        DELETE FROM tbl_resume_career WHERE fk_resume_id = #{resumeId}
+    </delete>
+
+    <select id="selectCareerList" parameterType="long"
+            resultType="com.spring.app.jobseeker.domain.ResumeCareerDTO">
+        SELECT C.career_id        AS careerId,
+               C.fk_resume_id     AS resumeId,
+               C.companyname,
+               C.fk_category_id   AS categoryId,
+               C.jobname_custom   AS jobnameCustom,
+               C.position,
+               TO_CHAR(C.joindate, 'YYYY-MM-DD') AS joindate,
+               TO_CHAR(C.leavedate, 'YYYY-MM-DD') AS leavedate,
+               C.job_desc         AS jobDesc,
+               C.sort,
+               JC.category_name   AS categoryName
+        FROM tbl_resume_career C
+        LEFT JOIN tbl_job_category JC ON C.fk_category_id = JC.category_id
+        WHERE C.fk_resume_id = #{resumeId}
+        ORDER BY C.sort ASC, C.joindate DESC
+    </select>
+
+    <!-- ================================================================ -->
+    <!--  어학                                                              -->
+    <!-- ================================================================ -->
+
+    <insert id="insertLanguage" parameterType="com.spring.app.jobseeker.domain.ResumeLanguageDTO">
+        INSERT INTO tbl_resume_language
+            (language_id, fk_resume_id, language_name, testname, score, acquired_date)
+        VALUES
+            (seq_resume_language_id.nextval, #{resumeId}, #{languageName}, #{testname, jdbcType=VARCHAR}, #{score, jdbcType=VARCHAR}, #{acquiredDate, jdbcType=VARCHAR})
+    </insert>
+
+    <delete id="deleteLanguageByResumeId">
+        DELETE FROM tbl_resume_language WHERE fk_resume_id = #{resumeId}
+    </delete>
+
+    <select id="selectLanguageList" parameterType="long"
+            resultType="com.spring.app.jobseeker.domain.ResumeLanguageDTO">
+        SELECT language_id     AS languageId,
+               fk_resume_id   AS resumeId,
+               language_name  AS languageName,
+               testname,
+               score,
+               TO_CHAR(acquired_date, 'YYYY-MM-DD') AS acquiredDate
+        FROM tbl_resume_language
+        WHERE fk_resume_id = #{resumeId}
+        ORDER BY acquired_date DESC
+    </select>
+
+    <!-- ================================================================ -->
+    <!--  자격증                                                            -->
+    <!-- ================================================================ -->
+
+    <insert id="insertCertificate" parameterType="com.spring.app.jobseeker.domain.ResumeCertificateDTO">
+        INSERT INTO tbl_resume_certificate
+            (cert_id, fk_resume_id, fk_certificate_code, acquired_date)
+        VALUES
+            (seq_resume_certificate_cert_id.nextval, #{resumeId}, #{certificateCode}, #{acquiredDate, jdbcType=VARCHAR})
+    </insert>
+
+    <delete id="deleteCertificateByResumeId">
+        DELETE FROM tbl_resume_certificate WHERE fk_resume_id = #{resumeId}
+    </delete>
+
+    <select id="selectCertificateList" parameterType="long"
+            resultType="com.spring.app.jobseeker.domain.ResumeCertificateDTO">
+        SELECT RC.cert_id              AS certId,
+               RC.fk_resume_id         AS resumeId,
+               RC.fk_certificate_code  AS certificateCode,
+               TO_CHAR(RC.acquired_date, 'YYYY-MM-DD') AS acquiredDate,
+               C.certificate_name      AS certificateName,
+               C.issuer
+        FROM tbl_resume_certificate RC
+        JOIN tbl_certificate C ON RC.fk_certificate_code = C.certificate_code
+        WHERE RC.fk_resume_id = #{resumeId}
+        ORDER BY RC.acquired_date DESC
+    </select>
+
+    <!-- ================================================================ -->
+    <!--  포트폴리오                                                        -->
+    <!-- ================================================================ -->
+
+    <insert id="insertPortfolio" parameterType="com.spring.app.jobseeker.domain.ResumePortfolioDTO">
+        INSERT INTO tbl_resume_portfolio
+            (portfolio_id, fk_resume_id, portfolio_type, link, filepath, original_filename, created_at)
+        VALUES
+            (seq_resume_portfolio_id.nextval, #{resumeId}, #{portfolioType}, #{link, jdbcType=VARCHAR}, #{filepath, jdbcType=VARCHAR}, #{originalFilename, jdbcType=VARCHAR}, SYSDATE)
+    </insert>
+
+    <delete id="deletePortfolioByResumeId">
+        DELETE FROM tbl_resume_portfolio WHERE fk_resume_id = #{resumeId}
+    </delete>
+
+    <select id="selectPortfolioList" parameterType="long"
+            resultType="com.spring.app.jobseeker.domain.ResumePortfolioDTO">
+        SELECT portfolio_id    AS portfolioId,
+               fk_resume_id   AS resumeId,
+               portfolio_type AS portfolioType,
+               link,
+               filepath,
+               original_filename AS originalFilename,
+               TO_CHAR(created_at, 'YYYY-MM-DD') AS createdAt
+        FROM tbl_resume_portfolio
+        WHERE fk_resume_id = #{resumeId}
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- ================================================================ -->
+    <!--  수상                                                              -->
+    <!-- ================================================================ -->
+
+    <insert id="insertAward" parameterType="com.spring.app.jobseeker.domain.ResumeAwardDTO">
+        INSERT INTO tbl_resume_award
+            (award_id, fk_resume_id, award_name, organization_name, award_date, description)
+        VALUES
+            (seq_resume_award_id.nextval, #{resumeId}, #{awardName}, #{organizationName, jdbcType=VARCHAR}, #{awardDate, jdbcType=VARCHAR}, #{description, jdbcType=VARCHAR})
+    </insert>
+
+    <delete id="deleteAwardByResumeId">
+        DELETE FROM tbl_resume_award WHERE fk_resume_id = #{resumeId}
+    </delete>
+
+    <select id="selectAwardList" parameterType="long"
+            resultType="com.spring.app.jobseeker.domain.ResumeAwardDTO">
+        SELECT award_id           AS awardId,
+               fk_resume_id      AS resumeId,
+               award_name        AS awardName,
+               organization_name AS organizationName,
+               TO_CHAR(award_date, 'YYYY-MM-DD') AS awardDate,
+               description
+        FROM tbl_resume_award
+        WHERE fk_resume_id = #{resumeId}
+        ORDER BY award_date DESC
+    </select>
+
+    <!-- ================================================================ -->
+    <!--  기술스택                                                          -->
+    <!-- ================================================================ -->
+
+    <insert id="insertTechstack" parameterType="com.spring.app.jobseeker.domain.ResumeTechstackDTO">
+        INSERT INTO tbl_resume_techstack
+            (fk_resume_id, fk_skill_id, proficiency)
+        VALUES
+            (#{resumeId}, #{skillId}, #{proficiency, jdbcType=VARCHAR})
+    </insert>
+
+    <delete id="deleteTechstackByResumeId">
+        DELETE FROM tbl_resume_techstack WHERE fk_resume_id = #{resumeId}
+    </delete>
+
+    <select id="selectTechstackList" parameterType="long"
+            resultType="com.spring.app.jobseeker.domain.ResumeTechstackDTO">
+        SELECT RT.fk_resume_id      AS resumeId,
+               RT.fk_skill_id       AS skillId,
+               RT.proficiency,
+               S.skill_name         AS skillName,
+               SC.category_name     AS categoryName
+        FROM tbl_resume_techstack RT
+        JOIN tbl_skill S ON RT.fk_skill_id = S.skill_id
+        LEFT JOIN tbl_skill_category SC ON S.fk_skill_category_id = SC.skill_category_id
+        WHERE RT.fk_resume_id = #{resumeId}
+        ORDER BY SC.skill_category_id ASC, S.skill_name ASC
+    </select>
+
+    <!-- ================================================================ -->
+    <!--  자격증 마스터 검색 (자동완성용)                                      -->
+    <!-- ================================================================ -->
+
+    <select id="searchCertificateMaster" parameterType="String"
+            resultType="com.spring.app.jobseeker.domain.CertificateDTO">
+        SELECT certificate_code  AS certificateCode,
+               certificate_name  AS certificateName,
+               issuer
+        FROM tbl_certificate
+        WHERE UPPER(certificate_name) LIKE '%' || UPPER(#{keyword}) || '%'
+        ORDER BY certificate_name ASC
+        FETCH FIRST 20 ROWS ONLY
+    </select>
+
+    <!-- ================================================================ -->
+    <!--  직무 카테고리 목록                                                 -->
+    <!-- ================================================================ -->
+
+    <select id="selectJobCategoryList"
+            resultType="com.spring.app.jobseeker.domain.JobCategoryDTO">
+        SELECT category_id    AS categoryId,
+               fk_parent_id   AS parentId,
+               category_name  AS categoryName,
+               depth
+        FROM tbl_job_category
+        ORDER BY category_id ASC
+    </select>
+
+    <!-- ================================================================ -->
+    <!--  지역 목록 (시/구 단위까지)                                          -->
+    <!-- ================================================================ -->
+
+    <select id="selectRegionList"
+            resultType="com.spring.app.jobseeker.domain.RegionDTO">
+        SELECT region_code             AS regionCode,
+               fk_parent_region_code   AS parentRegionCode,
+               region_name             AS regionName,
+               region_level            AS regionLevel,
+               sort
+        FROM tbl_region
+        ORDER BY sort ASC, region_name ASC
+    </select>
+
+    <!-- ================================================================ -->
+    <!--  기술스택 검색 (자동완성)                                          -->
+    <!-- ================================================================ -->
+
+    <select id="searchSkill" parameterType="String"
+            resultType="com.spring.app.jobseeker.domain.ResumeTechstackDTO">
+        SELECT S.skill_id              AS skillId,
+               S.skill_name            AS skillName,
+               SC.category_name        AS categoryName
+        FROM tbl_skill S
+        LEFT JOIN tbl_skill_category SC ON S.fk_skill_category_id = SC.skill_category_id
+        WHERE UPPER(S.skill_name) LIKE '%' || UPPER(#{keyword}) || '%'
+        ORDER BY S.skill_name ASC
+        FETCH FIRST 20 ROWS ONLY
+    </select>
+
+</mapper>

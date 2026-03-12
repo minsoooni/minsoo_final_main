@@ -1,0 +1,575 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring.app.jobseeker.model.CompanyInfoDAO">
+
+
+    <!-- ======================================================
+         1. 기업 목록 조회 (검색/필터/정렬/페이징)
+    ====================================================== -->
+    <select id="selectCompanyList" parameterType="map"
+            resultType="com.spring.app.jobseeker.domain.CompanyInfoDTO">
+        SELECT *
+        FROM (
+            SELECT ROWNUM AS rno, T.*
+            FROM (
+                SELECT C.fk_memberid           AS memberId,
+                       C.company_name          AS companyName,
+                       C.industry_code         AS industryCode,
+                       C.addr1                 AS addr1,
+                       CI.company_type         AS companyType,
+                       CI.homepage_url         AS homepageUrl,
+                       TO_CHAR(CI.open_date, 'YYYY') AS foundedYear,
+
+                       <!-- 로고 이미지 -->
+                       (SELECT I.file_url
+                        FROM tbl_image_file I
+                        WHERE I.target_type = 'company'
+                          AND I.filecategory = 'logo'
+                          AND I.target_id = CI.company_intro_id
+                          AND ROWNUM = 1
+                       ) AS logoUrl,
+
+                       <!-- 팔로워 수 -->
+                       (SELECT COUNT(*)
+                        FROM tbl_company_follow CF
+                        WHERE CF.fk_company_memberid = C.fk_memberid
+                       ) AS followerCount,
+
+                       <!-- 게시중 채용공고 수 -->
+                       (SELECT COUNT(*)
+                        FROM tbl_job_posting JP
+                        WHERE JP.fk_memberid = C.fk_memberid
+                          AND JP.status = '게시중'
+                          AND JP.is_hidden = 0
+                          AND (JP.deadline_type = 'always'
+                               OR JP.deadline_at >= TRUNC(SYSDATE))
+                       ) AS activePostCount
+
+                FROM tbl_company C
+                LEFT JOIN tbl_company_intro CI
+                       ON C.fk_memberid = CI.fk_memberid
+                JOIN tbl_member M
+                       ON C.fk_memberid = M.memberid
+                WHERE M.status = 1
+                  AND C.approved_yn = 1
+
+                <!-- 키워드 검색 -->
+                <if test="keyword != null and keyword != ''">
+                  AND (UPPER(C.company_name) LIKE '%' || UPPER(#{keyword}) || '%'
+                       OR UPPER(C.industry_code) LIKE '%' || UPPER(#{keyword}) || '%'
+                       OR UPPER(DECODE(C.industry_code,
+                            'IT',  'IT·인터넷',
+                            'SW',  '소프트웨어',
+                            'FIN', '금융·핀테크',
+                            'EDU', '교육·에듀테크',
+                            'MKT', '마케팅',
+                            'ETC', '기타',
+                            C.industry_code)) LIKE '%' || UPPER(#{keyword}) || '%')
+                </if>
+
+                <!-- 업종 필터 -->
+                <if test="industry != null and industry != ''">
+                  AND C.industry_code = #{industry}
+                </if>
+
+                <!-- 기업규모 필터 -->
+                <if test="companyType != null and companyType != ''">
+                  AND CI.company_type = #{companyType}
+                </if>
+
+                <!-- 지역 필터: 상세지역(구/시) 선택 시 해당 구/시로, 아니면 시/도 단위로 addr1 LIKE -->
+                <if test="locationDetailList != null and locationDetailList.size() > 0">
+                  AND (
+                    <foreach collection="locationDetailList" item="ld" separator="OR">
+                      C.addr1 LIKE '%' || #{ld} || '%'
+                    </foreach>
+                  )
+                </if>
+                <if test="(locationDetailList == null or locationDetailList.size() == 0) and locationList != null and locationList.size() > 0">
+                  AND (
+                    <foreach collection="locationList" item="loc" separator="OR">
+                      C.addr1 LIKE '%' || #{loc} || '%'
+                    </foreach>
+                  )
+                </if>
+
+                <!-- 채용중 기업만 보기 -->
+                <if test="hiringOnly != null and hiringOnly == 'on'">
+                  AND EXISTS (
+                      SELECT 1 FROM tbl_job_posting JP2
+                      WHERE JP2.fk_memberid = C.fk_memberid
+                        AND JP2.status = '게시중'
+                        AND JP2.is_hidden = 0
+                        AND (JP2.deadline_type = 'always'
+                             OR JP2.deadline_at >= TRUNC(SYSDATE))
+                  )
+                </if>
+
+                <!-- 정렬 -->
+                <choose>
+                    <when test="sort == 'name'">
+                        ORDER BY C.company_name ASC
+                    </when>
+                    <when test="sort == 'post'">
+                        ORDER BY activePostCount DESC, C.company_name ASC
+                    </when>
+                    <otherwise>
+                        ORDER BY followerCount DESC, C.company_name ASC
+                    </otherwise>
+                </choose>
+
+            ) T
+            WHERE ROWNUM &lt;= #{endRno}
+        )
+        WHERE rno >= #{startRno}
+    </select>
+
+
+    <!-- ======================================================
+         2. 기업 목록 총 건수
+    ====================================================== -->
+    <select id="selectCompanyListTotalCount" parameterType="map" resultType="int">
+        SELECT COUNT(*)
+        FROM tbl_company C
+        LEFT JOIN tbl_company_intro CI
+               ON C.fk_memberid = CI.fk_memberid
+        JOIN tbl_member M
+               ON C.fk_memberid = M.memberid
+        WHERE M.status = 1
+          AND C.approved_yn = 1
+
+        <if test="keyword != null and keyword != ''">
+          AND (UPPER(C.company_name) LIKE '%' || UPPER(#{keyword}) || '%'
+               OR UPPER(C.industry_code) LIKE '%' || UPPER(#{keyword}) || '%'
+               OR UPPER(DECODE(C.industry_code,
+                    'IT',  'IT·인터넷',
+                    'SW',  '소프트웨어',
+                    'FIN', '금융·핀테크',
+                    'EDU', '교육·에듀테크',
+                    'MKT', '마케팅',
+                    'ETC', '기타',
+                    C.industry_code)) LIKE '%' || UPPER(#{keyword}) || '%')
+        </if>
+
+        <if test="industry != null and industry != ''">
+          AND C.industry_code = #{industry}
+        </if>
+
+        <if test="companyType != null and companyType != ''">
+          AND CI.company_type = #{companyType}
+        </if>
+
+        <if test="locationDetailList != null and locationDetailList.size() > 0">
+          AND (
+            <foreach collection="locationDetailList" item="ld" separator="OR">
+              C.addr1 LIKE '%' || #{ld} || '%'
+            </foreach>
+          )
+        </if>
+        <if test="(locationDetailList == null or locationDetailList.size() == 0) and locationList != null and locationList.size() > 0">
+          AND (
+            <foreach collection="locationList" item="loc" separator="OR">
+              C.addr1 LIKE '%' || #{loc} || '%'
+            </foreach>
+          )
+        </if>
+
+        <if test="hiringOnly != null and hiringOnly == 'on'">
+          AND EXISTS (
+              SELECT 1 FROM tbl_job_posting JP2
+              WHERE JP2.fk_memberid = C.fk_memberid
+                AND JP2.status = '게시중'
+                AND JP2.is_hidden = 0
+                AND (JP2.deadline_type = 'always'
+                     OR JP2.deadline_at >= TRUNC(SYSDATE))
+          )
+        </if>
+    </select>
+
+
+    <!-- ======================================================
+         3. 기업 상세 조회
+    ====================================================== -->
+    <select id="selectCompanyDetail" resultType="com.spring.app.jobseeker.domain.CompanyInfoDTO">
+        SELECT C.fk_memberid           AS memberId,
+               C.company_name          AS companyName,
+               C.biz_no                AS bizNo,
+               C.industry_code         AS industryCode,
+               C.ceo_name              AS ceoName,
+               C.zip_code              AS zipCode,
+               C.addr1                 AS addr1,
+               C.addr2                 AS addr2,
+
+               CI.intro_text           AS introText,
+               CI.welfare_text         AS welfareText,
+               TO_CHAR(CI.open_date, 'YYYY-MM-DD') AS openDate,
+               TO_CHAR(CI.open_date, 'YYYY')       AS foundedYear,
+               CI.homepage_url         AS homepageUrl,
+               CI.vision_text          AS visionText,
+               CI.company_type         AS companyType,
+
+               <!-- 팔로워 수 -->
+               (SELECT COUNT(*)
+                FROM tbl_company_follow CF
+                WHERE CF.fk_company_memberid = C.fk_memberid
+               ) AS followerCount,
+
+               <!-- 게시중 채용공고 수 -->
+               (SELECT COUNT(*)
+                FROM tbl_job_posting JP
+                WHERE JP.fk_memberid = C.fk_memberid
+                  AND JP.status = '게시중'
+                  AND JP.is_hidden = 0
+                  AND (JP.deadline_type = 'always' OR JP.deadline_at >= TRUNC(SYSDATE))
+               ) AS activePostCount,
+
+               <!-- 로고 이미지 -->
+               (SELECT I.file_url
+                FROM tbl_image_file I
+                WHERE I.target_type = 'company'
+                  AND I.filecategory = 'logo'
+                  AND I.target_id = CI.company_intro_id
+                  AND ROWNUM = 1
+               ) AS logoUrl,
+
+               <!-- 전체 공고 수 -->
+               (SELECT COUNT(*)
+                FROM tbl_job_posting JP2
+                WHERE JP2.fk_memberid = C.fk_memberid
+               ) AS totalPostCount,
+
+               <!-- 로그인 사용자의 팔로우 여부 -->
+               <choose>
+                   <when test="loginMemberId != null and loginMemberId != ''">
+                       (SELECT COUNT(*)
+                        FROM tbl_company_follow CF2
+                        WHERE CF2.fk_company_memberid = C.fk_memberid
+                          AND CF2.fk_memberid = #{loginMemberId}
+                       ) AS isFollowed
+                   </when>
+                   <otherwise>
+                       0 AS isFollowed
+                   </otherwise>
+               </choose>
+
+        FROM tbl_company C
+        LEFT JOIN tbl_company_intro CI
+               ON C.fk_memberid = CI.fk_memberid
+        WHERE C.fk_memberid = #{memberId}
+          AND C.approved_yn = 1
+    </select>
+
+
+    <!-- ======================================================
+         4. 해당 기업의 게시중 채용공고 목록
+    ====================================================== -->
+    <select id="selectCompanyJobPostings" parameterType="string"
+            resultType="com.spring.app.jobseeker.domain.JobPostingListDTO">
+        SELECT JP.job_id             AS jobId,
+               JP.title              AS title,
+               JP.work_type          AS workType,
+               JP.career_type        AS careerType,
+               JP.salary             AS salary,
+               JP.view_count         AS viewCount,
+               JP.deadline_type      AS deadlineType,
+               TO_CHAR(JP.deadline_at, 'YYYY.MM.DD') AS deadlineAt,
+
+               <!-- D-day 계산 -->
+               CASE
+                   WHEN JP.deadline_type = 'always' THEN '상시채용'
+                   ELSE 'D-' || TO_CHAR(TRUNC(JP.deadline_at) - TRUNC(SYSDATE))
+               END AS dDay,
+
+               <!-- 지역명 -->
+               R.region_name         AS regionName,
+               PR.region_name        AS parentRegionName,
+
+               <!-- 학력 -->
+               EL.edu_level_name     AS educationLevelName,
+
+               <!-- 기술스택 (LISTAGG) -->
+               (SELECT LISTAGG(S.skill_name, ',') WITHIN GROUP (ORDER BY S.skill_name)
+                FROM tbl_job_posting_skill JPS
+                JOIN tbl_skill S ON JPS.fk_skill_id = S.skill_id
+                WHERE JPS.fk_job_id = JP.job_id
+               ) AS skillNames,
+
+               <!-- 지원자 수 -->
+               (SELECT COUNT(*)
+                FROM tbl_job_application JA
+                WHERE JA.fk_job_id = JP.job_id
+               ) AS applyCount
+
+        FROM tbl_job_posting JP
+        LEFT JOIN tbl_region R
+               ON JP.fk_region_code = R.region_code
+        LEFT JOIN tbl_region PR
+               ON R.fk_parent_region_code = PR.region_code
+        LEFT JOIN tbl_education_level EL
+               ON JP.fk_edu_code = EL.edu_level_code
+        WHERE JP.fk_memberid = #{memberId}
+          AND JP.status = '게시중'
+          AND JP.is_hidden = 0
+          AND (JP.deadline_type = 'always' OR JP.deadline_at >= TRUNC(SYSDATE))
+        ORDER BY JP.created_at DESC
+    </select>
+
+
+    <!-- ======================================================
+         5. 유사 기업 목록 (같은 업종, 최대 5건)
+    ====================================================== -->
+    <select id="selectSimilarCompanies"
+            resultType="com.spring.app.jobseeker.domain.CompanyInfoDTO">
+        SELECT *
+        FROM (
+            SELECT C.fk_memberid       AS memberId,
+                   C.company_name      AS companyName,
+                   C.industry_code     AS industryCode,
+                   CI.company_type     AS companyType,
+
+                   (SELECT COUNT(*)
+                    FROM tbl_job_posting JP
+                    WHERE JP.fk_memberid = C.fk_memberid
+                      AND JP.status = '게시중'
+                      AND JP.is_hidden = 0
+                      AND (JP.deadline_type = 'always' OR JP.deadline_at >= TRUNC(SYSDATE))
+                   ) AS activePostCount
+
+            FROM tbl_company C
+            LEFT JOIN tbl_company_intro CI
+                   ON C.fk_memberid = CI.fk_memberid
+            JOIN tbl_member M
+                   ON C.fk_memberid = M.memberid
+            WHERE C.industry_code = #{industryCode}
+              AND C.fk_memberid != #{memberId}
+              AND C.approved_yn = 1
+              AND M.status = 1
+            ORDER BY activePostCount DESC
+        )
+        WHERE ROWNUM &lt;= 5
+    </select>
+
+
+    <!-- ======================================================
+         6. 팔로우 여부 확인
+    ====================================================== -->
+    <select id="selectFollowStatus" resultType="int">
+        SELECT COUNT(*)
+        FROM tbl_company_follow
+        WHERE fk_company_memberid = #{companyMemberId}
+          AND fk_memberid = #{memberId}
+    </select>
+
+
+    <!-- ======================================================
+         7. 팔로우 등록
+    ====================================================== -->
+    <insert id="insertFollow">
+        INSERT INTO tbl_company_follow (fk_company_memberid, fk_memberid, followed_at)
+        VALUES (#{companyMemberId}, #{memberId}, SYSDATE)
+    </insert>
+
+
+    <!-- ======================================================
+         8. 팔로우 해제
+    ====================================================== -->
+    <delete id="deleteFollow">
+        DELETE FROM tbl_company_follow
+        WHERE fk_company_memberid = #{companyMemberId}
+          AND fk_memberid = #{memberId}
+    </delete>
+
+
+    <!-- ======================================================
+         9. 팔로워 수 조회
+    ====================================================== -->
+    <select id="selectFollowerCount" resultType="int">
+        SELECT COUNT(*)
+        FROM tbl_company_follow
+        WHERE fk_company_memberid = #{companyMemberId}
+    </select>
+
+
+    <!-- ======================================================
+         10. 팔로우한 기업 목록 조회 (관심기업 페이지용)
+    ====================================================== -->
+    <select id="selectFollowedCompanyList" parameterType="map"
+            resultType="com.spring.app.jobseeker.domain.CompanyInfoDTO">
+        SELECT *
+        FROM (
+            SELECT ROWNUM AS rno, T.*
+            FROM (
+                SELECT C.fk_memberid           AS memberId,
+               C.company_name          AS companyName,
+               C.industry_code         AS industryCode,
+               C.ceo_name              AS ceoName,
+               C.addr1                 AS addr1,
+               C.addr2                 AS addr2,
+               CI.company_type         AS companyType,
+               CI.homepage_url         AS homepageUrl,
+               TO_CHAR(CI.open_date, 'YYYY-MM-DD') AS openDate,
+
+               <!-- 팔로워 수 -->
+               (SELECT COUNT(*)
+                FROM tbl_company_follow CF
+                WHERE CF.fk_company_memberid = C.fk_memberid
+               ) AS followerCount,
+
+               <!-- 게시중 채용공고 수 -->
+               (SELECT COUNT(*)
+                FROM tbl_job_posting JP
+                WHERE JP.fk_memberid = C.fk_memberid
+                  AND JP.status = '게시중'
+                  AND JP.is_hidden = 0
+                  AND (JP.deadline_type = 'always'
+                       OR JP.deadline_at >= TRUNC(SYSDATE))
+               ) AS activePostCount,
+
+               <!-- 로고 이미지 -->
+               (SELECT I.file_url
+                FROM tbl_image_file I
+                WHERE I.target_type = 'company'
+                  AND I.filecategory = 'logo'
+                  AND I.target_id = CI.company_intro_id
+                  AND ROWNUM = 1
+               ) AS logoUrl
+
+        FROM tbl_company_follow F
+        JOIN tbl_company C
+               ON F.fk_company_memberid = C.fk_memberid
+        LEFT JOIN tbl_company_intro CI
+               ON C.fk_memberid = CI.fk_memberid
+        JOIN tbl_member M
+               ON C.fk_memberid = M.memberid
+        WHERE F.fk_memberid = #{memberId}
+          AND M.status = 1
+          AND C.approved_yn = 1
+
+        <!-- 키워드 검색 (기업명 또는 업종) -->
+        <if test="keyword != null and keyword != ''">
+            AND (
+                UPPER(C.company_name) LIKE '%' || UPPER(#{keyword}) || '%'
+                OR UPPER(DECODE(C.industry_code,
+                    'IT',  'IT·인터넷',
+                    'SW',  '소프트웨어',
+                    'FIN', '금융·핀테크',
+                    'EDU', '교육·에듀테크',
+                    'MKT', '마케팅',
+                    'ETC', '기타',
+                    C.industry_code)) LIKE '%' || UPPER(#{keyword}) || '%'
+            )
+        </if>
+
+        ORDER BY F.followed_at DESC
+            ) T
+            WHERE ROWNUM &lt;= #{endRow}
+        )
+        WHERE rno >= #{startRow}
+    </select>
+
+
+    <!-- ======================================================
+         11. 팔로우한 기업 총 건수
+    ====================================================== -->
+    <select id="selectFollowedCompanyCount" parameterType="map" resultType="int">
+        SELECT COUNT(*)
+        FROM tbl_company_follow F
+        JOIN tbl_company C
+               ON F.fk_company_memberid = C.fk_memberid
+        LEFT JOIN tbl_company_intro CI
+               ON C.fk_memberid = CI.fk_memberid
+        JOIN tbl_member M
+               ON C.fk_memberid = M.memberid
+        WHERE F.fk_memberid = #{memberId}
+          AND M.status = 1
+          AND C.approved_yn = 1
+        <if test="keyword != null and keyword != ''">
+            AND (
+                UPPER(C.company_name) LIKE '%' || UPPER(#{keyword}) || '%'
+                OR UPPER(DECODE(C.industry_code,
+                    'IT',  'IT·인터넷',
+                    'SW',  '소프트웨어',
+                    'FIN', '금융·핀테크',
+                    'EDU', '교육·에듀테크',
+                    'MKT', '마케팅',
+                    'ETC', '기타',
+                    C.industry_code)) LIKE '%' || UPPER(#{keyword}) || '%'
+            )
+        </if>
+    </select>
+
+
+    <!-- ======================================================
+         진행중 채용공고 목록 (페이징)
+    ====================================================== -->
+    <select id="selectCompanyJobPostingsPaged" parameterType="map"
+            resultType="com.spring.app.jobseeker.domain.JobPostingListDTO">
+        SELECT *
+        FROM (
+            SELECT ROWNUM AS rnum, T.*
+            FROM (
+                SELECT JP.job_id             AS jobId,
+                       JP.title              AS title,
+                       JP.work_type          AS workType,
+                       JP.career_type        AS careerType,
+                       JP.salary             AS salary,
+                       JP.view_count         AS viewCount,
+                       JP.deadline_type      AS deadlineType,
+                       TO_CHAR(JP.deadline_at, 'YYYY.MM.DD') AS deadlineAt,
+
+                       CASE
+                           WHEN JP.deadline_type = 'always' THEN '상시채용'
+                           ELSE 'D-' || TO_CHAR(TRUNC(JP.deadline_at) - TRUNC(SYSDATE))
+                       END AS dDay,
+
+                       R.region_name         AS regionName,
+                       PR.region_name        AS parentRegionName,
+
+                       EL.edu_level_name     AS educationLevelName,
+
+                       (SELECT LISTAGG(S.skill_name, ',') WITHIN GROUP (ORDER BY S.skill_name)
+                        FROM tbl_job_posting_skill JPS
+                        JOIN tbl_skill S ON JPS.fk_skill_id = S.skill_id
+                        WHERE JPS.fk_job_id = JP.job_id
+                       ) AS skillNames,
+
+                       (SELECT COUNT(*)
+                        FROM tbl_job_application JA
+                        WHERE JA.fk_job_id = JP.job_id
+                       ) AS applyCount
+
+                FROM tbl_job_posting JP
+                LEFT JOIN tbl_region R
+                       ON JP.fk_region_code = R.region_code
+                LEFT JOIN tbl_region PR
+                       ON R.fk_parent_region_code = PR.region_code
+                LEFT JOIN tbl_education_level EL
+                       ON JP.fk_edu_code = EL.edu_level_code
+                WHERE JP.fk_memberid = #{memberId}
+                  AND JP.status = '게시중'
+                  AND JP.is_hidden = 0
+                  AND (JP.deadline_type = 'always' OR JP.deadline_at >= TRUNC(SYSDATE))
+                ORDER BY JP.created_at DESC
+            ) T
+            WHERE ROWNUM &lt;= #{endRow}
+        )
+        WHERE rnum >= #{startRow}
+    </select>
+
+
+    <!-- ======================================================
+         진행중 채용공고 총 건수
+    ====================================================== -->
+    <select id="selectCompanyJobPostingsCount" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+        FROM tbl_job_posting JP
+        WHERE JP.fk_memberid = #{memberId}
+          AND JP.status = '게시중'
+          AND JP.is_hidden = 0
+          AND (JP.deadline_type = 'always' OR JP.deadline_at >= TRUNC(SYSDATE))
+    </select>
+
+
+</mapper>

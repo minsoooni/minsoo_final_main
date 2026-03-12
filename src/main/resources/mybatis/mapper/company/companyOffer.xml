@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- ==== 루트 엘리먼트 & 네임스페이스 설정(프로젝트 전체내에서 유일해야 한다.) ==== -->
+<mapper namespace="com.spring.app.company.model.CompanyOfferMapper">
+
+	<!-- 구직자 정보 조회하기 -->
+	<select id="selectJobSeekerList"
+        resultType="com.spring.app.company.domain.MemberSimpleDTO">
+
+	  SELECT
+	      MEMBERID AS memberId,
+	      NAME     AS name,
+	      EMAIL    AS email
+	  FROM TBL_MEMBER
+	  WHERE TYPE = 0           <!-- 0 = 구직자 -->
+	    AND STATUS = 1         <!-- 정상 회원만 -->
+	  ORDER BY CREATED_AT DESC
+	</select>
+
+
+
+	<!-- 발송한 제안서 전체 통계 조회하기 -->
+	<select id="selectOfferMetricsSummary"
+	        resultType="com.spring.app.company.domain.OfferMetricsSummaryDTO">
+	
+	  SELECT
+	    NVL(COUNT(r.fk_memberid), 0) AS sent,
+	    NVL(SUM(CASE WHEN r.viewed_at IS NOT NULL THEN 1 ELSE 0 END), 0) AS viewed,
+	    NVL(SUM(CASE WHEN r.response_status = 1 THEN 1 ELSE 0 END), 0) AS accepted,
+	    NVL(SUM(CASE WHEN r.response_status = 2 THEN 1 ELSE 0 END), 0) AS rejected
+	
+	  FROM tbl_offer_letter ol
+	  LEFT JOIN tbl_offer_submit s
+	    ON s.fk_offer_letter_id = ol.offer_letter_id
+	  LEFT JOIN tbl_offer_response r
+	    ON r.fk_offer_submit_id = s.offer_submit_id
+	  JOIN tbl_job_posting jp
+	    ON jp.job_id = ol.fk_job_id
+	
+	  WHERE jp.fk_memberid = #{companyMemberId}
+	
+	</select>
+	
+
+
+	<!-- 발송한 제안서 상태 조회해오기 -->	
+	<select id="selectOfferMetricsByCompany" resultType="com.spring.app.company.domain.OfferMetricsDTO">
+	  SELECT
+	    ol.offer_letter_id AS offerLetterId,
+	    NVL(COUNT(r.fk_memberid), 0) AS totalSent,
+	
+	    NVL(SUM(CASE WHEN r.viewed_at IS NOT NULL THEN 1 ELSE 0 END), 0) AS viewedCnt,
+	    NVL(SUM(CASE WHEN r.viewed_at IS NULL THEN 1 ELSE 0 END), 0) AS unreadCnt,
+	
+	    NVL(SUM(CASE WHEN r.response_status = 1 THEN 1 ELSE 0 END), 0) AS acceptCnt,
+	    NVL(SUM(CASE WHEN r.response_status = 2 THEN 1 ELSE 0 END), 0) AS rejectCnt
+	
+	  FROM tbl_offer_letter ol
+	  LEFT JOIN tbl_offer_submit s
+	    ON s.fk_offer_letter_id = ol.offer_letter_id
+	  LEFT JOIN tbl_offer_response r
+	    ON r.fk_offer_submit_id = s.offer_submit_id
+	
+	  /* 회사 소유 제안서만 */
+	  JOIN tbl_job_posting jp
+	    ON jp.job_id = ol.fk_job_id
+	
+	  WHERE jp.fk_memberid = #{companyMemberId}
+	
+	  GROUP BY ol.offer_letter_id
+	  ORDER BY ol.offer_letter_id DESC
+	</select>
+	
+	
+
+
+	<!-- 제안서 리스트 조회해오기 -->
+	<select id="selectOfferList"
+	        resultType="com.spring.app.company.domain.OfferListDTO">
+	  SELECT
+	      l.offer_letter_id AS offerLetterId,
+	      l.fk_job_id          AS jobId,
+	      l.title           AS title,
+	
+	      <!-- 해당 offer_letter의 "가장 최근 발송" 만료일 -->
+	      (
+	        SELECT s.expire_at
+	        FROM tbl_offer_submit s
+	        WHERE s.fk_offer_letter_id = l.offer_letter_id
+	        ORDER BY s.send_at DESC
+	        FETCH FIRST 1 ROW ONLY
+	      ) AS expireAt,
+	
+	      <!-- (지금은 집계값 없으니 0으로) -->
+	      0 AS totalSent,
+	      0 AS viewedCnt,
+	      0 AS acceptCnt,
+	      0 AS rejectCnt,
+	      0 AS unreadCnt
+	  
+	  FROM tbl_offer_letter l
+	  JOIN tbl_job_posting j
+	    ON j.job_id = l.fk_job_id
+	  WHERE j.fk_memberid = #{companyMemberId}
+	  ORDER BY l.created_at DESC
+	</select>
+	
+
+	
+	<!-- 제안서 상세정보 조회해오기 -->
+	<select id="selectOfferDetail"
+	        parameterType="long"
+	        resultType="com.spring.app.company.domain.OfferDetailDTO">
+	
+	  SELECT
+	      l.offer_letter_id AS offerLetterId,
+	      l.fk_job_id          AS jobId,
+	      l.title           AS title,
+	      l.message         AS message,
+	
+	      (
+	        SELECT s.expire_at
+	        FROM tbl_offer_submit s
+	        WHERE s.fk_offer_letter_id = l.offer_letter_id
+	        ORDER BY s.send_at DESC
+	        FETCH FIRST 1 ROW ONLY
+	      ) AS expireAt
+	
+	  FROM tbl_offer_letter l
+	  WHERE l.offer_letter_id = #{id}
+	</select>
+	
+	
+	
+	
+	<!-- 제안서 등록하기 -->
+	<insert id="insertOfferLetter"
+        parameterType="com.spring.app.company.domain.OfferCreateRequestDTO">
+
+	  <selectKey keyProperty="offerLetterId" resultType="long" order="BEFORE">
+	    SELECT SEQ_TEST_OFFER_LETTER.NEXTVAL FROM dual
+	  </selectKey>
+	
+	  INSERT INTO TBL_OFFER_LETTER
+	  (OFFER_LETTER_ID, FK_JOB_ID, TITLE, MESSAGE, CREATED_AT, UPDATE_AT)
+	  VALUES
+	  (#{offerLetterId}, #{jobId}, #{title}, #{message}, SYSDATE, SYSDATE)
+	
+	</insert>
+	
+	
+	
+	
+	
+	<!-- 제안서 수정하기 -->
+	<update id="updateOfferLetter"
+        parameterType="com.spring.app.company.domain.OfferUpdateRequestDTO">
+	  UPDATE TBL_OFFER_LETTER
+	     SET FK_JOB_ID = #{jobId},
+	         TITLE  = #{title},
+	         MESSAGE = #{message},
+	         UPDATE_AT = SYSDATE
+	   WHERE OFFER_LETTER_ID = #{offerLetterId}
+	</update>
+	
+	
+	
+	<select id="existsOfferSendHistory" resultType="int">
+	  SELECT CASE WHEN EXISTS (
+	    SELECT 1
+	    FROM TBL_OFFER_SUBMIT s
+	    WHERE s.fk_offer_letter_id = #{offerLetterId}
+	  ) THEN 1 ELSE 0 END AS ok
+	  FROM dual
+	</select>
+	
+	
+	
+	<!-- 제안서 삭제하기 -->
+	<delete id="deleteOfferLetter">
+	  DELETE FROM TBL_OFFER_LETTER
+	  WHERE OFFER_LETTER_ID = #{offerLetterId}
+	</delete>
+	
+	
+	
+	<!-- 제안서 발송 => 소유권 확인 (offerLetterId가 로그인 기업의 공고에 연결되어 있는지) -->
+	<select id="existsOfferLetterOwnedByCompany" resultType="int">
+	  SELECT CASE WHEN EXISTS (
+	    SELECT 1
+	    FROM TBL_OFFER_LETTER ol
+	    JOIN TBL_JOB_POSTING jp
+	      ON jp.JOB_ID = ol.FK_JOB_ID
+	    WHERE ol.OFFER_LETTER_ID = #{offerLetterId}
+	      AND jp.FK_MEMBERID = #{companyMemberId}
+	  ) THEN 1 ELSE 0 END AS ok
+	  FROM dual
+	</select>
+	
+	
+	<!-- 제안서 발송 => 스냅샷 insert (핵심) -->
+	<insert id="insertOfferSubmitSnapshot" parameterType="map">
+	  <selectKey keyProperty="offerSubmitId" resultType="long" order="BEFORE">
+	    SELECT SEQ_OFFER_SUBMIT_ID.NEXTVAL FROM dual
+	  </selectKey>
+	
+	  INSERT INTO TBL_OFFER_SUBMIT (
+	    OFFER_SUBMIT_ID,
+	    FK_OFFER_LETTER_ID,
+	    FK_JOB_ID,
+	    TITLE,
+	    MESSAGE,
+	    EXPIRE_AT,
+	    SEND_AT
+	  )
+	  SELECT
+	    #{offerSubmitId},
+	    ol.OFFER_LETTER_ID,
+	    ol.FK_JOB_ID,
+	    ol.TITLE,
+	    ol.MESSAGE,
+	    #{expireAt, jdbcType=DATE},
+	    SYSDATE
+	  FROM TBL_OFFER_LETTER ol
+	  WHERE ol.OFFER_LETTER_ID = #{offerLetterId}
+	</insert>
+	
+	
+	
+	<!-- 제안서 발송 => response 다건 insert (Oracle UNION ALL 방식) -->
+	<insert id="insertOfferResponses">
+	  INSERT INTO TBL_OFFER_RESPONSE (
+	    FK_OFFER_SUBMIT_ID,
+	    FK_MEMBERID,
+	    RESPONSE_STATUS
+	  )
+	  <foreach collection="receiverMemberIds" item="mid" separator=" UNION ALL ">
+	    SELECT #{offerSubmitId}, #{mid}, 0 FROM dual
+	  </foreach>
+	</insert>
+	
+	
+	
+	<!-- 제안서를 발송한 회원(memberId) 목록 조회 -->
+	<select id="selectSentMemberIdsByOfferLetterId"
+	        parameterType="long"
+	        resultType="string">
+	    SELECT DISTINCT r.fk_memberid
+	    FROM tbl_offer_response r
+	    JOIN tbl_offer_submit s
+	      ON s.offer_submit_id = r.fk_offer_submit_id
+	    WHERE s.fk_offer_letter_id = #{offerLetterId}
+	</select>
+	
+	
+	<!-- 제안서 수신자 상세 조회 -->
+	<select id="selectOfferRecipientDetailsByOfferLetterId"
+	        parameterType="long"
+	        resultType="com.spring.app.company.domain.OfferRecipientDetailDTO">
+	    SELECT
+	        s.fk_offer_letter_id AS offerLetterId,
+	        s.offer_submit_id    AS offerSubmitId,
+	        s.title              AS offerTitle,
+	
+	        r.fk_memberid        AS memberId,
+	        m.name               AS receiverName,
+	        m.email              AS receiverEmail,
+	
+	        s.send_at            AS sendAt,
+	        r.viewed_at          AS viewedAt,
+	        r.responded_at       AS respondedAt,
+	
+	        r.response_status    AS responseStatus,
+	
+	        CASE
+	            WHEN r.response_status = 1 THEN '수락'
+	            WHEN r.response_status = 2 THEN '거절'
+	            ELSE '미응답'
+	        END AS responseStatusText
+	
+	    FROM tbl_offer_submit s
+	    JOIN tbl_offer_response r
+	      ON r.fk_offer_submit_id = s.offer_submit_id
+	    LEFT JOIN tbl_member m
+	      ON m.memberid = r.fk_memberid
+	    WHERE s.fk_offer_letter_id = #{offerLetterId}
+	    ORDER BY s.send_at DESC, r.fk_memberid ASC
+	</select>
+	
+	
+	
+	
+	
+	<!-- 제안서 발송 가능 여부 검사용 공고 정보 조회 -->
+	<select id="selectOfferSendValidationInfo"
+	        resultType="com.spring.app.company.domain.OfferSendValidationDTO">
+	  SELECT
+	      ol.offer_letter_id AS offerLetterId,
+	      ol.fk_job_id       AS jobId,
+	      jp.fk_memberid     AS companyMemberId,
+	      jp.status          AS jobStatus,
+	      jp.opened_at       AS openedAt,
+	      jp.deadline_at     AS deadlineAt,
+	      jp.closed_at       AS closedAt
+	  FROM tbl_offer_letter ol
+	  JOIN tbl_job_posting jp
+	    ON jp.job_id = ol.fk_job_id
+	  WHERE ol.offer_letter_id = #{offerLetterId}
+	</select>
+	
+	
+	<!-- 수신자가 유효한지 검사 조회 -->
+	<select id="countValidOfferReceivers" resultType="int">
+	  SELECT COUNT(*)
+	  FROM tbl_member
+	  WHERE type = 0
+	    AND status = 1
+	    AND memberid IN
+	    <foreach collection="receiverMemberIds" item="mid" open="(" separator="," close=")">
+	      #{mid}
+	    </foreach>
+	</select>
+	
+	
+	<!-- 이미 발송한 회원 재확인 -->
+	<select id="selectAlreadySentReceiverIds"
+	        resultType="string">
+	  SELECT DISTINCT r.fk_memberid
+	  FROM tbl_offer_response r
+	  JOIN tbl_offer_submit s
+	    ON s.offer_submit_id = r.fk_offer_submit_id
+	  WHERE s.fk_offer_letter_id = #{offerLetterId}
+	    AND r.fk_memberid IN
+	    <foreach collection="receiverMemberIds" item="mid" open="(" separator="," close=")">
+	      #{mid}
+	    </foreach>
+	</select>
+	
+</mapper>

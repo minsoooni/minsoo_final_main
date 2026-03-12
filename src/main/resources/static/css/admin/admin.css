@@ -1,0 +1,94 @@
+@charset "UTF-8";
+
+
+/* ===== 레이아웃 ===== */
+.admin-wrapper{
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-topbar{
+  height: 60px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e5e5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 30px;
+}
+
+.admin-body{
+  display: flex;
+  flex: 1;
+}
+
+
+
+/* ===== Topbar 내부 ===== */
+.topbar-left,
+.topbar-right{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.logo{ font-weight:800; }
+.sub{ color:#6b7280; font-size:13px; }
+
+.profile{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.avatar{
+  width:36px; height:36px; border-radius:999px;
+  display:flex; align-items:center; justify-content:center;
+  background:#f3f4f6;
+  font-weight:800;
+}
+.admin-name{ font-weight:800; font-size:13px; line-height:1.2; }
+.email{ color:#6b7280; font-size:12px; line-height:1.2; }
+
+/* ===== 사이드바 ===== */
+.admin-sidebar{ background:#fff; }
+.admin-sidebar ul{ list-style:none; padding:0; margin:0; }
+
+.admin-sidebar li a{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:12px 18px;
+  color:#111;
+  text-decoration:none;
+  border-radius:10px;
+  margin:6px 12px;
+  background:#fff;
+  transition: all 0.2s ease;
+}
+.admin-sidebar li a:hover{
+  background:#0b1524;
+  color:#fff;
+}
+.admin-sidebar li.active a{
+  background:#0b1524;
+  color:#fff;
+}
+.admin-sidebar li a i{
+  width:18px;
+  opacity:.8;
+}
+.admin-sidebar li a:hover i,
+.admin-sidebar li.active a i{
+  opacity:1;
+}
+
+.admin-content {
+    flex: 1;
+    overflow-y: auto;
+    min-width: 0;
+}
+
+.admin-sidebar {
+    background: #fff;
+    padding-top: 16px;
+}

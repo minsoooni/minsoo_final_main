@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      lang="ko"
+      th:replace="~{fragment/jobseeker_bar :: jobseeker_layout(~{::div#applicationListContent})}">
+
+<head>
+  <title>지원 내역 | 구인구직</title>
+  <th:block data-slot="link"></th:block>
+  <th:block data-slot="css">
+    
+  </th:block>
+  <th:block data-slot="script"><script th:inline="javascript"></script></th:block>
+</head>
+
+<body>
+<div id="applicationListContent">
+
+	<style>
+      /* ── 상단 요약 카드 ── */
+      .stat-card {
+        border-radius: 12px;
+        padding: 18px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border: 1px solid #e9ecef;
+        background: #fff;
+        transition: box-shadow 0.2s;
+      }
+      .stat-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+      .stat-card .stat-label { font-size: 0.8rem; color: #6c757d; margin-bottom: 4px; }
+      .stat-card .stat-num   { font-size: 1.6rem; font-weight: 700; line-height: 1; }
+      .stat-card .stat-icon  { font-size: 1.8rem; opacity: 0.85; }
+
+      .stat-blue   { }
+      .stat-yellow { }
+      .stat-purple { }
+      .stat-green  { }
+      .stat-red    { }
+
+      .stat-blue   .stat-num { color: #4A90E2; }
+      .stat-yellow .stat-num { color: #F5A623; }
+      .stat-purple .stat-num { color: #9B59B6; }
+      .stat-green  .stat-num { color: #27AE60; }
+      .stat-red    .stat-num { color: #E74C3C; }
+
+      /* ── 필터 탭 ── */
+      .app-tabs { border-bottom: 2px solid #e9ecef; margin-bottom: 20px; }
+      .app-tabs .nav-link {
+        color: #6c757d;
+        font-size: 0.9rem;
+        padding: 10px 16px;
+        border: none;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+      }
+      .app-tabs .nav-link.active {
+        color: #4A90E2;
+        font-weight: 600;
+        border-bottom: 2px solid #4A90E2;
+        background: transparent;
+      }
+      .app-tabs .nav-link .cnt {
+        font-size: 0.78rem;
+        background: #f1f3f5;
+        color: #6c757d;
+        border-radius: 10px;
+        padding: 1px 7px;
+        margin-left: 4px;
+      }
+      .app-tabs .nav-link.active .cnt {
+        background: #EBF4FF;
+        color: #4A90E2;
+      }
+
+      /* ── 검색바 ── */
+      .search-bar {
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        padding: 14px 18px;
+        margin-bottom: 20px;
+      }
+      .search-bar .form-control {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        font-size: 0.9rem;
+      }
+      .search-bar .form-control:focus {
+        border-color: #4A90E2;
+        box-shadow: 0 0 0 3px rgba(74,144,226,0.1);
+      }
+
+      /* ── 지원 카드 (공통 js-card 값에 맞춤) ── */
+      .app-card {
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        margin-bottom: 16px;
+        overflow: hidden;
+        transition: box-shadow 0.2s;
+      }
+      .app-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+      .app-card-body  { padding: 22px 24px; }
+
+      /* 상태 라벨 */
+      .status-label {
+        font-size: 0.82rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+      }
+      .status-submitted { color: #4A90E2; }
+      .status-review    { color: #F5A623; }
+      .status-interview { color: #9B59B6; }
+      .status-passed    { color: #27AE60; }
+      .status-rejected  { color: #E74C3C; }
+      .status-default   { color: #6c757d; }
+
+      /* 기업 로고 박스 (공통 56x56) */
+      .company-logo-box {
+        width: 56px; height: 56px;
+        border-radius: 10px;
+        border: 1px solid #e9ecef;
+        background: #f8f9fa;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.65rem; color: #adb5bd; text-align: center;
+        flex-shrink: 0; overflow: hidden;
+      }
+      .company-logo-box img { width: 100%; height: 100%; object-fit: cover; }
+
+      /* 태그 뱃지 (공통 스타일) */
+      .tag-badge {
+        display: inline-block;
+        font-size: 0.78rem;
+        padding: 3px 10px;
+        border-radius: 20px;
+        background: #f1f3f5;
+        color: #495057;
+        margin-right: 4px;
+        margin-bottom: 4px;
+      }
+      .tag-badge.salary { background: #EBF4FF; color: #4A90E2; font-weight: 600; }
+
+      /* 열람 상태 */
+      .read-status { font-size: 0.8rem; }
+      .read-status.unread { color: #6c757d; }
+      .read-status.read   { color: #4A90E2; }
+
+      /* 면접 일정 박스 */
+      .interview-box {
+        background: #F8F0FF;
+        border: 1px solid #E8D5FF;
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 0.85rem;
+        color: #6f42c1;
+        margin-top: 12px;
+      }
+
+      /* 카드 하단 */
+      .app-card-footer {
+        padding: 14px 24px;
+        border-top: 1px solid #f1f3f5;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #fafbfc;
+      }
+      .app-card-footer .btn-sm {
+        font-size: 0.82rem;
+        padding: 5px 14px;
+        border-radius: 6px;
+      }
+      .footer-hint {
+        font-size: 0.78rem;
+        color: #adb5bd;
+      }
+
+      /* 빈 상태 */
+      .empty-state {
+        text-align: center;
+        padding: 60px 0;
+        color: #adb5bd;
+      }
+    </style>
+
+  <div class="container-fluid px-4 py-4">
+
+    <!-- ── 헤더 ── -->
+    <div class="js-page-header">
+      <h1 class="js-page-title">지원 내역</h1>
+      <p class="js-page-subtitle">
+        총 <span class="font-weight-bold text-dark" th:text="${totalCount}">0</span>건의 지원 내역이 있습니다.
+      </p>
+    </div>
+
+    <!-- ── 요약 카드 ── -->
+    <div class="row mb-4">
+      <div class="col mb-2">
+        <div class="stat-card stat-blue d-flex align-items-center justify-content-between">
+          <div>
+            <div class="stat-label">지원 완료</div>
+            <div class="stat-num" th:text="${submittedCount}">0</div>
+          </div>
+          <div class="stat-icon text-primary"><i class="fas fa-file-alt"></i></div>
+        </div>
+      </div>
+      <div class="col mb-2">
+        <div class="stat-card stat-yellow">
+          <div>
+            <div class="stat-label">심사중</div>
+            <div class="stat-num" th:text="${reviewingCount}">0</div>
+          </div>
+          <div class="stat-icon" style="color:#F5A623;"><i class="fas fa-clock"></i></div>
+        </div>
+      </div>
+      <div class="col mb-2">
+        <div class="stat-card stat-purple">
+          <div>
+            <div class="stat-label">면접</div>
+            <div class="stat-num" th:text="${interviewCount}">0</div>
+          </div>
+          <div class="stat-icon" style="color:#9B59B6;"><i class="fas fa-users"></i></div>
+        </div>
+      </div>
+      <div class="col mb-2">
+        <div class="stat-card stat-green">
+          <div>
+            <div class="stat-label">합격</div>
+            <div class="stat-num" th:text="${passedCount}">0</div>
+          </div>
+          <div class="stat-icon" style="color:#27AE60;"><i class="fas fa-check-circle"></i></div>
+        </div>
+      </div>
+      <div class="col mb-2">
+        <div class="stat-card stat-red">
+          <div>
+            <div class="stat-label">불합격</div>
+            <div class="stat-num" th:text="${rejectedCount}">0</div>
+          </div>
+          <div class="stat-icon" style="color:#E74C3C;"><i class="fas fa-times-circle"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 필터 탭 ── -->
+    <ul class="nav app-tabs">
+      <li class="nav-item">
+        <a class="nav-link" th:classappend="${status == null || status == 'ALL'} ? 'active' : ''"
+           th:href="@{/jobseeker/application/list}">
+          전체 <span class="cnt" th:text="${totalCount}">0</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" th:classappend="${status == 'SUBMITTED'} ? 'active' : ''"
+           th:href="@{/jobseeker/application/list(status='SUBMITTED')}">
+          지원완료 <span class="cnt" th:text="${submittedCount}">0</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" th:classappend="${status == 'REVIEWING'} ? 'active' : ''"
+           th:href="@{/jobseeker/application/list(status='REVIEWING')}">
+          서류심사 <span class="cnt" th:text="${reviewingCount}">0</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" th:classappend="${status == 'INTERVIEW'} ? 'active' : ''"
+           th:href="@{/jobseeker/application/list(status='INTERVIEW')}">
+          면접 <span class="cnt" th:text="${interviewCount}">0</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" th:classappend="${status == 'PASSED'} ? 'active' : ''"
+           th:href="@{/jobseeker/application/list(status='PASSED')}">
+          합격 <span class="cnt" th:text="${passedCount}">0</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" th:classappend="${status == 'REJECTED'} ? 'active' : ''"
+           th:href="@{/jobseeker/application/list(status='REJECTED')}">
+          불합격 <span class="cnt" th:text="${rejectedCount}">0</span>
+        </a>
+      </li>
+    </ul>
+
+    <!-- ── 검색바 ── -->
+    <div class="js-search-bar">
+      <form th:action="@{/jobseeker/application/list}" method="get"
+            class="d-flex align-items-center" style="gap: 10px;">
+        <div class="flex-fill position-relative">
+          <i class="fas fa-search position-absolute text-muted"
+             style="left:12px; top:50%; transform:translateY(-50%); font-size:0.85rem;"></i>
+          <input type="text" name="keyword" th:value="${keyword}"
+                 class="form-control" style="padding-left: 36px;"
+                 placeholder="공고명, 회사명으로 검색" maxlength="100">
+        </div>
+        <button type="submit" class="btn btn-primary" style="white-space:nowrap;">
+          <i class="fas fa-search"></i> 검색
+        </button>
+        <input type="hidden" name="status" th:value="${status}">
+        <select name="sort" class="form-control" style="width: 120px;">
+          <option value="latest" th:selected="${sort == 'latest' or sort == null}">최신순</option>
+          <option value="oldest" th:selected="${sort == 'oldest'}">오래된순</option>
+          <option value="company" th:selected="${sort == 'company'}">기업명순</option>
+        </select>
+      </form>
+    </div>
+
+    <!-- ── 지원 목록 없음 ── -->
+    <div th:if="${#lists.isEmpty(applications)}" class="empty-state">
+      <i class="fas fa-file-alt fa-3x mb-3"></i>
+      <p class="h6 mt-2">지원 내역이 없습니다.</p>
+      <a th:href="@{/job/list}" class="btn btn-primary btn-sm mt-2">채용공고 보러가기</a>
+    </div>
+
+    <!-- ── 지원 카드 목록 ── -->
+    <div th:each="app : ${applications}" class="app-card border rounded">
+      <div class="app-card-body">
+        <div class="d-flex" style="gap: 16px;">
+
+          <!-- 기업 로고 -->
+          <div class="company-logo-box d-flex align-items-center justify-content-center">
+            <img th:if="${app['companyLogo'] != null}" th:src="@{/{path}(path=${app['companyLogo']})}" alt="로고">
+            <i th:unless="${app['companyLogo'] != null}" class="fas fa-building" style="font-size:22px; color:#bfc4cc;"></i>
+          </div>
+
+          <!-- 카드 내용 -->
+          <div class="flex-fill">
+
+            <!-- 제목 + 상태 -->
+            <div class="d-flex justify-content-between align-items-start mb-1">
+              <h5 class="font-weight-bold mb-0" style="font-size: 1rem;">
+                <a th:href="@{/job/detail/{id}(id=${app['postId']})}" class="text-dark" target="_blank"
+                   th:text="${app['postTitle']}">공고 제목</a>
+              </h5>
+              <div class="status-label ml-3">
+                <span th:if="${app['status'] == 'SUBMITTED'}"    class="status-submitted">
+                  <i class="fas fa-file-alt"></i> 지원 완료
+                </span>
+                <span th:if="${app['status'] == 'UNREAD'}"       class="status-default">
+                  <i class="fas fa-file-alt"></i> 지원 완료
+                </span>
+                <span th:if="${app['status'] == 'REVIEWING' or app['status'] == 'UNDER_REVIEW' or app['status'] == 'READ'}"
+                      class="status-review">
+                  <i class="fas fa-clock"></i> 서류 심사중
+                </span>
+                <span th:if="${app['status'] == 'INTERVIEW'}"    class="status-interview">
+                  <i class="fas fa-users"></i> 면접 예정
+                </span>
+                <span th:if="${app['status'] == 'PASSED'}"       class="status-passed">
+                  <i class="fas fa-check-circle"></i> 최종 합격
+                </span>
+                <span th:if="${app['status'] == 'REJECTED'}"     class="status-rejected">
+                  <i class="fas fa-times-circle"></i> 불합격
+                </span>
+              </div>
+            </div>
+
+            <!-- 기업명 -->
+            <p class="text-muted small mb-2">
+              <i class="fas fa-building" style="font-size:0.75rem;"></i>
+              <span th:text="${app['companyName']}">기업명</span>
+            </p>
+
+            <!-- 태그 뱃지 -->
+            <div class="mb-2">
+              <span class="tag-badge" th:text="${app['region']}">지역</span>
+              <span class="tag-badge" th:text="${app['role']}">직무</span>
+              <span class="tag-badge" th:if="${app['employmentType'] != null}" th:text="${app['employmentType']}">고용형태</span>
+              <span class="tag-badge salary" th:if="${app['salary'] != null}" th:text="${app['salary']}">급여</span>
+            </div>
+
+            <!-- 메타 정보 -->
+            <div class="d-flex flex-wrap align-items-center text-muted small" style="gap: 14px;">
+              <!-- 열람 상태 -->
+              <span th:if="${app['status'] == 'UNREAD'}" class="read-status unread">
+                <i class="fas fa-eye-slash"></i> 미열람
+              </span>
+              <span th:if="${app['status'] == 'READ' or app['status'] == 'REVIEWING' or app['status'] == 'UNDER_REVIEW'
+                             or app['status'] == 'INTERVIEW' or app['status'] == 'PASSED' or app['status'] == 'REJECTED'}"
+                    class="read-status read">
+                <i class="fas fa-eye"></i> 기업 열람
+              </span>
+              <!-- 지원일 -->
+              <span>
+                <i class="far fa-calendar-alt"></i>
+                지원일: <span th:text="${app['appliedAt']}">2026.02.10</span>
+              </span>
+              <!-- 마감일 -->
+              <span th:if="${app['deadline'] != null}">
+                <i class="far fa-clock"></i>
+                마감: <span th:text="${app['deadline']}">2026.03.15</span>
+              </span>
+            </div>
+
+            <!-- 사용 이력서 -->
+            <div class="text-muted small mt-1" th:if="${app['resumeTitle'] != null}">
+              <i class="far fa-file-alt"></i>
+              사용 이력서: <span th:text="${app['resumeTitle']}">이력서명</span>
+            </div>
+
+            <!-- 면접 안내 박스 -->
+            <div class="interview-box"
+                 th:if="${app['status'] == 'INTERVIEW'}">
+              <i class="fas fa-phone-alt"></i>
+              <strong>면접 일정은 전화/문자로 연락 예정입니다.</strong>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+
+     <!-- 진행상태 패널 (기본 숨김) -->
+     <div th:id="'status-' + ${app['id']}" style="display:none; border-top: 1px solid #f1f3f5; padding: 20px 24px; background:#fafbfc;">
+       <h6 class="font-weight-bold mb-3">진행 상태</h6>
+       <div class="d-flex flex-column" style="gap: 0;">
+
+         <!-- 지원 완료 -->
+         <div class="d-flex align-items-start" style="gap: 12px; margin-bottom: 16px;">
+           <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                style="width:36px; height:36px; background:#4A90E2;">
+             <i class="fas fa-file-alt text-white" style="font-size:0.85rem;"></i>
+           </div>
+           <div style="border-left: 2px solid #dee2e6; padding-left: 12px; flex:1;">
+             <div class="font-weight-bold small">지원 완료</div>
+             <div class="text-muted" style="font-size:0.78rem;" th:text="${app['appliedAt']}">날짜</div>
+           </div>
+         </div>
+
+         <!-- 서류 검토 -->
+         <div class="d-flex align-items-start" style="gap: 12px; margin-bottom: 16px;">
+           <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                th:style="${app['status'] == 'UNREAD'} ? 'width:36px;height:36px;background:#dee2e6;' : 'width:36px;height:36px;background:#F5A623;'">
+             <i class="fas fa-search text-white" style="font-size:0.85rem;"></i>
+           </div>
+           <div style="border-left: 2px solid #dee2e6; padding-left: 12px; flex:1;">
+             <div class="font-weight-bold small"
+                  th:style="${app['status'] == 'UNREAD'} ? 'color:#adb5bd;' : ''">서류 검토</div>
+             <div class="text-muted" style="font-size:0.78rem;"
+                  th:text="${app['status'] == 'UNREAD'} ? '대기중' : (${app['viewedDate'] != null} ? ${app['viewedDate']} : '진행됨')">대기중</div>
+           </div>
+         </div>
+
+         <!-- 면접 -->
+         <div class="d-flex align-items-start" style="gap: 12px; margin-bottom: 16px;">
+           <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                th:style="${app['hasInterview'] == true or app['status'] == 'INTERVIEW'} ? 'width:36px;height:36px;background:#9B59B6;' : 'width:36px;height:36px;background:#dee2e6;'">
+             <i class="fas fa-users text-white" style="font-size:0.85rem;"></i>
+           </div>
+           <div style="border-left: 2px solid #dee2e6; padding-left: 12px; flex:1;">
+             <div class="font-weight-bold small"
+                  th:style="${app['hasInterview'] != true and app['status'] != 'INTERVIEW'} ? 'color:#adb5bd;' : ''">면접</div>
+             <div class="text-muted" style="font-size:0.78rem;"
+                  th:text="${app['status'] == 'INTERVIEW'} ? '예정' : (${app['hasInterview'] == true} ? '완료' : '대기중')">대기중</div>
+           </div>
+         </div>
+
+         <!-- 최종 결과 -->
+         <div class="d-flex align-items-start" style="gap: 12px;">
+           <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                th:style="${app['status'] == 'PASSED'} ? 'width:36px;height:36px;background:#27AE60;' : (${app['status'] == 'REJECTED'} ? 'width:36px;height:36px;background:#E74C3C;' : 'width:36px;height:36px;background:#dee2e6;')">
+             <i th:class="${app['status'] == 'PASSED'} ? 'fas fa-check text-white' : (${app['status'] == 'REJECTED'} ? 'fas fa-times text-white' : 'fas fa-check text-white')" style="font-size:0.85rem;"></i>
+           </div>
+           <div style="padding-left: 12px; flex:1;">
+             <div class="font-weight-bold small"
+                  th:style="${app['status'] != 'PASSED' and app['status'] != 'REJECTED'} ? 'color:#adb5bd;' : ''"
+                  th:text="${app['status'] == 'PASSED'} ? '최종결과 - 합격' : (${app['status'] == 'REJECTED'} ? '최종결과 - 불합격' : '최종 결과')">최종 결과</div>
+             <div class="text-muted" style="font-size:0.78rem;"
+                  th:text="${app['status'] == 'PASSED' or app['status'] == 'REJECTED'} ? (${app['resultDate'] != null} ? ${app['resultDate']} : '') : '결과 대기중'">결과 대기중</div>
+           </div>
+         </div>
+
+       </div>
+     </div>
+
+      <!-- 카드 하단 버튼 영역 -->
+      <div class="app-card-footer d-flex align-items-center justify-content-between">
+        <div class="d-flex" style="gap: 8px;">
+        
+          <button type="button"
+		          class="btn btn-sm btn-outline-secondary"
+		          th:attr="data-target=${'#status-' + app['id']}"
+		          onclick="toggleStatus(this)">
+		    <i class="fas fa-chevron-down"></i> 진행상태
+		  </button>
+        
+          <a th:href="@{/jobseeker/application/detail/{id}(id=${app['id']})}"
+             class="btn btn-sm btn-outline-secondary">
+             상세보기
+          </a>
+
+          <a th:href="@{/job/detail/{id}(id=${app['postId']})}"
+             class="btn btn-sm btn-outline-primary" target="_blank">
+            <i class="far fa-eye"></i> 공고 보기
+          </a>
+          
+        </div>
+
+        <div>
+          <span th:unless="${app['canCancel']}" class="footer-hint">
+            <i class="fas fa-info-circle"></i> 기업이 열람한 지원서는 수정/취소할 수 없습니다
+          </span>
+          <button th:if="${app['canCancel']}"
+                  type="button"
+                  class="btn btn-sm btn-outline-danger"
+                  th:attr="data-id=${app['id']}"
+                  onclick="cancelApplication(this.dataset.id)">
+            <i class="fas fa-times"></i> 지원 취소
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script th:inline="javascript">
+  var successMsg = /*[[${successMsg}]]*/ null;
+  var errorMsg = /*[[${errorMsg}]]*/ null;
+  if (successMsg) { alert(successMsg); }
+  if (errorMsg) { alert(errorMsg); }
+
+  function cancelApplication(id) {
+      if (confirm('정말 지원을 취소하시겠습니까?')) {
+        var contextPath = /*[[@{/}]]*/ '/';
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = contextPath + 'jobseeker/application/' + id + '/cancel';
+        document.body.appendChild(form);
+        form.submit();
+      }
+    }
+    
+    
+    function toggleStatus(btn) {
+    	  const targetId = btn.getAttribute('data-target');
+    	  const panel = document.querySelector(targetId);
+    	  const isOpen = panel.style.display !== 'none';
+    	  panel.style.display = isOpen ? 'none' : 'block';
+    	  btn.innerHTML = isOpen
+    	    ? '<i class="fas fa-chevron-down"></i> 진행상태'
+    	    : '<i class="fas fa-chevron-up"></i> 간략히';
+    	}
+    
+  </script>
+
+</div>
+</body>
+</html>

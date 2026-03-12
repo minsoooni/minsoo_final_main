@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html th:replace="~{layout/layout_main :: layout(~{::title}, ~{::link}, ~{::style}, ~{::script}, ~{::section})}"
+      lang="ko"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8">
+  <title>회원가입 완료 | 잡파인더</title>
+
+  <link rel="stylesheet" th:href="@{/css/index.css}">
+  <link rel="stylesheet" th:href="@{/css/member/memberRegister.css}">
+  <style>
+    /* 회원가입 완료 카드 넓이/패딩 업 */
+    .jp-success-card{
+      width: 100%;
+      max-width: 920px;      /* 원하는 만큼 조절 가능: 860~980 추천 */
+      margin: 0 auto;
+      padding: 28px 28px;
+    }
+
+    .jp-success-card .jp-join-card__title{
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    .jp-success-card .jp-join-card__desc{
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    /* 버튼도 카드 크기에 맞게 조금 더 큼직하게 */
+    .jp-success-card .jp-join-btn,
+    .jp-success-card .btn-outline-secondary{
+      padding: 12px 16px;
+      border-radius: 12px;
+    }
+  </style>
+  <script></script>
+  
+  
+</head>
+
+<body>
+<section class="jp-join-page">
+
+  <section class="jp-join-hero">
+    <div class="container-fluid jp-container">
+      <h1 class="jp-join-hero__title">회원가입 완료</h1>
+      <div class="jp-join-hero__sub">잡파인더에 오신 것을 환영합니다.</div>
+    </div>
+  </section>
+
+  <section class="jp-section" style="background:#fff;">
+    <div class="container-fluid jp-container">
+      <div class="row justify-content-center">
+		<div class="col-12 col-md-10 col-lg-9 col-xl-8">
+
+		    <div class="jp-card jp-join-card jp-success-card">
+            <div class="jp-join-card__head">
+              <div class="jp-join-card__title">회원가입을 환영합니다 🎉</div>
+
+              <div class="jp-join-card__desc mt-2" th:if="${type == null || type == 'member'}">
+                개인 회원 가입이 완료되었습니다.<br/>
+                지금 바로 로그인하고 잡파인더 서비스를 이용해 보세요.
+              </div>
+
+              <div class="jp-join-card__desc mt-2" th:if="${type == 'company'}">
+                기업 회원 가입이 완료되었습니다.<br/>
+                로그인 후 기업 서비스를 이용하실 수 있습니다.
+              </div>
+            </div>
+
+            <hr class="my-3"/>
+
+            <div class="d-grid gap-2">
+              <a class="btn btn-primary btn-block jp-join-btn" th:href="@{/member/login}">
+                로그인 하기
+              </a>
+              <a class="btn btn-outline-secondary btn-block" th:href="@{/index}">
+                홈으로 가기
+              </a>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+</section>
+</body>
+</html>

@@ -1,0 +1,2009 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      lang="ko"
+      th:replace="~{fragment/jobseeker_bar :: jobseeker_layout(~{::div#resumeFormContent})}">
+
+<head>
+  <title>이력서 작성/수정 | 구인구직</title>
+
+  <th:block data-slot="link">
+  </th:block>
+
+  <th:block data-slot="css">
+    <style>
+    </style>
+  </th:block>
+
+  <th:block data-slot="script">
+    <script th:inline="javascript">
+    </script>
+  </th:block>
+</head>
+
+<body>
+<div id="resumeFormContent">
+<style>
+.gap-2 { gap: 0.5rem; }
+.cert-autocomplete-list {
+    position: absolute; z-index: 1000; background: #fff;
+    border: 1px solid #dee2e6; border-top: none; max-height: 200px;
+    overflow-y: auto; width: 100%; border-radius: 0 0 4px 4px; box-shadow: 0 4px 6px rgba(0,0,0,.1);
+}
+.cert-autocomplete-list .cert-item { padding: 8px 12px; cursor: pointer; font-size: 14px; }
+.cert-autocomplete-list .cert-item:hover { background: #f0f4ff; }
+.cert-autocomplete-list .cert-item small { color: #6c757d; }
+
+/* 체크박스 드롭다운 */
+.cb-dropdown { position: relative; }
+.cb-dropdown .cb-toggle {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 12px; border: 1px solid #ced4da; border-radius: 4px;
+    background: #fff; cursor: pointer; min-height: 38px; font-size: 14px;
+}
+.cb-dropdown .cb-toggle:hover { border-color: #80bdff; }
+.cb-dropdown .cb-toggle .selected-text { color: #495057; }
+.cb-dropdown .cb-toggle .placeholder-text { color: #6c757d; }
+.cb-dropdown .cb-toggle .arrow { font-size: 10px; color: #6c757d; }
+.cb-dropdown .cb-panel {
+    display: none; position: absolute; top: 100%; left: 0;
+    min-width: 320px; width: max-content; max-width: 450px;
+    background: #fff; border: 1px solid #dee2e6;
+    border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,.15);
+    z-index: 1050; max-height: 400px; overflow-y: auto; padding: 14px 18px;
+}
+.cb-dropdown.open .cb-panel { display: block; }
+.cb-dropdown .cb-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-bottom: 10px; border-bottom: 2px solid #eee; margin-bottom: 12px;
+}
+.cb-dropdown .cb-header span { font-weight: 700; font-size: 15px; color: #222; }
+.cb-dropdown .cb-header a { font-size: 13px; color: #ff6b6b; cursor: pointer; text-decoration: none; }
+.cb-dropdown .cb-header a:hover { text-decoration: underline; }
+.cb-dropdown .cb-section-title {
+    font-weight: 700; font-size: 14px; margin: 14px 0 8px; color: #333;
+    padding-bottom: 4px; border-bottom: 1px solid #f0f0f0;
+}
+.cb-dropdown .cb-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 2px 20px;
+}
+.cb-dropdown .cb-grid label {
+    display: flex; align-items: center; gap: 8px; padding: 5px 4px;
+    font-size: 14px; cursor: pointer; color: #444; border-radius: 4px;
+}
+.cb-dropdown .cb-grid label:hover { background: #f5f8ff; color: #007bff; }
+.cb-dropdown .cb-grid input[type="checkbox"] {
+    width: 18px; height: 18px; accent-color: #007bff; cursor: pointer; flex-shrink: 0;
+}
+</style>
+<!-- 자동완성/드롭다운 CSS -->
+<style>
+.autocomplete-list {
+    position: absolute; top: 100%; left: 0; right: 0; z-index: 1050;
+    background: #fff; border: 1px solid #dee2e6; border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,.15); max-height: 250px; overflow-y: auto;
+}
+/* col-* 안에 있을 때 padding 보정 */
+[class*="col-"] > .autocomplete-list {
+    left: 15px; right: 15px;
+}
+/* position-relative 직접 감싼 경우 보정 불필요 */
+.position-relative > .autocomplete-list {
+    left: 0; right: 0;
+}
+.autocomplete-list .ac-item {
+    padding: 8px 14px; cursor: pointer; font-size: 14px; border-bottom: 1px solid #f0f0f0;
+}
+.autocomplete-list .ac-item:hover { background: #f5f8ff; color: #007bff; }
+.autocomplete-list .ac-item:last-child { border-bottom: none; }
+.autocomplete-list .ac-item small { color: #868e96; margin-left: 6px; }
+.autocomplete-list .ac-item.text-muted { cursor: default; }
+.autocomplete-list .ac-item.text-muted:hover { background: transparent; }
+</style>
+<!-- flatpickr 날짜 선택기 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js"></script>
+<!-- 카카오 주소 API -->
+<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+
+<div class="container py-4" style="max-width: 900px;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 font-weight-bold" th:text="${resume != null ? '이력서 수정' : '이력서 작성'}">이력서 작성</h1>
+            <div class="d-flex" style="gap:8px;">
+                <button th:if="${resume == null and myResumeList != null and !myResumeList.isEmpty()}"
+                        type="button" class="btn btn-outline-primary" onclick="$('#importModal').modal('show')">
+                    <i class="fas fa-file-import"></i> 기존 이력서 불러오기
+                </button>
+                <a th:href="@{/jobseeker/resume/list}" class="btn btn-outline-secondary">목록</a>
+            </div>
+        </div>
+
+        <!-- 기존 이력서 불러오기 모달 -->
+        <div th:if="${resume == null and myResumeList != null and !myResumeList.isEmpty()}"
+             class="modal fade" id="importModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content" style="border-radius:12px; overflow:hidden;">
+                    <div class="modal-header" style="background:#f8f9fa; border-bottom:1px solid #e9ecef;">
+                        <h5 class="modal-title font-weight-bold"><i class="fas fa-file-import text-primary mr-2"></i>기존 이력서 불러오기</h5>
+                        <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                    </div>
+                    <div class="modal-body p-0">
+                        <p class="text-muted px-4 pt-3 mb-2" style="font-size:13px;">불러올 이력서를 선택하면 해당 내용이 폼에 채워집니다. (제목은 새로 입력해야 합니다.)</p>
+                        <div class="list-group list-group-flush">
+                            <button th:each="r : ${myResumeList}" type="button"
+                                    class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3 px-4"
+                                    th:attr="onclick='importResume(' + ${r.resumeId} + ')'">
+                                <div>
+                                    <strong th:text="${r.title}" style="font-size:15px;">이력서 제목</strong>
+                                    <div style="font-size:12px; color:#868e96; margin-top:2px;">
+                                        <span th:if="${r.categoryName != null}" th:text="${r.categoryName}"></span>
+                                        <span th:if="${r.regionName != null}"> · <span th:text="${r.regionName}"></span></span>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span th:if="${r.isPrimary == 1}" class="badge" style="background:#28a745; color:#fff; font-size:11px;">대표</span>
+                                    <span th:if="${r.writeStatus == 1}" class="badge" style="background:#e3f2fd; color:#1565c0; font-size:11px;">작성완료</span>
+                                    <span th:if="${r.writeStatus == 0}" class="badge" style="background:#fff3e0; color:#e65100; font-size:11px;">임시저장</span>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="border-top:1px solid #e9ecef;">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">취소</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 이력서 폼 (Ajax로 전송) -->
+        <form id="resumeForm" enctype="multipart/form-data">
+            <input type="hidden" name="resumeId" id="resumeId" th:value="${resume?.resumeId}">
+
+            <!-- 기본 정보 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="font-weight-bold mb-4">
+                        
+                        기본 정보
+                    </h5>
+
+                    <!-- 이력서 제목 -->
+                    <div class="form-group mb-4">
+                        <label class="font-weight-medium">
+                            이력서 제목 <span class="text-danger">*</span>
+                        </label>
+                        <input type="text"
+                               name="title" id="title"
+                               th:value="${resume?.title}"
+                               class="form-control"
+                               placeholder="예: 프론트엔드 개발자 경력 이력서"
+                               maxlength="50"
+                               required>
+                        <small class="text-muted">지원할 직무나 경력 수준을 포함하면 좋습니다.</small>
+                    </div>
+
+                    <!-- 프로필 사진 -->
+                    <div class="mb-4">
+                        <label class="font-weight-medium d-block mb-2">프로필 사진</label>
+                        <div class="d-flex align-items-start">
+                            <div class="position-relative mr-3" style="flex-shrink:0;">
+                                <div id="photoPreviewWrap" style="width:120px; height:150px; border-radius:6px; overflow:hidden; border:2px solid #e9ecef; background:#f8f9fa; display:flex; align-items:center; justify-content:center;">
+                                    <img th:if="${resume?.photoPath != null and !#strings.isEmpty(resume.photoPath)}"
+                                         th:src="@{/{path}(path=${resume.photoPath.substring(1)})}"
+                                         alt="프로필 사진"
+                                         id="photoPreview"
+                                         style="width:100%; height:100%; object-fit:cover;">
+                                    <div th:if="${resume?.photoPath == null or #strings.isEmpty(resume?.photoPath)}" id="photoPlaceholder"
+                                         style="text-align:center; color:#adb5bd;">
+                                        <i class="fas fa-user" style="font-size:40px;"></i>
+                                        <p style="font-size:11px; margin:6px 0 0;">사진 등록</p>
+                                    </div>
+                                </div>
+                                <label for="photoUpload"
+                                       class="btn btn-primary btn-sm rounded-circle position-absolute"
+                                       style="bottom:-6px; right:-6px; width:32px; height:32px; padding:0; line-height:32px; text-align:center; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,.2);">
+                                    <i class="fas fa-camera" style="font-size:13px;"></i>
+                                </label>
+                                <button type="button" id="photoDeleteBtn" onclick="removePhoto()"
+                                        class="btn btn-danger btn-sm rounded-circle position-absolute"
+                                        th:style="'top:-6px; right:-6px; width:24px; height:24px; padding:0; line-height:24px; text-align:center; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,.2);' + (${resume?.photoPath != null and !#strings.isEmpty(resume.photoPath)} ? '' : ' display:none;')">
+                                    <i class="fas fa-times" style="font-size:11px;"></i>
+                                </button>
+                                <input type="file" id="photoUpload" name="photo" accept="image/*" class="d-none">
+                            </div>
+                            <div class="pt-2" style="font-size:13px; color:#868e96;">
+                                <p class="mb-1">• 증명사진 또는 프로필 사진을 등록해주세요.</p>
+                                <p class="mb-0">• 파일 형식: JPG, PNG (최대 5MB)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 회원 프로필 정보 (읽기 전용) -->
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="font-weight-medium">이름</label>
+                            <input type="text"
+                                   class="form-control bg-light"
+                                   th:value="${member?.name}"
+                                   readonly>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="font-weight-medium">생년월일</label>
+                            <input type="text"
+                                   class="form-control bg-light"
+                                   th:value="${member?.birthDate}"
+                                   readonly>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="font-weight-medium">성별</label>
+                            <input type="text"
+                                   class="form-control bg-light"
+                                   th:value="${member != null && member.gender != null ? (member.gender.toString() == '1' ? '남성' : '여성') : ''}"
+                                   readonly>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="font-weight-medium">연락처</label>
+                            <input type="text"
+                                   class="form-control bg-light"
+                                   th:value="${member?.phone}"
+                                   readonly>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="font-weight-medium">이메일</label>
+                            <input type="text"
+                                   class="form-control bg-light"
+                                   th:value="${member?.email}"
+                                   readonly>
+                        </div>
+                    </div>
+                    <small class="text-muted d-block mb-3">
+                        <i class="fas fa-info-circle"></i> 이름, 생년월일, 성별, 연락처, 이메일은 프로필에서 수정할 수 있습니다.
+                    </small>
+
+                    <!-- 주소 -->
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label class="font-weight-medium">
+                                주소 <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <input type="text"
+                                       name="address" id="address"
+                                       th:value="${resume?.address}"
+                                       class="form-control"
+                                       placeholder="주소 검색을 클릭하세요"
+                                       readonly>
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-outline-primary" onclick="searchAddress()">
+                                        <i class="fas fa-search"></i> 주소 검색
+                                    </button>
+                                </div>
+                            </div>
+                            <small class="text-muted">주소 검색으로 입력해주세요.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 희망 근무조건 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="font-weight-bold mb-3">
+                        
+                        희망 근무조건 <span class="text-danger">*</span>
+                    </h5>
+                    <div class="row">
+                        <!-- 희망 직무 (체크박스 드롭다운) -->
+                        <div class="col-md-4 mb-3">
+                            <label class="font-weight-medium">희망 직무</label>
+                            <div class="cb-dropdown" id="categoryDropdown">
+                                <div class="cb-toggle" onclick="toggleDropdown('categoryDropdown')">
+                                    <span class="placeholder-text" id="categoryDisplayText">직무 선택</span>
+                                    <span class="arrow">▼</span>
+                                </div>
+                                <div class="cb-panel">
+                                    <div class="cb-header">
+                                        <span>직무 선택</span>
+                                        <a onclick="resetCategory()">초기화</a>
+                                    </div>
+                                    <div id="categoryCheckboxArea"></div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="categoryId" name="categoryId" th:value="${resume?.categoryId}">
+                        </div>
+
+                        <!-- 희망 지역 (체크박스 드롭다운) -->
+                        <div class="col-md-4 mb-3">
+                            <label class="font-weight-medium">희망 지역</label>
+                            <div class="cb-dropdown" id="regionDropdown">
+                                <div class="cb-toggle" onclick="toggleDropdown('regionDropdown')">
+                                    <span class="placeholder-text" id="regionDisplayText">지역 선택</span>
+                                    <span class="arrow">▼</span>
+                                </div>
+                                <div class="cb-panel">
+                                    <div class="cb-header">
+                                        <span>지역 선택</span>
+                                        <a onclick="resetRegion()">초기화</a>
+                                    </div>
+                                    <!-- 시/도 -->
+                                    <div class="cb-section-title">시/도</div>
+                                    <div class="cb-grid" id="regionLevel1Area"></div>
+                                    <!-- 상세지역 (동적 생성) -->
+                                    <div id="regionDetailArea" style="display:none;">
+                                        <div class="cb-section-title" id="regionDetailTitle">상세지역</div>
+                                        <div class="cb-grid" id="regionLevel2Area"></div>
+                                    </div>
+                                    <!-- 구 (동적 생성, 경기도 등) -->
+                                    <div id="regionDetail2Area" style="display:none;">
+                                        <div class="cb-section-title" id="regionDetail2Title">구</div>
+                                        <div class="cb-grid" id="regionLevel3Area"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="regionCode" name="regionCode" th:value="${resume?.regionCode}">
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="font-weight-medium">희망 연봉</label>
+                            <div class="input-group">
+                                <input type="number"
+                                       id="desiredSalary" name="desiredSalary"
+                                       th:value="${resume?.desiredSalary}"
+                                       class="form-control"
+                                       placeholder="예: 3500"
+                                       min="0" max="999999" step="1"
+                                       onkeydown="if(event.key==='.' || event.key==='e') event.preventDefault();">
+                                <div class="input-group-append">
+                                    <span class="input-group-text">만원</span>
+                                </div>
+                            </div>
+                            <small class="text-muted">연봉 기준 (만원 단위)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 학력 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="font-weight-bold mb-0">학력</h5>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addEducation()">
+                            <i class="fas fa-plus"></i> 추가
+                        </button>
+                    </div>
+                    <div id="educationList">
+                        <!-- 기존 데이터 렌더링 (수정 모드) -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 경력 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="font-weight-bold mb-0">경력</h5>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addCareer()">
+                            <i class="fas fa-plus"></i> 추가
+                        </button>
+                    </div>
+                    <div id="careerList"></div>
+                </div>
+            </div>
+
+            <!-- 기술스택 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="font-weight-bold mb-3">기술스택</h5>
+                    <div class="position-relative mb-3">
+                        <div class="input-group">
+                            <input type="text"
+                                   id="skillInput"
+                                   class="form-control"
+                                   placeholder="기술스택을 입력하세요 (예: React, Java)"
+                                   maxlength="100"
+                                   autocomplete="off">
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-primary" onclick="addSkill()">
+                                    <i class="fas fa-plus"></i> 추가
+                                </button>
+                            </div>
+                        </div>
+                        <div class="autocomplete-list" id="skillDropdown" style="display:none;"></div>
+                    </div>
+                    <div id="skillList" class="d-flex flex-wrap gap-2"></div>
+                    <small class="text-muted mt-2 d-block" id="skillHint" style="display:none;">
+                        <i class="fas fa-info-circle"></i> 숙련도 배지를 클릭하면 초급 → 중급 → 고급으로 변경됩니다.
+                    </small>
+                </div>
+            </div>
+
+            <!-- 자격증 (자동완성 기능) -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="font-weight-bold mb-0">자격증</h5>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addCertificate()">
+                            <i class="fas fa-plus"></i> 추가
+                        </button>
+                    </div>
+                    <div id="certificateList"></div>
+                </div>
+            </div>
+
+            <!-- 어학 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="font-weight-bold mb-0">어학</h5>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addLanguage()">
+                            <i class="fas fa-plus"></i> 추가
+                        </button>
+                    </div>
+                    <div id="languageList"></div>
+                </div>
+            </div>
+
+            <!-- 포트폴리오/링크 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="font-weight-bold mb-0">포트폴리오/링크</h5>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addPortfolio()">
+                            <i class="fas fa-plus"></i> 추가
+                        </button>
+                    </div>
+                    <div id="portfolioList"></div>
+                </div>
+            </div>
+
+            <!-- 수상 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="font-weight-bold mb-0">수상</h5>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addAward()">
+                            <i class="fas fa-plus"></i> 추가
+                        </button>
+                    </div>
+                    <div id="awardList"></div>
+                </div>
+            </div>
+
+            <!-- 자기소개 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="font-weight-bold mb-3">자기소개</h5>
+                    <textarea name="selfIntro" id="selfIntro"
+                              class="form-control"
+                              rows="5"
+                              maxlength="1000"
+                              placeholder="자신의 강점, 경험, 목표 등을 간단하게 소개해주세요 (최대 1000자)"
+                              th:text="${resume?.selfIntro}"></textarea>
+                    <small class="text-muted mt-1 d-block">
+                        <span id="selfIntroCount">0</span> / 1000자
+                    </small>
+                </div>
+            </div>
+
+            <!-- 이력서 설정 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="font-weight-bold mb-3">이력서 설정</h5>
+                    <div class="custom-control custom-checkbox mb-2">
+                        <input type="checkbox" class="custom-control-input" id="allowScout" name="allowScout"
+                               th:checked="${resume != null && resume.allowScout == 1}">
+                        <label class="custom-control-label" for="allowScout">
+                            <strong>제안 허용</strong>
+                            <small class="text-muted d-block">기업이 이력서를 보고 입사 제안을 할 수 있습니다.</small>
+                        </label>
+                    </div>
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="isPrimary" name="isPrimary"
+                               th:checked="${resume != null && resume.isPrimary == 1}">
+                        <label class="custom-control-label" for="isPrimary">
+                            <strong>대표 이력서로 설정</strong>
+                            <small class="text-muted d-block">지원 시 기본으로 선택되는 이력서입니다.</small>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 버튼 -->
+            <div class="d-flex justify-content-between mb-5">
+                <a th:href="@{/jobseeker/resume/list}" class="btn btn-outline-secondary px-4">취소</a>
+                <div>
+                    <button type="button" class="btn btn-secondary px-4 mr-2" onclick="submitResume(0)">
+                        <i class="far fa-save"></i> 임시저장
+                    </button>
+                    <button type="button" class="btn btn-primary px-4" onclick="submitResume(1)">
+                        <i class="fas fa-check"></i> 저장
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+
+    <script th:inline="javascript">
+        const ctxPath = /*[[@{/}]]*/ '/finalProject/';
+        const existingResume = /*[[${resume}]]*/ null;
+
+        // 직무 카테고리 목록 (경력 입력 시 직무 선택용)
+        const categoryListData = /*[[${categoryList}]]*/ [];
+
+        // 지역 목록 (연동 셀렉트박스용)
+        const regionListData = /*[[${regionList}]]*/ [];
+
+        let educationIdx = 0;
+        let careerIdx = 0;
+        let certificateIdx = 0;
+        let languageIdx = 0;
+        let portfolioIdx = 0;
+        let awardIdx = 0;
+        let skills = []; // { skillId, skillName, proficiency }
+        let certSearchTimer = null;
+
+        // 드롭다운 토글
+        function toggleDropdown(id) {
+            const $dd = $('#' + id);
+            // 다른 드롭다운 닫기
+            $('.cb-dropdown').not($dd).removeClass('open');
+            $dd.toggleClass('open');
+        }
+
+        // 바깥 클릭 시 드롭다운 닫기
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.cb-dropdown').length) {
+                $('.cb-dropdown').removeClass('open');
+            }
+            // 자동완성 드롭다운 닫기 (기술스택, 자격증)
+            if (!$(e.target).closest('.autocomplete-list').length && !$(e.target).hasClass('cert-name-input') && !$(e.target).is('#skillInput')) {
+                $('.autocomplete-list').hide();
+            }
+        });
+
+        // 날짜 입력 초기화 (flatpickr + 키보드 마스크)
+        function initDatePicker(el) {
+            flatpickr(el, {
+                locale: 'ko',
+                dateFormat: 'Y-m-d',
+                allowInput: true,
+                clickOpens: true
+            });
+            // 키보드 입력 시 자동 하이픈
+            $(el).on('input', function() {
+                let v = $(this).val().replace(/[^0-9]/g, '');
+                if (v.length > 8) v = v.substring(0, 8);
+                if (v.length >= 5) v = v.substring(0, 4) + '-' + v.substring(4);
+                if (v.length >= 8) v = v.substring(0, 7) + '-' + v.substring(7);
+                $(this).val(v);
+            });
+            $(el).attr('placeholder', 'YYYY-MM-DD');
+            $(el).attr('maxlength', '10');
+        }
+
+        // 이미 존재하는 date-pick 초기화
+        $(document).ready(function() {
+            $('.date-pick').each(function() { initDatePicker(this); });
+        });
+
+        // 기존 이력서 불러오기
+        function importResume(resumeId) {
+            $.ajax({
+                url: ctxPath + 'api/resume/' + resumeId,
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    const r = data.resume;
+                    if (!r) { alert('이력서 데이터를 불러올 수 없습니다.'); return; }
+
+                    $('#importModal').modal('hide');
+
+                    // 기본 정보 채우기 (제목은 비워두기 - 새 이력서니까)
+                    $('#title').val('');
+                    $('#address').val(r.address || '');
+                    $('#selfIntro').val(r.selfIntro || '');
+                    if (r.selfIntro) $('#selfIntroCount').text(r.selfIntro.length);
+                    $('#desiredSalary').val(r.desiredSalary || '');
+
+                    // 직무 복원
+                    if (r.categoryId) {
+                        const $cb = $('#categoryCheckboxArea .cat-cb[value="' + r.categoryId + '"]');
+                        if ($cb.length) {
+                            $cb.prop('checked', true);
+                            $('#categoryId').val(r.categoryId);
+                            $('#categoryDisplayText').text($cb.data('name')).removeClass('placeholder-text').addClass('selected-text');
+                        }
+                    }
+
+                    // 지역 복원
+                    if (r.regionCode) {
+                        const savedRegion = regionListData.find(function(rg) { return rg.regionCode === r.regionCode; });
+                        if (savedRegion) {
+                            if (savedRegion.regionLevel === 1) {
+                                $('#regionLevel1Area .region-l1-cb[value="' + r.regionCode + '"]').prop('checked', true).trigger('change');
+                            } else if (savedRegion.regionLevel === 2) {
+                                $('#regionLevel1Area .region-l1-cb[value="' + savedRegion.parentRegionCode + '"]').prop('checked', true).trigger('change');
+                                setTimeout(function() {
+                                    $('#regionLevel2Area .region-l2-cb[value="' + r.regionCode + '"]').prop('checked', true).trigger('change');
+                                }, 50);
+                            } else if (savedRegion.regionLevel === 3) {
+                                const parent2 = regionListData.find(function(rg) { return rg.regionCode === savedRegion.parentRegionCode; });
+                                if (parent2) {
+                                    $('#regionLevel1Area .region-l1-cb[value="' + parent2.parentRegionCode + '"]').prop('checked', true).trigger('change');
+                                    setTimeout(function() {
+                                        $('#regionLevel2Area .region-l2-cb[value="' + parent2.regionCode + '"]').prop('checked', true).trigger('change');
+                                        setTimeout(function() {
+                                            $('#regionLevel3Area .region-l3-cb[value="' + r.regionCode + '"]').prop('checked', true).trigger('change');
+                                        }, 50);
+                                    }, 50);
+                                }
+                            }
+                            $('#regionCode').val(r.regionCode);
+                        }
+                    }
+
+                    // 학력
+                    $('#educationList').empty();
+                    educationIdx = 0;
+                    if (r.educationList) r.educationList.forEach(function(edu) { addEducation(edu); });
+
+                    // 경력
+                    $('#careerList').empty();
+                    careerIdx = 0;
+                    if (r.careerList) r.careerList.forEach(function(c) { addCareer(c); });
+
+                    // 기술스택
+                    skills = [];
+                    if (r.techstackList) {
+                        r.techstackList.forEach(function(t) {
+                            skills.push({ skillId: t.skillId, skillName: t.skillName, proficiency: t.proficiency });
+                        });
+                    }
+                    updateSkillList();
+
+                    // 자격증
+                    $('#certificateList').empty();
+                    certificateIdx = 0;
+                    if (r.certificateList) r.certificateList.forEach(function(cert) { addCertificate(cert); });
+
+                    // 어학
+                    $('#languageList').empty();
+                    languageIdx = 0;
+                    if (r.languageList) r.languageList.forEach(function(lang) { addLanguage(lang); });
+
+                    // 포트폴리오 (링크 + 파일 모두 불러오기)
+                    $('#portfolioList').empty();
+                    portfolioIdx = 0;
+                    if (r.portfolioList) {
+                        r.portfolioList.forEach(function(p) {
+                            addPortfolio(p);
+                        });
+                    }
+
+                    // 수상
+                    $('#awardList').empty();
+                    awardIdx = 0;
+                    if (r.awardList) r.awardList.forEach(function(a) { addAward(a); });
+
+                    // 사진 불러오기
+                    if (r.photoPath) {
+                        uploadedPhotoPath = r.photoPath;
+                        photoRemoved = false;
+                        $('#photoPlaceholder').remove();
+                        if ($('#photoPreview').length === 0) {
+                            $('#photoPreviewWrap').html('<img id="photoPreview" style="width:100%; height:100%; object-fit:cover;">');
+                        }
+                        $('#photoPreview').attr('src', ctxPath + r.photoPath.substring(1));
+                        $('#photoDeleteBtn').show();
+                    } else {
+                        uploadedPhotoPath = null;
+                        photoRemoved = false;
+                    }
+
+                    alert('이력서를 불러왔습니다. 제목을 새로 입력해주세요.');
+                    $('#title').focus();
+                },
+                error: function() { alert('이력서를 불러오는 중 오류가 발생했습니다.'); }
+            });
+        }
+
+        // 직무 초기화
+        function resetCategory() {
+            $('#categoryCheckboxArea .cat-cb').prop('checked', false);
+            $('#categoryId').val('');
+            $('#categoryDisplayText').text('직무 선택').removeClass('selected-text').addClass('placeholder-text');
+        }
+
+        // 지역 초기화
+        function resetRegion() {
+            $('#regionLevel1Area .region-l1-cb').prop('checked', false);
+            $('#regionLevel2Area').empty();
+            $('#regionLevel3Area').empty();
+            $('#regionDetailArea').hide();
+            $('#regionDetail2Area').hide();
+            $('#regionCode').val('');
+            $('#regionDisplayText').text('지역 선택').removeClass('selected-text').addClass('placeholder-text');
+        }
+
+        // 카카오 주소 검색
+        function searchAddress() {
+            new daum.Postcode({
+                oncomplete: function(data) {
+                    let addr = '';
+                    if (data.userSelectedType === 'R') {
+                        addr = data.roadAddress;
+                    } else {
+                        addr = data.jibunAddress;
+                    }
+                    $('#address').val(addr);
+                }
+            }).open();
+        }
+
+        // ========================================
+        // 페이지 로드 시 기존 데이터 렌더링 (수정 모드)
+        // ========================================
+        $(document).ready(function() {
+
+            // ========================================
+            // 체크박스 드롭다운 공통
+            // ========================================
+            // 드롭다운 바깥 클릭 시 닫기
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.cb-dropdown').length) {
+                    $('.cb-dropdown').removeClass('open');
+                }
+            });
+
+            // ========================================
+            // 직무 체크박스 드롭다운 생성
+            // ========================================
+            function buildCategoryCheckboxes() {
+                const $area = $('#categoryCheckboxArea');
+                $area.empty();
+                // 대분류(depth=0) 별로 그룹핑
+                const parents = categoryListData.filter(function(c) { return c.depth === 0; });
+                parents.forEach(function(parent) {
+                    $area.append('<div class="cb-section-title">' + parent.categoryName + '</div>');
+                    const children = categoryListData.filter(function(c) { return c.parentId == parent.categoryId && c.depth === 1; });
+                    if (children.length > 0) {
+                        let grid = '<div class="cb-grid">';
+                        children.forEach(function(child) {
+                            grid += '<label><input type="checkbox" class="cat-cb" value="' + child.categoryId + '" data-name="' + child.categoryName + '"> ' + child.categoryName + '</label>';
+                        });
+                        grid += '</div>';
+                        $area.append(grid);
+                    }
+                });
+
+                // 체크박스 클릭 이벤트 (단일 선택)
+                $area.on('change', '.cat-cb', function() {
+                    // 다른 체크 해제 (단일 선택)
+                    if ($(this).is(':checked')) {
+                        $area.find('.cat-cb').not(this).prop('checked', false);
+                        $('#categoryId').val($(this).val());
+                        updateCategoryDisplay($(this).data('name'));
+                    } else {
+                        $('#categoryId').val('');
+                        updateCategoryDisplay(null);
+                    }
+                });
+            }
+
+        function updateCategoryDisplay(name) {
+            const $text = $('#categoryDisplayText');
+            if (name) {
+                $text.text(name).removeClass('placeholder-text').addClass('selected-text');
+            } else {
+                $text.text('직무 선택').removeClass('selected-text').addClass('placeholder-text');
+            }
+        }
+
+            // ========================================
+            // 지역 체크박스 드롭다운 생성
+            // ========================================
+            function buildRegionCheckboxes() {
+                const $level1 = $('#regionLevel1Area');
+                $level1.empty();
+                // 레벨1 (시/도)
+                const level1List = regionListData.filter(function(r) { return r.regionLevel === 1; });
+                level1List.forEach(function(r) {
+                    $level1.append('<label><input type="checkbox" class="region-l1-cb" value="' + r.regionCode + '" data-name="' + r.regionName + '"> ' + r.regionName + '</label>');
+                });
+
+                // 시/도 체크 시 → 상세지역 표시 (단일 선택)
+                $level1.on('change', '.region-l1-cb', function() {
+                    const $detailArea = $('#regionDetailArea');
+                    const $detail2Area = $('#regionDetail2Area');
+                    const $level2 = $('#regionLevel2Area');
+                    const $level3 = $('#regionLevel3Area');
+
+                    // 다른 시/도 체크 해제
+                    if ($(this).is(':checked')) {
+                        $level1.find('.region-l1-cb').not(this).prop('checked', false);
+                        const code = $(this).val();
+                        const name = $(this).data('name');
+
+                        // 하위 지역 표시
+                        const children = regionListData.filter(function(r) { return r.parentRegionCode === code; });
+                        $level2.empty();
+                        $level3.empty();
+                        $detail2Area.hide();
+
+                        if (children.length > 0) {
+                            $('#regionDetailTitle').text(name + ' 상세지역');
+                            children.forEach(function(r) {
+                                $level2.append('<label><input type="checkbox" class="region-l2-cb" value="' + r.regionCode + '" data-name="' + r.regionName + '"> ' + r.regionName + '</label>');
+                            });
+                            $detailArea.show();
+                        } else {
+                            $detailArea.hide();
+                        }
+
+                        $('#regionCode').val(code);
+                        updateRegionDisplay(name);
+                    } else {
+                        $detailArea.hide();
+                        $detail2Area.hide();
+                        $level2.empty();
+                        $level3.empty();
+                        $('#regionCode').val('');
+                        updateRegionDisplay(null);
+                    }
+                });
+
+                // 상세지역(레벨2) 체크 시 → 구(레벨3) 표시 (단일 선택)
+                $(document).on('change', '.region-l2-cb', function() {
+                    const $detail2Area = $('#regionDetail2Area');
+                    const $level3 = $('#regionLevel3Area');
+
+                    if ($(this).is(':checked')) {
+                        $('#regionLevel2Area').find('.region-l2-cb').not(this).prop('checked', false);
+                        const code = $(this).val();
+                        const name = $(this).data('name');
+                        const parentName = $('#regionLevel1Area .region-l1-cb:checked').data('name');
+
+                        // 하위 구 확인
+                        const children = regionListData.filter(function(r) { return r.parentRegionCode === code; });
+                        $level3.empty();
+
+                        if (children.length > 0) {
+                            $('#regionDetail2Title').text(name + ' 상세지역');
+                            children.forEach(function(r) {
+                                $level3.append('<label><input type="checkbox" class="region-l3-cb" value="' + r.regionCode + '" data-name="' + r.regionName + '"> ' + r.regionName + '</label>');
+                            });
+                            $detail2Area.show();
+                        } else {
+                            $detail2Area.hide();
+                        }
+
+                        $('#regionCode').val(code);
+                        updateRegionDisplay(parentName + ' ' + name);
+                    } else {
+                        $detail2Area.hide();
+                        $level3.empty();
+                        // 시/도로 복귀
+                        const parentName = $('#regionLevel1Area .region-l1-cb:checked').data('name');
+                        const parentCode = $('#regionLevel1Area .region-l1-cb:checked').val();
+                        $('#regionCode').val(parentCode || '');
+                        updateRegionDisplay(parentName || null);
+                    }
+                });
+
+                // 구(레벨3) 체크 시 (단일 선택)
+                $(document).on('change', '.region-l3-cb', function() {
+                    if ($(this).is(':checked')) {
+                        $('#regionLevel3Area').find('.region-l3-cb').not(this).prop('checked', false);
+                        const code = $(this).val();
+                        const name = $(this).data('name');
+                        const l1Name = $('#regionLevel1Area .region-l1-cb:checked').data('name');
+                        const l2Name = $('#regionLevel2Area .region-l2-cb:checked').data('name');
+                        $('#regionCode').val(code);
+                        updateRegionDisplay(l1Name + ' ' + l2Name + ' ' + name);
+                    } else {
+                        const l1Name = $('#regionLevel1Area .region-l1-cb:checked').data('name');
+                        const l2Name = $('#regionLevel2Area .region-l2-cb:checked').data('name');
+                        const l2Code = $('#regionLevel2Area .region-l2-cb:checked').val();
+                        $('#regionCode').val(l2Code || '');
+                        updateRegionDisplay(l1Name + ' ' + l2Name);
+                    }
+                });
+            }
+
+            function updateRegionDisplay(name) {
+                const $text = $('#regionDisplayText');
+                if (name) {
+                    $text.text(name).removeClass('placeholder-text').addClass('selected-text');
+                } else {
+                    $text.text('지역 선택').removeClass('selected-text').addClass('placeholder-text');
+                }
+            }
+
+            // 초기화
+            buildCategoryCheckboxes();
+            buildRegionCheckboxes();
+
+            // 수정 모드일 때 기존 값 복원
+            if (existingResume) {
+                // 직무 복원
+                if (existingResume.categoryId) {
+                    const $cb = $('#categoryCheckboxArea .cat-cb[value="' + existingResume.categoryId + '"]');
+                    if ($cb.length) {
+                        $cb.prop('checked', true);
+                        updateCategoryDisplay($cb.data('name'));
+                    }
+                }
+                // 지역 복원
+                if (existingResume.regionCode) {
+                    const savedCode = existingResume.regionCode;
+                    const savedRegion = regionListData.find(function(r) { return r.regionCode === savedCode; });
+                    if (savedRegion) {
+                        if (savedRegion.regionLevel === 1) {
+                            $('#regionLevel1Area .region-l1-cb[value="' + savedCode + '"]').prop('checked', true).trigger('change');
+                        } else if (savedRegion.regionLevel === 2) {
+                            $('#regionLevel1Area .region-l1-cb[value="' + savedRegion.parentRegionCode + '"]').prop('checked', true).trigger('change');
+                            setTimeout(function() {
+                                $('#regionLevel2Area .region-l2-cb[value="' + savedCode + '"]').prop('checked', true).trigger('change');
+                            }, 50);
+                        } else if (savedRegion.regionLevel === 3) {
+                            const parent2 = regionListData.find(function(r) { return r.regionCode === savedRegion.parentRegionCode; });
+                            if (parent2) {
+                                $('#regionLevel1Area .region-l1-cb[value="' + parent2.parentRegionCode + '"]').prop('checked', true).trigger('change');
+                                setTimeout(function() {
+                                    $('#regionLevel2Area .region-l2-cb[value="' + parent2.regionCode + '"]').prop('checked', true).trigger('change');
+                                    setTimeout(function() {
+                                        $('#regionLevel3Area .region-l3-cb[value="' + savedCode + '"]').prop('checked', true).trigger('change');
+                                    }, 50);
+                                }, 50);
+                            }
+                        }
+                        $('#regionCode').val(savedCode);
+                    }
+                }
+            }
+
+            // 자기소개 글자수 카운트
+            $('#selfIntro').on('input', function() {
+                $('#selfIntroCount').text($(this).val().length);
+            });
+            // 초기 카운트
+            if ($('#selfIntro').val()) {
+                $('#selfIntroCount').text($('#selfIntro').val().length);
+            }
+
+            if (existingResume) {
+                // 학력
+                if (existingResume.educationList) {
+                    existingResume.educationList.forEach(function(edu) {
+                        addEducation(edu);
+                    });
+                }
+                // 경력
+                if (existingResume.careerList) {
+                    existingResume.careerList.forEach(function(c) {
+                        addCareer(c);
+                    });
+                }
+                // 기술스택
+                if (existingResume.techstackList) {
+                    existingResume.techstackList.forEach(function(t) {
+                        skills.push({ skillId: t.skillId, skillName: t.skillName, proficiency: t.proficiency });
+                    });
+                    updateSkillList();
+                }
+                // 자격증
+                if (existingResume.certificateList) {
+                    existingResume.certificateList.forEach(function(cert) {
+                        addCertificate(cert);
+                    });
+                }
+                // 어학
+                if (existingResume.languageList) {
+                    existingResume.languageList.forEach(function(lang) {
+                        addLanguage(lang);
+                    });
+                }
+                // 포트폴리오
+                if (existingResume.portfolioList) {
+                    existingResume.portfolioList.forEach(function(p) {
+                        addPortfolio(p);
+                    });
+                }
+                // 수상
+                if (existingResume.awardList) {
+                    existingResume.awardList.forEach(function(a) {
+                        addAward(a);
+                    });
+                }
+            }
+        });
+
+        // 사진 미리보기 + 서버 업로드
+        let uploadedPhotoPath = null; // 업로드된 사진 경로 저장
+        let photoRemoved = false; // 사진 삭제 플래그
+
+        $('#photoUpload').on('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // 확장자 체크 (JPG, PNG만 허용)
+                var ext = file.name.split('.').pop().toLowerCase();
+                if (ext !== 'jpg' && ext !== 'jpeg' && ext !== 'png') {
+                    alert('사진은 JPG, PNG 파일만 업로드 가능합니다.');
+                    $(this).val('');
+                    return;
+                }
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('파일 크기는 최대 5MB까지 가능합니다.');
+                    $(this).val('');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    $('#photoPlaceholder').remove();
+                    if ($('#photoPreview').length === 0) {
+                        $('#photoPreviewWrap').html('<img id="photoPreview" style="width:100%; height:100%; object-fit:cover;">');
+                    }
+                    $('#photoPreview').attr('src', e.target.result);
+                    $('#photoDeleteBtn').show();
+                };
+                reader.readAsDataURL(file);
+
+                const formData = new FormData();
+                formData.append('photo', file);
+                $.ajax({
+                    url: ctxPath + 'api/resume/uploadPhoto',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    dataType: 'json',
+                    success: function(data) {
+                        if (data.result === 1) {
+                            uploadedPhotoPath = data.photoPath;
+                            photoRemoved = false;
+                        } else {
+                            alert('사진 업로드에 실패했습니다. ' + (data.message || ''));
+                        }
+                    },
+                    error: function() {
+                        alert('사진 업로드 중 오류가 발생했습니다.');
+                    }
+                });
+            }
+        });
+
+        // 사진 삭제
+        function removePhoto() {
+            uploadedPhotoPath = null;
+            photoRemoved = true;
+            $('#photoPreview').remove();
+            $('#photoPreviewWrap').html(
+                '<div id="photoPlaceholder" style="text-align:center; color:#adb5bd;">' +
+                '<i class="fas fa-user" style="font-size:40px;"></i>' +
+                '<p style="font-size:11px; margin:6px 0 0;">사진 등록</p></div>'
+            );
+            $('#photoDeleteBtn').hide();
+            $('#photoUpload').val('');
+        }
+
+        // ========================================
+        // 학력 추가
+        // ========================================
+        function addEducation(data) {
+            if ($('#educationList > div').length >= 10) {
+                alert('학력은 최대 10개까지 등록 가능합니다.');
+                return;
+            }
+            const idx = educationIdx++;
+            const html = `
+                <div class="border rounded p-3 mb-3" id="edu${idx}">
+                    <div class="d-flex justify-content-between mb-2">
+                        <strong>학력 정보</strong>
+                        <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="$('#edu${idx}').remove()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <input type="text" class="form-control form-control-sm edu-schoolname" placeholder="학교명 *" value="${data?.schoolname || ''}" maxlength="50" required>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <input type="text" class="form-control form-control-sm edu-major" placeholder="전공" value="${data?.major || ''}" maxlength="50">
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <select class="form-control form-control-sm edu-level">
+                                <option value="">학력수준 선택</option>
+                                <option value="EDU_HIGH" ${data?.educationLevelCode === 'EDU_HIGH' ? 'selected' : ''}>고등학교</option>
+                                <option value="EDU_COLLEGE_2" ${data?.educationLevelCode === 'EDU_COLLEGE_2' ? 'selected' : ''}>전문대(2~3년)</option>
+                                <option value="EDU_COLLEGE_4" ${data?.educationLevelCode === 'EDU_COLLEGE_4' ? 'selected' : ''}>대학교(4년)</option>
+                                <option value="EDU_MASTER" ${data?.educationLevelCode === 'EDU_MASTER' ? 'selected' : ''}>석사</option>
+                                <option value="EDU_DOCTOR" ${data?.educationLevelCode === 'EDU_DOCTOR' ? 'selected' : ''}>박사</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <select class="form-control form-control-sm edu-status">
+                                <option value="0" ${!data || data.status == 0 || data.status == null ? 'selected' : ''}>졸업</option>
+                                <option value="1" ${data?.status == 1 ? 'selected' : ''}>재학</option>
+                                <option value="2" ${data?.status == 2 ? 'selected' : ''}>중퇴</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <input type="text" class="form-control form-control-sm date-pick edu-enrolldate" placeholder="입학일" value="${data?.enrolldate ? data.enrolldate.substring(0,10) : ''}">
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <input type="text" class="form-control form-control-sm date-pick edu-graduationdate" placeholder="졸업일" value="${data?.graduationdate ? data.graduationdate.substring(0,10) : ''}">
+                        </div>
+                    </div>
+                </div>
+            `;
+            $('#educationList').append(html);
+            $(`#edu${idx} .date-pick`).each(function() { initDatePicker(this); });
+        }
+        // ========================================
+        function addCareer(data) {
+            if ($('#careerList > div').length >= 20) {
+                alert('경력은 최대 20개까지 등록 가능합니다.');
+                return;
+            }
+            const idx = careerIdx++;
+            const html = `
+                <div class="border rounded p-3 mb-3" id="career${idx}">
+                    <div class="d-flex justify-content-between mb-2">
+                        <strong>경력 정보</strong>
+                        <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="$('#career${idx}').remove()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <input type="text" class="form-control form-control-sm career-company" placeholder="회사명 *" value="${data?.companyname || ''}" maxlength="50" required>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <div class="cb-dropdown career-cat-dropdown" id="careerCatDrop${idx}" style="font-size:0.875rem;">
+                                <div class="cb-toggle" onclick="toggleDropdown('careerCatDrop${idx}')" style="padding:4px 10px; min-height:31px;">
+                                    <span class="placeholder-text career-cat-text" id="careerCatText${idx}">직무 선택</span>
+                                    <span class="arrow">▼</span>
+                                </div>
+                                <div class="cb-panel">
+                                    <div class="cb-header"><span>직무 선택</span><a onclick="resetCareerCat(${idx})">초기화</a></div>
+                                    <div class="career-cat-area" id="careerCatArea${idx}"></div>
+                                </div>
+                            </div>
+                            <input type="hidden" class="career-category" value="${data?.categoryId || ''}">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <input type="text" class="form-control form-control-sm career-position" placeholder="직급/직책" value="${data?.position || ''}" maxlength="30">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <input type="text" class="form-control form-control-sm career-jobname-custom" placeholder="직무 직접입력 (선택)" value="${data?.jobnameCustom || ''}" maxlength="50">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <input type="text" class="form-control form-control-sm date-pick career-joindate" value="${data?.joindate ? data.joindate.substring(0,10) : ''}">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <input type="text" class="form-control form-control-sm date-pick career-leavedate" value="${data?.leavedate ? data.leavedate.substring(0,10) : ''}">
+                        </div>
+                        <div class="col-12">
+                            <textarea class="form-control form-control-sm career-jobdesc" rows="2" placeholder="주요 업무" maxlength="1000">${data?.jobDesc || ''}</textarea>
+                        </div>
+                    </div>
+                </div>
+            `;
+            $('#careerList').append(html);
+
+            // 경력 직무 체크박스 생성
+            buildCareerCategoryCheckboxes(idx, data?.categoryId);
+            $(`#career${idx} .date-pick`).each(function() { initDatePicker(this); });
+        }
+
+        function buildCareerCategoryCheckboxes(idx, selectedId) {
+            const $area = $(`#careerCatArea${idx}`);
+            $area.empty();
+            const parents = categoryListData.filter(c => c.depth === 0);
+            parents.forEach(function(parent) {
+                $area.append('<div class="cb-section-title">' + parent.categoryName + '</div>');
+                const children = categoryListData.filter(c => c.parentId == parent.categoryId && c.depth === 1);
+                if (children.length > 0) {
+                    let grid = '<div class="cb-grid">';
+                    children.forEach(function(child) {
+                        const checked = (selectedId && selectedId == child.categoryId) ? 'checked' : '';
+                        grid += '<label><input type="checkbox" class="career-cat-cb" value="' + child.categoryId + '" data-name="' + child.categoryName + '" data-idx="' + idx + '" ' + checked + '> ' + child.categoryName + '</label>';
+                    });
+                    grid += '</div>';
+                    $area.append(grid);
+                }
+            });
+
+            // 체크박스 이벤트 (단일 선택)
+            $area.on('change', '.career-cat-cb', function() {
+                if ($(this).is(':checked')) {
+                    $area.find('.career-cat-cb').not(this).prop('checked', false);
+                    $(`#career${idx} .career-category`).val($(this).val());
+                    $(`#careerCatText${idx}`).text($(this).data('name')).removeClass('placeholder-text').addClass('selected-text');
+                } else {
+                    $(`#career${idx} .career-category`).val('');
+                    $(`#careerCatText${idx}`).text('직무 선택').addClass('placeholder-text').removeClass('selected-text');
+                }
+            });
+
+            // 기존 선택값 표시
+            if (selectedId) {
+                const $checked = $area.find('.career-cat-cb:checked');
+                if ($checked.length > 0) {
+                    $(`#careerCatText${idx}`).text($checked.data('name')).removeClass('placeholder-text').addClass('selected-text');
+                }
+            }
+        }
+
+        function resetCareerCat(idx) {
+            $(`#careerCatArea${idx} .career-cat-cb`).prop('checked', false);
+            $(`#career${idx} .career-category`).val('');
+            $(`#careerCatText${idx}`).text('직무 선택').addClass('placeholder-text').removeClass('selected-text');
+        }
+
+        // ========================================
+        // 기술스택 (자동완성)
+        // ========================================
+        let skillSearchTimer;
+
+        function addSkill(skillId, skillName) {
+            if (!skillName) {
+                skillName = $('#skillInput').val().trim();
+            }
+            if (!skillId && skillName) {
+                alert('목록에서 기술스택을 선택해주세요.');
+                $('#skillInput').val('');
+                $('#skillInput').focus();
+                return;
+            }
+            if (skills.length >= 15) {
+                alert('기술스택은 최대 15개까지 등록 가능합니다.');
+                $('#skillInput').val('');
+                $('#skillInput').focus();
+                return;
+            }
+            if (skillName && !skills.some(s => s.skillName === skillName)) {
+                skills.push({ skillId: skillId, skillName: skillName, proficiency: 2 });
+                updateSkillList();
+            }
+            $('#skillInput').val('');
+            $('#skillDropdown').hide();
+        }
+
+        function removeSkill(skillName) {
+            skills = skills.filter(s => s.skillName !== skillName);
+            updateSkillList();
+        }
+
+        function cycleSkillProficiency(skillName) {
+            const s = skills.find(s => s.skillName === skillName);
+            if (s) {
+                s.proficiency = (s.proficiency % 3) + 1; // 1→2→3→1
+                updateSkillList();
+            }
+        }
+
+        function getProfLabel(p) {
+            return p === 1 ? '초급' : (p === 2 ? '중급' : '고급');
+        }
+        function getProfColor(p) {
+            return p === 1 ? '#adb5bd' : (p === 2 ? '#007bff' : '#28a745');
+        }
+
+        function updateSkillList() {
+            const html = skills.map(s =>
+                `<span class="badge p-2 mr-1 mb-1" style="font-size:14px; background:#f1f3f5; color:#333; border:1px solid #dee2e6; cursor:default;">
+                    ${s.skillName}
+                    <span onclick="cycleSkillProficiency('${s.skillName}')"
+                          style="cursor:pointer; font-size:11px; color:#fff; background:${getProfColor(s.proficiency)};
+                                 border-radius:10px; padding:1px 8px; margin-left:4px; font-weight:600;"
+                          title="클릭하여 숙련도 변경">${getProfLabel(s.proficiency)}</span>
+                    <i class="fas fa-times ml-1" style="cursor:pointer; color:#dc3545;" onclick="removeSkill('${s.skillName}')"></i>
+                </span>`
+            ).join('');
+            $('#skillList').html(html);
+            $('#skillHint').toggle(skills.length > 0);
+        }
+
+        // 기술스택 자동완성
+        $('#skillInput').on('input', function() {
+            const keyword = $(this).val().trim();
+            if (keyword.length < 1) {
+                $('#skillDropdown').hide();
+                return;
+            }
+            clearTimeout(skillSearchTimer);
+            skillSearchTimer = setTimeout(function() {
+                $.ajax({
+                    url: ctxPath + 'api/resume/skill/search',
+                    type: 'GET',
+                    data: { keyword: keyword },
+                    dataType: 'json',
+                    success: function(list) {
+                        let html = '';
+                        if (list.length === 0) {
+                            html = '<div class="ac-item text-muted">검색 결과 없음 (Enter로 직접 추가)</div>';
+                        } else {
+                            list.forEach(function(s) {
+                                const already = skills.some(sk => sk.skillId == s.skillId);
+                                if (!already) {
+                                    html += '<div class="ac-item" data-id="' + s.skillId + '" data-name="' + s.skillName + '">'
+                                         + s.skillName + '<small>' + (s.categoryName || '') + '</small></div>';
+                                }
+                            });
+                            if (!html) html = '<div class="ac-item text-muted">이미 모두 추가됨</div>';
+                        }
+                        $('#skillDropdown').html(html).show();
+                        $('#skillDropdown .ac-item[data-id]').on('click', function() {
+                            addSkill($(this).data('id'), $(this).data('name'));
+                        });
+                    }
+                });
+            }, 300);
+        });
+
+        $('#skillInput').on('keypress', function(e) {
+            if (e.which === 13) { e.preventDefault(); addSkill(); }
+        });
+
+        // ========================================
+        // 자격증 추가 (자동완성 기능 포함)
+        // ========================================
+        function addCertificate(data) {
+            if ($('#certificateList > div').length >= 20) {
+                alert('자격증은 최대 20개까지 등록 가능합니다.');
+                return;
+            }
+            const idx = certificateIdx++;
+            const html = `
+                <div class="border rounded p-3 mb-3" id="cert${idx}" style="position: relative;">
+                    <div class="d-flex justify-content-between mb-2">
+                        <strong>자격증</strong>
+                        <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="$('#cert${idx}').remove()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-2" style="position: relative;">
+                            <input type="text" class="form-control form-control-sm cert-name-input"
+                                   placeholder="자격증명 (검색)" value="${data?.certificateName || ''}"
+                                   data-idx="${idx}" autocomplete="off">
+                            <input type="hidden" class="cert-code-hidden" value="${data?.certificateCode || ''}">
+                            <div class="autocomplete-list" id="certDropdown${idx}" style="display:none;"></div>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <input type="text" class="form-control form-control-sm cert-issuer" placeholder="발급기관" value="${data?.issuer || ''}" readonly>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <input type="text" class="form-control form-control-sm date-pick cert-date" value="${data?.acquiredDate ? data.acquiredDate.substring(0,10) : ''}">
+                        </div>
+                    </div>
+                </div>
+            `;
+            $('#certificateList').append(html);
+
+            // 자격증 자동완성 이벤트 바인딩
+            const certInput = $(`#cert${idx} .cert-name-input`);
+            const certDropdownId = `certDropdown${idx}`;
+            const certParent = $(`#cert${idx}`);
+
+            certInput.on('input', function() {
+                const keyword = $(this).val().trim();
+
+                if (keyword.length < 1) {
+                    $(`#${certDropdownId}`).hide();
+                    return;
+                }
+
+                clearTimeout(certSearchTimer);
+                certSearchTimer = setTimeout(function() {
+                    $.ajax({
+                        url: ctxPath + 'api/resume/certificate/search',
+                        type: 'GET',
+                        data: { keyword: keyword },
+                        dataType: 'json',
+                        success: function(list) {
+                            let dropHtml = '';
+                            if (!list || list.length === 0) {
+                                dropHtml = '<div class="ac-item text-muted">검색 결과가 없습니다</div>';
+                            } else {
+                                list.forEach(function(c) {
+                                    dropHtml += '<div class="ac-item" data-code="' + c.certificateCode + '" data-name="' + c.certificateName + '" data-issuer="' + (c.issuer || '') + '">'
+                                        + c.certificateName + ' <small>' + (c.issuer || '') + '</small></div>';
+                                });
+                            }
+                            $(`#${certDropdownId}`).html(dropHtml).show();
+
+                            // 클릭 시 선택
+                            $(`#${certDropdownId} .ac-item[data-code]`).off('click').on('click', function() {
+                                const code = $(this).data('code');
+                                const name = $(this).data('name');
+                                const issuer = $(this).data('issuer');
+                                certParent.find('.cert-name-input').val(name);
+                                certParent.find('.cert-code-hidden').val(code);
+                                certParent.find('.cert-issuer').val(issuer);
+                                $(`#${certDropdownId}`).hide();
+                            });
+                        },
+                        error: function(xhr, status, error) {
+                            console.log('자격증 검색 실패:', status, error);
+                        }
+                    });
+                }, 300);
+            });
+            $(`#cert${idx} .date-pick`).each(function() { initDatePicker(this); });
+        }
+        // 어학 추가
+        // ========================================
+        function addLanguage(data) {
+            if ($('#languageList > div').length >= 10) {
+                alert('어학은 최대 10개까지 등록 가능합니다.');
+                return;
+            }
+            const idx = languageIdx++;
+            const html = `
+                <div class="border rounded p-3 mb-3" id="lang${idx}">
+                    <div class="d-flex justify-content-between mb-2">
+                        <strong>어학</strong>
+                        <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="$('#lang${idx}').remove()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <input type="text" class="form-control form-control-sm lang-name" placeholder="언어명" value="${data?.languageName || ''}" maxlength="15">
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <input type="text" class="form-control form-control-sm lang-test" placeholder="시험명" value="${data?.testname || ''}" maxlength="15">
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <input type="text" class="form-control form-control-sm lang-score" placeholder="점수/급수" value="${data?.score || ''}" maxlength="10">
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <input type="text" class="form-control form-control-sm date-pick lang-date" value="${data?.acquiredDate ? data.acquiredDate.substring(0,10) : ''}">
+                        </div>
+                    </div>
+                </div>
+            `;
+            $('#languageList').append(html);
+            $(`#lang${idx} .date-pick`).each(function() { initDatePicker(this); });
+        }
+        // ========================================
+        function addPortfolio(data) {
+            if ($('#portfolioList > div').length >= 10) {
+                alert('포트폴리오는 최대 10개까지 등록 가능합니다.');
+                return;
+            }
+            const idx = portfolioIdx++;
+            const isFile = data?.portfolioType == 1;
+            const html = `
+                <div class="border rounded p-3 mb-3" id="port${idx}">
+                    <div class="d-flex justify-content-between mb-2">
+                        <strong>포트폴리오</strong>
+                        <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="$('#port${idx}').remove()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <select class="form-control form-control-sm port-type" onchange="togglePortfolioType(${idx})">
+                                <option value="0" ${!isFile ? 'selected' : ''}>링크</option>
+                                <option value="1" ${isFile ? 'selected' : ''}>파일</option>
+                            </select>
+                        </div>
+                        <div class="col-md-9 mb-2 port-link-wrap" id="portLinkWrap${idx}" style="${isFile ? 'display:none' : ''}">
+                            <input type="url" class="form-control form-control-sm port-link" placeholder="URL (예: https://github.com/...)" value="${data?.link || ''}" maxlength="300">
+                        </div>
+                        <div class="col-md-9 mb-2 port-file-wrap" id="portFileWrap${idx}" style="${!isFile ? 'display:none' : ''}">
+                            <div class="d-flex align-items-center" style="gap:8px;">
+                                <input type="file" class="form-control form-control-sm port-file" id="portFile${idx}"
+                                       accept=".pdf,.doc,.docx,.ppt,.pptx,.zip,.hwp,.png,.jpg,.jpeg"
+                                       onchange="uploadPortfolioFile(${idx})"
+                                       style="${isFile && data?.filepath ? 'display:none' : ''}">
+                                <input type="hidden" class="port-filepath" value="${data?.filepath || ''}">
+                                <input type="hidden" class="port-origname" value="${data?.originalFilename || ''}">
+                            </div>
+                            <div class="port-existing-file" id="portExisting${idx}" style="${isFile && data?.filepath ? '' : 'display:none'}">
+                                <span class="badge badge-light p-2">
+                                    <i class="fas fa-file mr-1"></i>
+                                    <span class="port-filename-text">${data?.originalFilename || (data?.filepath ? data.filepath.split('/').pop() : '')}</span>
+                                    <button type="button" class="btn btn-sm btn-link text-danger p-0 ml-2" onclick="removePortfolioFile(${idx})">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </span>
+                            </div>
+                            <small class="port-filename text-muted" id="portFileName${idx}"></small>
+                        </div>
+                    </div>
+                </div>
+            `;
+            $('#portfolioList').append(html);
+        }
+
+        function togglePortfolioType(idx) {
+            const type = $('#port' + idx + ' .port-type').val();
+            if (type == '0') {
+                $('#portLinkWrap' + idx).show();
+                $('#portFileWrap' + idx).hide();
+            } else {
+                $('#portLinkWrap' + idx).hide();
+                $('#portFileWrap' + idx).show();
+            }
+        }
+
+        function uploadPortfolioFile(idx) {
+            const fileInput = $('#portFile' + idx)[0];
+            const file = fileInput.files[0];
+            if (!file) return;
+            if (file.size > 10 * 1024 * 1024) {
+                alert('파일 크기는 최대 10MB까지 가능합니다.');
+                fileInput.value = '';
+                return;
+            }
+            const formData = new FormData();
+            formData.append('file', file);
+            $.ajax({
+                url: ctxPath + 'api/resume/uploadPortfolio',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(data) {
+                    if (data.result === 1) {
+                        $('#port' + idx + ' .port-filepath').val(data.filepath);
+                        $('#port' + idx + ' .port-origname').val(data.fileName);
+                        $('#portFile' + idx).hide();
+                        $('#portExisting' + idx).show()
+                            .find('.port-filename-text').text(data.fileName);
+                    } else {
+                        alert(data.message || '업로드 실패');
+                    }
+                },
+                error: function() { alert('파일 업로드 중 오류가 발생했습니다.'); }
+            });
+        }
+
+        function removePortfolioFile(idx) {
+            $('#port' + idx + ' .port-filepath').val('');
+            $('#port' + idx + ' .port-origname').val('');
+            $('#portExisting' + idx).hide();
+            $('#portFile' + idx).val('').show();
+        }
+
+        // ========================================
+        // 수상 추가
+        // ========================================
+        function addAward(data) {
+            if ($('#awardList > div').length >= 10) {
+                alert('수상은 최대 10개까지 등록 가능합니다.');
+                return;
+            }
+            const idx = awardIdx++;
+            const html = `
+                <div class="border rounded p-3 mb-3" id="award${idx}">
+                    <div class="d-flex justify-content-between mb-2">
+                        <strong>수상</strong>
+                        <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="$('#award${idx}').remove()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-2">
+                            <input type="text" class="form-control form-control-sm award-name" placeholder="수상명" value="${data?.awardName || ''}" maxlength="50">
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <input type="text" class="form-control form-control-sm award-org" placeholder="기관명" value="${data?.organizationName || ''}" maxlength="50">
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <input type="text" class="form-control form-control-sm date-pick award-date" value="${data?.awardDate ? data.awardDate.substring(0,10) : ''}">
+                        </div>
+                        <div class="col-12">
+                            <textarea class="form-control form-control-sm award-desc" rows="2" placeholder="설명" maxlength="1000">${data?.description || ''}</textarea>
+                        </div>
+                    </div>
+                </div>
+            `;
+            $('#awardList').append(html);
+            $(`#award${idx} .date-pick`).each(function() { initDatePicker(this); });
+        }
+        // ========================================
+        function submitResume(writeStatus) {
+            const resumeId = $('#resumeId').val();
+            const isEdit = resumeId && resumeId !== '';
+
+            // ── 유효성 검사 (공통: 제목 필수) ──
+            if (!$('#title').val().trim()) {
+                alert('이력서 제목을 입력해주세요.');
+                $('#title').focus();
+                return;
+            }
+
+            // 희망연봉 음수 체크
+            var salary = $('#desiredSalary').val();
+            if (salary && parseInt(salary) < 0) {
+                alert('희망연봉은 0 이상이어야 합니다.');
+                $('#desiredSalary').focus();
+                return;
+            }
+
+            // 날짜 유효성 검사 함수
+            function isValidDate(str) {
+                if (!str || str === '') return true;
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(str)) return false;
+                var d = new Date(str);
+                if (isNaN(d.getTime())) return false;
+                var parts = str.split('-');
+                if (!(d.getFullYear() == parts[0] && (d.getMonth() + 1) == parseInt(parts[1]) && d.getDate() == parseInt(parts[2]))) return false;
+                // 연도 범위 체크 (1950 ~ 현재연도+1)
+                var year = parseInt(parts[0]);
+                var maxYear = new Date().getFullYear() + 1;
+                if (year < 1920 || year > maxYear) return false;
+                return true;
+            }
+
+            // 학력 검사
+            var eduError = false;
+            $('#educationList > div').each(function(i) {
+                var schoolname = $(this).find('.edu-schoolname').val().trim();
+                var eduLevel = $(this).find('.edu-level').val();
+                var enrolldate = $(this).find('.edu-enrolldate').val();
+                var graduationdate = $(this).find('.edu-graduationdate').val();
+                if (!schoolname) {
+                    alert('학력 ' + (i+1) + '번째의 학교명을 입력해주세요.');
+                    $(this).find('.edu-schoolname').focus();
+                    eduError = true; return false;
+                }
+                if (!eduLevel) {
+                    alert('학력 ' + (i+1) + '번째의 학력수준을 선택해주세요.');
+                    $(this).find('.edu-level').focus();
+                    eduError = true; return false;
+                }
+                if (!enrolldate) {
+                    alert('학력 ' + (i+1) + '번째의 입학일을 입력해주세요.');
+                    $(this).find('.edu-enrolldate').focus();
+                    eduError = true; return false;
+                }
+                var eduStatus = $(this).find('.edu-status').val();
+                if (eduStatus === '0' && !graduationdate) {
+                    alert('학력 ' + (i+1) + '번째의 졸업일을 입력해주세요. (졸업 상태)');
+                    $(this).find('.edu-graduationdate').focus();
+                    eduError = true; return false;
+                }
+                if (enrolldate && !isValidDate(enrolldate)) {
+                    alert('학력 ' + (i+1) + '번째의 입학일이 올바르지 않습니다. (YYYY-MM-DD 형식)');
+                    $(this).find('.edu-enrolldate').focus();
+                    eduError = true; return false;
+                }
+                if (graduationdate && !isValidDate(graduationdate)) {
+                    alert('학력 ' + (i+1) + '번째의 졸업일이 올바르지 않습니다. (YYYY-MM-DD 형식)');
+                    $(this).find('.edu-graduationdate').focus();
+                    eduError = true; return false;
+                }
+                if (enrolldate && graduationdate && enrolldate > graduationdate) {
+                    alert('학력 ' + (i+1) + '번째의 입학일이 졸업일보다 늦을 수 없습니다.');
+                    $(this).find('.edu-enrolldate').focus();
+                    eduError = true; return false;
+                }
+            });
+            if (eduError) return;
+
+            // 경력 검사
+            var careerError = false;
+            $('#careerList > div').each(function(i) {
+                var companyname = $(this).find('.career-company').val().trim();
+                var joindate = $(this).find('.career-joindate').val();
+                var leavedate = $(this).find('.career-leavedate').val();
+                if (!companyname) {
+                    alert('경력 ' + (i+1) + '번째의 회사명을 입력해주세요.');
+                    $(this).find('.career-company').focus();
+                    careerError = true; return false;
+                }
+                var categoryId = $(this).find('.career-category').val();
+                var jobnameCustom = $(this).find('.career-jobname-custom').val().trim();
+                if (!categoryId && !jobnameCustom) {
+                    alert('경력 ' + (i+1) + '번째의 직무를 선택하거나 직접 입력해주세요.');
+                    $(this).find('.career-jobname-custom').focus();
+                    careerError = true; return false;
+                }
+                if (!joindate) {
+                    alert('경력 ' + (i+1) + '번째의 입사일을 입력해주세요.');
+                    $(this).find('.career-joindate').focus();
+                    careerError = true; return false;
+                }
+                if (joindate && !isValidDate(joindate)) {
+                    alert('경력 ' + (i+1) + '번째의 입사일이 올바르지 않습니다. (YYYY-MM-DD 형식)');
+                    $(this).find('.career-joindate').focus();
+                    careerError = true; return false;
+                }
+                if (leavedate && !isValidDate(leavedate)) {
+                    alert('경력 ' + (i+1) + '번째의 퇴사일이 올바르지 않습니다. (YYYY-MM-DD 형식)');
+                    $(this).find('.career-leavedate').focus();
+                    careerError = true; return false;
+                }
+                if (joindate && leavedate && joindate > leavedate) {
+                    alert('경력 ' + (i+1) + '번째의 입사일이 퇴사일보다 늦을 수 없습니다.');
+                    $(this).find('.career-joindate').focus();
+                    careerError = true; return false;
+                }
+            });
+            if (careerError) return;
+
+            // 자격증 검사
+            var certError = false;
+            $('#certificateList > div').each(function(i) {
+                var certName = $(this).find('.cert-name-input').val().trim();
+                var certCode = $(this).find('.cert-code-hidden').val();
+                var certDate = $(this).find('.cert-date').val();
+                if (!certName) {
+                    alert('자격증 ' + (i+1) + '번째의 자격증명을 입력해주세요.');
+                    $(this).find('.cert-name-input').focus();
+                    certError = true; return false;
+                }
+                if (!certCode) {
+                    alert('자격증 ' + (i+1) + '번째의 자격증을 목록에서 선택해주세요.');
+                    $(this).find('.cert-name-input').focus();
+                    certError = true; return false;
+                }
+                if (!certDate) {
+                    alert('자격증 ' + (i+1) + '번째의 취득일을 입력해주세요.');
+                    $(this).find('.cert-date').focus();
+                    certError = true; return false;
+                }
+                if (certDate && !isValidDate(certDate)) {
+                    alert('자격증 ' + (i+1) + '번째의 취득일이 올바르지 않습니다. (YYYY-MM-DD 형식)');
+                    $(this).find('.cert-date').focus();
+                    certError = true; return false;
+                }
+            });
+            if (certError) return;
+
+            // 어학 검사
+            var langError = false;
+            $('#languageList > div').each(function(i) {
+                var langName = $(this).find('.lang-name').val().trim();
+                var testName = $(this).find('.lang-test').val().trim();
+                var score = $(this).find('.lang-score').val().trim();
+                var langDate = $(this).find('.lang-date').val();
+                if (!langName) {
+                    alert('어학 ' + (i+1) + '번째의 언어명을 입력해주세요.');
+                    $(this).find('.lang-name').focus();
+                    langError = true; return false;
+                }
+                if (!testName) {
+                    alert('어학 ' + (i+1) + '번째의 시험명을 입력해주세요.');
+                    $(this).find('.lang-test').focus();
+                    langError = true; return false;
+                }
+                if (!score) {
+                    alert('어학 ' + (i+1) + '번째의 점수/급수를 입력해주세요.');
+                    $(this).find('.lang-score').focus();
+                    langError = true; return false;
+                }
+                if (!langDate) {
+                    alert('어학 ' + (i+1) + '번째의 취득일을 입력해주세요.');
+                    $(this).find('.lang-date').focus();
+                    langError = true; return false;
+                }
+                if (langDate && !isValidDate(langDate)) {
+                    alert('어학 ' + (i+1) + '번째의 취득일이 올바르지 않습니다. (YYYY-MM-DD 형식)');
+                    $(this).find('.lang-date').focus();
+                    langError = true; return false;
+                }
+            });
+            if (langError) return;
+
+            // 수상 검사
+            var awardError = false;
+            $('#awardList > div').each(function(i) {
+                var awardName = $(this).find('.award-name').val().trim();
+                var awardOrg = $(this).find('.award-org').val().trim();
+                var awardDate = $(this).find('.award-date').val();
+                if (!awardName) {
+                    alert('수상 ' + (i+1) + '번째의 수상명을 입력해주세요.');
+                    $(this).find('.award-name').focus();
+                    awardError = true; return false;
+                }
+                if (!awardOrg) {
+                    alert('수상 ' + (i+1) + '번째의 기관명을 입력해주세요.');
+                    $(this).find('.award-org').focus();
+                    awardError = true; return false;
+                }
+                if (!awardDate) {
+                    alert('수상 ' + (i+1) + '번째의 수상일을 입력해주세요.');
+                    $(this).find('.award-date').focus();
+                    awardError = true; return false;
+                }
+                if (awardDate && !isValidDate(awardDate)) {
+                    alert('수상 ' + (i+1) + '번째의 수상일이 올바르지 않습니다. (YYYY-MM-DD 형식)');
+                    $(this).find('.award-date').focus();
+                    awardError = true; return false;
+                }
+            });
+            if (awardError) return;
+
+            // 포트폴리오 검사
+            var portfolioError = false;
+            $('#portfolioList > div').each(function(i) {
+                var type = $(this).find('.port-type').val();
+                if (type === '0') {
+                    var link = $(this).find('.port-link').val().trim();
+                    if (!link) {
+                        alert('포트폴리오 ' + (i+1) + '번째의 링크를 입력해주세요.');
+                        $(this).find('.port-link').focus();
+                        portfolioError = true; return false;
+                    }
+                    if (!link.startsWith('http://') && !link.startsWith('https://')) {
+                        alert('포트폴리오 ' + (i+1) + '번째의 링크는 http:// 또는 https://로 시작해야 합니다.');
+                        $(this).find('.port-link').focus();
+                        portfolioError = true; return false;
+                    }
+                } else if (type === '1') {
+                    var filepath = $(this).find('.port-filepath').val();
+                    if (!filepath) {
+                        alert('포트폴리오 ' + (i+1) + '번째의 파일을 업로드해주세요.');
+                        portfolioError = true; return false;
+                    }
+                }
+            });
+            if (portfolioError) return;
+
+            // 기본 정보 수집
+            const resumeData = {
+                title: $('#title').val(),
+                address: $('#address').val(),
+                selfIntro: $('#selfIntro').val(),
+                categoryId: $('#categoryId').val() || null,
+                regionCode: $('#regionCode').val() || null,
+                desiredSalary: $('#desiredSalary').val() ? parseInt($('#desiredSalary').val()) : null,
+                writeStatus: writeStatus,
+                isPrimary: $('#isPrimary').is(':checked') ? 1 : 0,
+                allowScout: $('#allowScout').is(':checked') ? 1 : 0,
+                photoPath: photoRemoved ? null : (uploadedPhotoPath || (existingResume ? existingResume.photoPath : null))
+            };
+
+            if (isEdit) {
+                resumeData.resumeId = parseInt(resumeId);
+            }
+
+            // 학력 수집
+            resumeData.educationList = [];
+            $('#educationList > div').each(function(i) {
+                resumeData.educationList.push({
+                    schoolname: $(this).find('.edu-schoolname').val(),
+                    major: $(this).find('.edu-major').val(),
+                    educationLevelCode: $(this).find('.edu-level').val(),
+                    enrolldate: $(this).find('.edu-enrolldate').val() || null,
+                    graduationdate: $(this).find('.edu-graduationdate').val() || null,
+                    status: parseInt($(this).find('.edu-status').val()),
+                    sort: i
+                });
+            });
+
+            // 경력 수집
+            resumeData.careerList = [];
+            $('#careerList > div').each(function(i) {
+                resumeData.careerList.push({
+                    companyname: $(this).find('.career-company').val(),
+                    categoryId: $(this).find('.career-category').val() || null,
+                    jobnameCustom: $(this).find('.career-jobname-custom').val() || null,
+                    position: $(this).find('.career-position').val(),
+                    joindate: $(this).find('.career-joindate').val() || null,
+                    leavedate: $(this).find('.career-leavedate').val() || null,
+                    jobDesc: $(this).find('.career-jobdesc').val(),
+                    sort: i
+                });
+            });
+
+            // 기술스택 수집
+            resumeData.techstackList = skills.map(function(s) {
+                return { skillId: s.skillId, proficiency: s.proficiency };
+            });
+
+            // 자격증 수집
+            resumeData.certificateList = [];
+            $('#certificateList > div').each(function() {
+                const code = $(this).find('.cert-code-hidden').val();
+                if (code) {
+                    resumeData.certificateList.push({
+                        certificateCode: code,
+                        acquiredDate: $(this).find('.cert-date').val() || null
+                    });
+                }
+            });
+
+            // 어학 수집
+            resumeData.languageList = [];
+            $('#languageList > div').each(function() {
+                resumeData.languageList.push({
+                    languageName: $(this).find('.lang-name').val(),
+                    testname: $(this).find('.lang-test').val(),
+                    score: $(this).find('.lang-score').val(),
+                    acquiredDate: $(this).find('.lang-date').val() || null
+                });
+            });
+
+            // 포트폴리오 수집
+            resumeData.portfolioList = [];
+            $('#portfolioList > div').each(function() {
+                const type = parseInt($(this).find('.port-type').val()) || 0;
+                const link = $(this).find('.port-link').val();
+                const filepath = $(this).find('.port-filepath').val();
+                if (type === 0 && link) {
+                    resumeData.portfolioList.push({ portfolioType: 0, link: link });
+                } else if (type === 1 && filepath) {
+                    resumeData.portfolioList.push({ portfolioType: 1, filepath: filepath, originalFilename: $(this).find('.port-origname').val() });
+                }
+            });
+
+            // 수상 수집
+            resumeData.awardList = [];
+            $('#awardList > div').each(function() {
+                resumeData.awardList.push({
+                    awardName: $(this).find('.award-name').val(),
+                    organizationName: $(this).find('.award-org').val(),
+                    awardDate: $(this).find('.award-date').val() || null,
+                    description: $(this).find('.award-desc').val()
+                });
+            });
+
+            // 유효성 검사
+            if (!resumeData.title) {
+                alert('이력서 제목을 입력해주세요.');
+                $('#title').focus();
+                return;
+            }
+            // 작성완료 시에만 기본정보 필수 검사
+            if (writeStatus === 1) {
+                if (!resumeData.address) {
+                    alert('주소를 입력해주세요.');
+                    $('#address').focus();
+                    return;
+                }
+                if (!resumeData.categoryId) {
+                    alert('희망 직무를 선택해주세요.');
+                    $('html, body').animate({ scrollTop: $('#categoryId').closest('.col-md-4').offset().top - 100 }, 300);
+                    toggleDropdown('categoryDropdown');
+                    return;
+                }
+                if (!resumeData.regionCode) {
+                    alert('희망 지역을 선택해주세요.');
+                    $('html, body').animate({ scrollTop: $('#regionCode').closest('.col-md-4').offset().top - 100 }, 300);
+                    toggleDropdown('regionDropdown');
+                    return;
+                }
+            }
+
+            // Ajax 전송
+            const url = isEdit ? ctxPath + 'api/resume/update' : ctxPath + 'api/resume/save';
+            const method = isEdit ? 'PUT' : 'POST';
+
+            $.ajax({
+                url: url,
+                type: method,
+                contentType: 'application/json',
+                data: JSON.stringify(resumeData),
+                dataType: 'json',
+                success: function(data) {
+                    if (data.result === 1) {
+                        alert(writeStatus === 1 ? '이력서가 저장되었습니다.' : '임시저장 되었습니다.');
+                        location.href = ctxPath + 'jobseeker/resume/detail/' + data.resumeId;
+                    } else {
+                        alert('저장에 실패하였습니다. ' + (data.message || ''));
+                    }
+                },
+                error: function(xhr) {
+                    alert('오류가 발생하였습니다.');
+                    console.error(xhr);
+                }
+            });
+        }
+    </script>
+</div>
+</body>
+</html>

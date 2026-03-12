@@ -1,0 +1,192 @@
+@charset "UTF-8";
+
+
+/* ===== 레이아웃 ===== */
+.dash{
+  min-width: 1180px;          /* 이 크기 아래로는 레이아웃 유지 + 가로 스크롤 */
+}
+
+/* 브라우저 창이 좁아지면 가로 스크롤 생기게 */
+body{
+  overflow-x: auto;
+}
+
+.company-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 내부 스크롤이 있으면 sticky가 꼬이므로 제거 */
+.company-content{
+  overflow: visible !important;
+  height: auto !important;
+}
+
+.company-topbar {
+  height: 60px;
+  min-height: 60px;           /* 최소 높이 고정 */
+  box-sizing: border-box;     /* padding 포함 계산 */
+  background: #ffffff;
+  border-bottom: 1px solid #e5e5e5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: nowrap;          /* 줄바꿈 금지 */
+  padding: 0 30px;
+  overflow: hidden;           /* 내부가 커져도 높이 변형 방지(선택) */
+  
+  /*  추가 */
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.company-body {
+  /* border: solid 2px red; */
+  display: flex;
+  flex: 1;
+  
+}
+
+
+
+/* ===== Topbar 내부 정렬(추가) ===== */
+.topbar-left,
+.topbar-right{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-wrap: nowrap;          /* 내부 줄바꿈 금지 */
+  min-width: 0;               /* ellipsis 적용 가능하게 */
+  
+}
+
+.logo{
+  font-weight:800;
+}
+
+.sub{
+  color:#6b7280;
+  font-size:13px;
+}
+
+.profile{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+/* Topbar 프로필 아바타(페이지별 avatar와 충돌 방지 위해 네이밍 분리) */
+.topbar-avatar{
+  width:36px;
+  height:36px;
+  border-radius:999px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#f3f4f6;
+  font-weight:800;
+  
+}
+
+.company-name{
+  font-weight:800;
+  font-size:13px;
+  line-height:1.2;
+}
+
+.email{
+  color:#6b7280;
+  font-size:12px;
+  line-height:1.2;
+}
+
+.logo,
+.sub,
+.company-name,
+.email{
+  white-space: nowrap;        /* 줄바꿈 방지 */
+}
+
+.company-name,
+.email{
+  overflow: hidden;           /* 넘치면 숨김 */
+  text-overflow: ellipsis;    /* ... 처리 */
+  max-width: 220px;           /* 화면 줄일 때 깨짐 방지(필요하면 조절) */
+}
+
+/* ===== 사이드바 기본 ===== */
+.company-sidebar{
+  background:#fff;   /* 기본 흰색 */
+  min-width: 190px;    /* 이 크기 아래로는 레이아웃 유지 + 가로 스크롤 */
+  /* border: solid 2px red; */
+  
+  /* ✅ 스크롤 따라오기 */
+  position: sticky;
+  top: 74px;       /* ✅ 14px -> 74px (60 + 14) */
+  align-self: flex-start;
+  height: fit-content;
+  z-index: 3;
+}
+
+.company-sidebar ul{
+  list-style:none;
+  padding:0;
+  margin:0;
+}
+
+.company-sidebar li a{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:12px 18px;
+  color:#111;
+  text-decoration:none;
+  border-radius:10px;
+  margin:6px 12px;
+  background:#fff;  /* 기본 흰색 */
+  transition: all 0.2s ease;
+}
+
+/* ===== 마우스 올렸을 때 ===== */
+.company-sidebar li a:hover{
+  background:#EFF6FF;      /* 연한 블루 */
+  color:#2563EB;           /* 블루 텍스트 */
+}
+
+/* ===== 현재 선택된 메뉴 ===== */
+.company-sidebar li.active a{
+  background:#2563EB;      /* 메인 블루 */
+  color:#fff;
+  position: relative;
+}
+
+.company-sidebar li.active a::before{
+  content:"";
+  position:absolute;
+  left:-12px;     /* margin 보정 */
+  top:8px;
+  bottom:8px;
+  width:4px;
+  border-radius:999px;
+  background:#1D4ED8;
+}
+
+/* 아이콘 색상 변경 */
+.company-sidebar li a i{
+  width:18px;
+  opacity:.7;
+  transition:0.2s;
+}
+
+.company-sidebar li a:hover i{
+  opacity:1;
+  color:#2563EB;
+}
+
+.company-sidebar li.active a i{
+  opacity:1;
+  color:#fff;
+}
+
+

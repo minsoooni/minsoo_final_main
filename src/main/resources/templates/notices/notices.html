@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/layout_main :: layout(~{::title},~{::link},~{::style},~{::script},~{::section})}">
+
+<head>
+  <title>공지사항</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Noto Sans KR', sans-serif; background-color: #f9fafb; color: #1f2937; }
+
+    .notice-wrap { max-width: 1100px; margin: 40px auto; padding: 0 24px; }
+
+    .notice-hero { background: linear-gradient(135deg, #1f2937 0%, #374151 100%); border-radius: 12px; padding: 36px 32px; margin-bottom: 28px; color: white; display: flex; align-items: center; justify-content: space-between; }
+    .notice-hero .hero-text h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+    .notice-hero .hero-text p { font-size: 14px; color: #9ca3af; }
+    .notice-hero .hero-icon { font-size: 48px; opacity: 0.2; }
+
+    .controls { display: flex; justify-content: flex-start; margin-bottom: 20px; }
+    .search-box input { width: 300px; padding: 10px 16px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; font-family: inherit; background: white; }
+    .search-box input:focus { outline: none; border-color: #d1d5db; }
+
+    .notice-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; border: 1px solid #e5e7eb; overflow: hidden; }
+    .notice-table thead tr { border-bottom: 1px solid #e5e7eb; }
+    .notice-table th { padding: 12px 8px; text-align: left; font-weight: 500; color: #6b7280; font-size: 13px; background: #f9fafb; }
+    .notice-table th.center { text-align: center; }
+    .notice-table td { padding: 16px 8px; font-size: 14px; color: #374151; border-bottom: 1px solid #f3f4f6; }
+    .notice-table td.center { text-align: center; }
+    .notice-table tbody tr:hover { background: #f0f9ff; cursor: pointer; }
+    .notice-table tbody tr.important { background: rgba(254,242,242,0.5); border-left: 3px solid #ef4444; }
+    .notice-table tbody tr.important:hover { background: rgba(254,226,226,0.5); }
+
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; margin-right: 8px; }
+    .badge.important { background: #ef4444; color: white; }
+    .badge.normal { background: #9ca3af; color: white; }
+
+    .table-footer { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 16px 0; margin-top: 8px; }
+    .total-count { font-size: 14px; color: #6b7280; }
+    .pagination { display: flex; justify-content: center; gap: 4px; }
+    .pagination a { display: inline-block; padding: 8px 14px; border: 1px solid #e5e7eb; background: white; border-radius: 6px; font-size: 13px; color: #374151; text-decoration: none; transition: all 0.15s; }
+    .pagination a:hover { background: #f9fafb; }
+    .pagination a.active { background: #06b6d4; color: white; border-color: #06b6d4; }
+    .pagination a.disabled { color: #d1d5db; background: #f9fafb; cursor: not-allowed; pointer-events: none; }
+
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+    .modal.active { display: flex; }
+    .modal-content { background: white; padding: 0; border-radius: 12px; width: 90%; max-width: 640px; max-height: 85vh; overflow-y: auto; }
+    .modal-header {
+	  margin-bottom: 20px;
+	  padding: 24px 28px 16px;
+	  border-bottom: 1px solid #e5e7eb;
+	  text-align: left;
+	}	
+    .modal-badge { margin-bottom: 8px; }
+	    .modal-title {
+	  font-size: 18px;
+	  font-weight: 700;
+	  color: #1f2937;
+	  margin-bottom: 12px;
+	  line-height: 1.5;
+	  display: block;
+	  width: 100%;
+	  text-align: left;
+	  word-break: keep-all;
+	  
+	}
+
+	.modal-meta { display: flex; gap: 20px; font-size: 13px; color: #6b7280; flex-wrap: wrap; margin-top: 8px; }
+    .modal-body { font-size: 15px; color: #374151; line-height: 1.8; white-space: pre-wrap; }
+    .modal-close-btn { display: block; margin: 24px auto 24px; padding: 12px 32px; background: #1f2937; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; }
+    .modal-close-btn:hover { background: #374151; }
+
+	.modal-body{
+	  padding: 16px 28px 0;
+	}
+
+    @media (max-width: 768px) {
+      .notice-hero { flex-direction: column; gap: 12px; }
+      .notice-table { display: block; overflow-x: auto; }
+    }
+  </style>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+      /* ── 검색 (서버사이드) ── */
+      window.applySearch = function () {
+        const search = document.getElementById('searchInput').value;
+        const params = new URLSearchParams();
+        if (search) params.append('search', search);
+        location.href = '/finalProject/notice?' + params.toString();
+      };
+      document.getElementById('searchInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') applySearch();
+      });
+
+      /* ── 상세 모달 (서버에서 fetch) ── */
+      window.openDetail = function (id) {
+        fetch('/finalProject/notice/' + id + '/detail')
+          .then(res => res.json())
+          .then(data => {
+            document.getElementById('detailBadge').className = 'badge ' + (data.pinnedYn === 'Y' ? 'important' : 'normal');
+            document.getElementById('detailBadge').textContent = data.pinnedYn === 'Y' ? '중요' : '일반';
+            document.getElementById('detailTitle').textContent = data.title;
+            document.getElementById('detailDate').textContent = '작성일: ' + (data.createdAt ? data.createdAt.substring(0, 10) : '');
+            document.getElementById('detailEnd').textContent = '마감일: ' + (data.endDate ? data.endDate.substring(0, 10) : '상시');
+            document.getElementById('detailViews').textContent = '조회수: ' + data.viewCount.toLocaleString();
+            document.getElementById('detailContent').textContent = data.content;
+            document.getElementById('detailModal').classList.add('active');
+          });
+      };
+
+      window.closeDetail = function () {
+        document.getElementById('detailModal').classList.remove('active');
+      };
+
+      document.getElementById('detailModal').addEventListener('click', e => {
+        if (e.target === document.getElementById('detailModal')) closeDetail();
+      });
+    });
+  </script>
+</head>
+
+<body>
+<section>
+  <div class="notice-wrap">
+
+    <!-- 헤더 배너 -->
+    <div class="notice-hero">
+      <div class="hero-text">
+        <h2>📢 공지사항</h2>
+        <p>잡파인더의 새로운 소식과 중요 안내사항을 확인하세요.</p>
+      </div>
+      <div class="hero-icon">📋</div>
+    </div>
+
+    <!-- 검색 -->
+    <div class="controls">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="제목 또는 내용으로 검색..."
+               th:value="${param.search != null ? param.search[0] : ''}">
+      </div>
+    </div>
+
+    <!-- 목록 -->
+    <table class="notice-table">
+      <thead>
+        <tr>
+          <th class="center" style="width:50px;">번호</th>
+          <th class="center" style="width:70px;">구분</th>
+          <th>제목</th>
+          <th class="center" style="width:110px;">작성일</th>
+          <th class="center" style="width:110px;">마감일</th>
+          <th class="center" style="width:80px;">조회수</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="notice, stat : ${notices}"
+            th:classappend="${notice.pinnedYn == 'Y'} ? 'important'"
+            th:attr="onclick='openDetail(' + ${notice.noticeId} + ')'">
+
+          <td class="center" th:text="${(currentPage - 1) * 10 + stat.count}"></td>
+
+          <td class="center">
+            <span class="badge"
+                  th:classappend="${notice.pinnedYn == 'Y'} ? 'important' : 'normal'"
+                  th:text="${notice.pinnedYn == 'Y'} ? '중요' : '일반'"></span>
+          </td>
+
+          <td th:text="${notice.title}"></td>
+
+          <td class="center" th:text="${#dates.format(notice.createdAt, 'yyyy-MM-dd')}"></td>
+
+		  <td class="center" th:text="${notice.endDate != null} ? ${#dates.format(notice.endDate, 'yyyy-MM-dd')} : '상시'"></td>
+
+          <td class="center" th:text="${#numbers.formatInteger(notice.viewCount, 0, 'COMMA')}"></td>
+       
+        </tr>
+
+        <tr th:if="${#lists.isEmpty(notices)}">
+          <td colspan="5" style="text-align:center; padding:40px; color:#9ca3af;">
+            공지사항이 없습니다.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- 페이지바 -->
+    <div class="table-footer">
+      <span class="total-count">총 <span th:text="${totalCount}"></span>개의 공지사항</span>
+      <div class="pagination">
+        <a th:href="@{/notice(page=1,search=${param.search})}"
+           th:classappend="${currentPage == 1} ? 'disabled'">«</a>
+        <a th:href="@{/notice(page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search})}"
+           th:classappend="${currentPage == 1} ? 'disabled'">이전</a>
+        <span th:each="i : ${#numbers.sequence(1, totalPages)}">
+          <a th:href="@{/notice(page=${i},search=${param.search})}"
+             th:text="${i}"
+             th:classappend="${i == currentPage} ? 'active'"></a>
+        </span>
+        <a th:href="@{/notice(page=${currentPage < totalPages ? currentPage+1 : totalPages},search=${param.search})}"
+           th:classappend="${currentPage == totalPages} ? 'disabled'">다음</a>
+        <a th:href="@{/notice(page=${totalPages},search=${param.search})}"
+           th:classappend="${currentPage == totalPages} ? 'disabled'">»</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 상세 모달 -->
+  <div class="modal" id="detailModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-badge"><span id="detailBadge" class="badge"></span></div>
+        <div class="modal-title" id="detailTitle"></div>
+        <div class="modal-meta">        
+          <span id="detailDate"></span>
+          <span id="detailEnd"></span> 
+          <span id="detailViews"></span>
+        </div>
+      </div>
+      <div class="modal-body" id="detailContent"></div>
+      <button class="modal-close-btn" onclick="closeDetail()">닫기</button>
+    </div>
+  </div>
+
+</section>
+</body>
+</html>

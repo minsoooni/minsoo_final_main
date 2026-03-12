@@ -1,0 +1,325 @@
+@charset "UTF-8";
+
+
+/* ===== job_list.css ===== */
+
+/* 상단 헤더 */
+.job-head{
+  display:flex; align-items:flex-start; justify-content:space-between;
+  margin-bottom:14px;
+}
+.job-title{ font-size:18px; font-weight:900; margin:0; }
+.job-desc{ color:#6b7280; font-size:13px; margin-top:6px; }
+
+.job-add-btn{
+  border-radius:12px;
+  padding:10px 14px;
+  font-weight:800;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+}
+
+/* 필터 패널 */
+.job-filter-panel{ padding:14px; }
+
+.job-filters{
+  display:flex; align-items:center; gap:12px;
+  padding:14px;
+  border:1px solid #eee;
+  border-radius:14px;
+  background:#fff;
+}
+.job-search{
+  flex:1;
+  display:flex; align-items:center; gap:10px;
+  background:#f3f4f6;
+  border:1px solid #eee;
+  border-radius:12px;
+  padding:10px 12px;
+}
+.job-search-icon{ color:#9ca3af; }
+
+.job-search input{
+  border:0;
+  outline:0;
+  background:transparent;
+  width:100%;
+  font-size:13px;
+}
+
+.job-select{
+  min-width:140px;
+  border-radius:12px;
+  border:1px solid #eee;
+  background:#fff;
+  height:42px;
+  font-size:13px;
+  padding:0 10px;
+}
+
+/* 테이블 */
+.job-table th{
+  font-size:12px;
+  color:#6b7280;
+  font-weight:800;
+  border-top:0;
+}
+.job-table td{
+  font-size:13px;
+  vertical-align:middle;
+}
+
+.job-row{
+  cursor:pointer;
+}
+.job-row.is-selected{
+  background:#f8fafc;
+}
+
+/* 상태 뱃지 - 진행중 */
+.badge-darkpill{
+  display:inline-block;
+  padding:6px 10px;
+  border-radius:999px;
+  background:#0b1524;
+  color:#fff;
+  font-size:12px;
+  font-weight:800;
+}
+/* 상태 뱃지 - 마감 */
+.badge-graypill{
+  display:inline-block;
+  padding:6px 10px;
+  border-radius:999px;
+  background:#eef2f7;
+  color:#111;
+  font-size:12px;
+  font-weight:800;
+}
+/* 상태 뱃지 - 삭제됨 */
+.badge-deleted{
+  display:inline-block;
+  padding:6px 10px;
+  border-radius:999px;
+  background:#fee2e2;
+  color:#b91c1c;
+  font-size:12px;
+  font-weight:800;
+}
+/* 상태 뱃지 - 임시저장 */
+.badge-lightpill{
+  display:inline-block;
+  padding:6px 10px;
+  border-radius:999px;
+  background:#fff7ed;   /* 연한 오렌지/베이지 */
+  color:#9a3412;        /* 진한 오렌지 브라운 */
+  font-size:12px;
+  font-weight:800;
+  border:1px solid #fed7aa; /* 테두리로 구분감 */
+}
+
+/* row action */
+.job-row-action{
+  width:34px;
+  height:34px;
+  border-radius:10px;
+  border:1px solid #eee;
+  background:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+}
+
+/* 목록 비었을 때 */
+.job-empty-td{
+  text-align:center;
+  color:#6b7280;
+  padding:30px 10px !important;
+}
+
+/* 미리보기 박스 */
+.preview-box{
+  border:1px solid #eee;
+  border-radius:14px;
+  background:#fff;
+  padding:16px;
+  /* border: solid 2px blue; */
+  width: 60%;
+  margin: 0 auto;
+}
+.preview-empty{
+  border:1px dashed #d1d5db;
+  border-radius:12px;
+  padding:16px;
+  color:#6b7280;
+  font-size:13px;
+  text-align:center;
+  background:#fafafa;
+}
+
+/* ===== 구직자 상세 페이지처럼 보이게 하는 영역 ===== */
+.job-view{
+  padding:6px 2px;
+}
+
+.jv-head{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.jv-title{
+  font-size:28px;
+  font-weight:700;
+  margin:0;
+}
+.jv-company{
+  font-size:14px;
+  font-weight:600;
+  color:#111827;
+}
+.jv-meta{
+  color:#6b7280;
+  font-size:13px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.jv-divider{
+  border:0;
+  border-top:1px solid #eee;
+  margin:16px 0;
+}
+
+.jv-section{
+  margin-top:15px;
+}
+.jv-section-title{
+  font-size:18px;
+  font-weight:700;
+  margin-bottom:12px;
+  /* border: solid 2px red; */
+}
+
+.jv-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:14px 22px;
+}
+.jv-item{
+  margin-bottom: 6px;
+  /* border: solid 2px red; */ 
+}
+.jv-wide{ grid-column: 1 / -1; }
+
+.jv-label{
+  color:#6b7280;
+  font-size:14px;
+  font-weight:600;
+  margin-bottom:4px;
+  /* border: solid 1px blue; */
+}
+
+.jv-label i {
+  margin-right: 6px;
+  color: #6b7280;
+}
+
+.jv-value{
+  font-size: 12px;
+  font-weight:600;
+  color:#111827;
+  /* border: solid 1px red; */
+}
+.jv-salary{
+  color:#2563eb;
+  font-weight:600;
+}
+
+/* content */
+.jv-content{
+  white-space:pre-wrap;
+  line-height:1.75;
+  font-size:14px;
+  color:#111827;
+}
+
+/* bottom buttons (정적) */
+.jv-bottom{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+}
+.jv-bottom-right{
+  display:flex;
+  gap:10px;
+}
+
+.jv-btn{
+  border-radius:12px;
+  padding:10px 14px;
+  font-weight:600;
+  font-size:13px;
+  border:1px solid #d1d5db;
+  background:#fff;
+}
+.jv-btn-primary{
+  border:0;
+  background:#2563eb;
+  color:#fff;
+}
+.jv-btn-ghost{
+  background:#fff;
+}
+
+
+
+/* 더보기 아이콘 클릭 시 CSS  */
+.job-actions { position: relative; display: inline-block; }
+.job-row-action { background: transparent; border: 0; cursor: pointer; }
+
+.job-menu {
+  position: absolute;
+  right: 0;
+  top: 24px;
+  min-width: 120px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  padding: 6px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.08);
+  z-index: 50;
+}
+
+/* ✅ a, button 둘 다 같은 박스로 만들기 */
+.job-menu .job-menu-item{
+  display: flex;              /* 또는 block */
+  align-items: center;
+  width: 100%;                /* ✅ 전체 너비 */
+  box-sizing: border-box;
+  padding: 10px 10px;         /* ✅ 높이 통일 */
+  border-radius: 8px;
+  text-decoration: none;      /* a 밑줄 제거 */
+  border: 0;                  /* button 기본 테두리 제거 */
+  background: transparent;    /* 기본 투명 */
+  cursor: pointer;
+  font: inherit;              /* button 기본 폰트 차이 제거 */
+  color: inherit;
+  text-align: left;           /* button 텍스트 정렬 */
+}
+
+.job-menu .job-menu-item:hover{
+  background: #f3f4f6;        /* ✅ hover 영역 동일 */
+}
+
+/* ✅ form 때문에 레이아웃 틀어지면 이것도 추가 */
+.job-menu form{
+  margin: 0;
+}
+
+.job-menu form .job-menu-item{
+  width: 100%;
+}

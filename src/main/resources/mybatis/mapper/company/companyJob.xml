@@ -1,0 +1,422 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- ==== 루트 엘리먼트 & 네임스페이스 설정(프로젝트 전체내에서 유일해야 한다.) ==== -->
+<mapper namespace="com.spring.app.company.model.CompanyJobMapper">
+
+	<!-- 채용공고 리스트 조회하기 -->
+	<select id="getJobPostingList" resultType="com.spring.app.company.domain.JobPostingDTO">
+	  SELECT
+	      j.job_id           AS jobId,
+	      j.fk_memberId      AS memberId,
+	      j.fk_category_id   AS categoryId,
+	      c.category_name    AS categoryName,
+	      j.title            AS title,
+	      j.work_type        AS workType,
+	      j.career_type      AS careerType,
+	      j.salary           AS salary,
+	      j.deadline_at      AS deadlineAt,
+	      j.status           AS status,
+	      j.view_count       AS viewCount,
+	      j.headcount        AS headcount,
+	      (
+	        SELECT COUNT(*)
+	        FROM tbl_job_scrap s
+	        WHERE s.fk_job_id = j.job_id
+	      )                  AS scrapCount
+	  FROM tbl_job_posting j
+	  LEFT JOIN tbl_job_category c
+	         ON c.category_id = j.fk_category_id
+	        AND c.depth = 1
+	  WHERE j.fk_memberId = #{memberId}
+	    AND j.status != '삭제됨'
+	  ORDER BY j.job_id DESC
+	</select>
+	
+	
+	<!-- 채용공고 전체갯수 조회 -->
+	<select id="getJobPostingCount" parameterType="string" resultType="int">
+	    SELECT COUNT(*)
+	    FROM tbl_job_posting j
+	    WHERE j.fk_memberId = #{memberId}
+	      AND j.status != '삭제됨'
+	</select>
+	
+	
+	<!-- 페이징 처리하여 채용공고 리스트 조회 -->
+	<select id="getJobPostingListPaing" parameterType="map" resultType="com.spring.app.company.domain.JobPostingDTO">
+	    SELECT *
+	    FROM (
+	        SELECT
+	            ROW_NUMBER() OVER (ORDER BY j.job_id DESC) AS rno,
+	            j.job_id           AS jobId,
+	            j.fk_memberId      AS memberId,
+	            j.fk_category_id   AS categoryId,
+	            c.category_name    AS categoryName,
+	            j.title            AS title,
+	            j.work_type        AS workType,
+	            j.career_type      AS careerType,
+	            j.salary           AS salary,
+	            j.deadline_at      AS deadlineAt,
+	            j.status           AS status,
+	            j.view_count       AS viewCount,
+	            j.headcount        AS headcount,
+	            (
+	                SELECT COUNT(*)
+	                FROM tbl_job_scrap s
+	                WHERE s.fk_job_id = j.job_id
+	            ) AS scrapCount
+	        FROM tbl_job_posting j
+	        LEFT JOIN tbl_job_category c
+	               ON c.category_id = j.fk_category_id
+	              AND c.depth = 1
+	        WHERE j.fk_memberId = #{memberId}
+	          AND j.status != '삭제됨'
+	    )
+	    WHERE rno BETWEEN #{startRow} AND #{endRow}
+	</select>
+	
+	
+	
+	<!-- 채용공고 상세내용 조회하기 (학력명 + 직무명 포함) -->
+	<select id="getJobPostingOne"
+	        parameterType="long"
+	        resultType="com.spring.app.company.domain.JobPostingDTO">
+	  SELECT
+	      j.job_id           AS jobId,
+	      j.fk_memberid      AS memberId,
+	      j.fk_category_id   AS categoryId,
+	      c.category_name    AS categoryName,  <!-- 직무명 추가 -->
+	
+	      j.title            AS title,
+	      j.work_type        AS workType,
+	      j.career_type      AS careerType,
+	      j.salary           AS salary,
+	      j.deadline_at      AS deadlineAt,
+	      j.status           AS status,
+	      j.view_count       AS viewCount,
+	      j.headcount        AS headcount,
+	
+	      j.fk_region_code   AS regionCode,
+	      j.content          AS content,
+	      j.fk_edu_code      AS eduCode,
+	      e.edu_level_name   AS eduLevelName,
+	      j.deadline_type    AS deadlineType,
+	      j.opened_at        AS openedAt,
+	      j.closed_at        AS closedAt,
+	      j.created_at       AS createdAt,
+	      j.updated_at       AS updatedAt
+	
+	  FROM tbl_job_posting j
+	  LEFT JOIN tbl_education_level e
+	         ON e.edu_level_code = j.fk_edu_code
+	  LEFT JOIN tbl_job_category c
+	         ON c.category_id = j.fk_category_id
+	        AND c.depth = 1
+	  WHERE j.job_id = #{jobId}
+	</select>
+	
+	
+	<!-- 대분류 직무 리스트 가져오기 -->
+	<select id="selectRoots" resultType="com.spring.app.common.domain.JobCategoryDTO">
+	    SELECT category_id AS categoryId,
+	           fk_parent_id AS fkParentId,
+	           category_name AS categoryName,
+	           depth
+	    FROM tbl_job_category
+	    WHERE depth = 0
+	    ORDER BY category_id
+    </select>
+    
+    
+	<!-- 자식 직무들 리스트 가져오기 -->
+    <select id="selectChildren" parameterType="long" resultType="com.spring.app.common.domain.JobCategoryDTO">
+	    SELECT category_id AS categoryId,
+	           fk_parent_id AS fkParentId,
+	           category_name AS categoryName,
+	           depth
+	    FROM tbl_job_category
+	    WHERE fk_parent_id = #{parentId}
+	    ORDER BY category_id
+    </select>
+	
+	
+	<!-- 스킬카테고리 조회해오기 -->
+	<select id="selectSkillCategorySkillRows" resultType="com.spring.app.common.domain.SkillJoinRowDTO">
+	    SELECT
+	        sc.skill_category_id    AS skillCategoryId,
+	        sc.category_name        AS categoryName,
+	        s.skill_id              AS skillId,
+	        s.skill_name            AS skillName
+	    FROM tbl_skill_category sc
+	    LEFT JOIN tbl_skill s
+	           ON s.fk_skill_category_id = sc.skill_category_id
+	    ORDER BY sc.skill_category_id, s.skill_id
+	</select>
+	
+	
+	<!-- 학력 리스트 조회해오기 -->
+	<select id="selectEduList" resultType="com.spring.app.common.domain.EducationDTO">
+		SELECT EDU_LEVEL_CODE AS eduCode, 
+			   EDU_LEVEL_NAME AS eduName,
+			   SORT  
+		FROM tbl_education_level
+	</select>
+
+	
+	<!-- 지역 리스트 조회해오기 (대분류) -->
+	<select id="selectRegionLevel1" resultType="com.spring.app.common.domain.RegionDTO">
+	  SELECT region_code           AS regionCode,
+	         fk_parent_region_code AS fkParentRegionCode,
+	         region_name           AS regionName,
+	         region_level          AS regionLevel,
+	         sort
+	  FROM tbl_region
+	  WHERE region_level = 1
+	  ORDER BY sort
+	</select>
+	
+	
+	<!-- 지역 리스트 중소분류 -->
+	<select id="selectRegionChildren" parameterType="string" resultType="com.spring.app.common.domain.RegionDTO">
+	  SELECT region_code           AS regionCode,
+	         fk_parent_region_code AS fkParentRegionCode,
+	         region_name           AS regionName,
+	         region_level          AS regionLevel,
+	         sort
+	  FROM tbl_region
+	  WHERE fk_parent_region_code = #{parentCode}
+	  ORDER BY sort
+	</select>
+	
+	
+	
+	<!-- 채용공고 등록하기 ==> 공고-기술스택 매핑테이블 데이터 삽입은 맨 아래의 insertNewJobPostingSkills 이용! -->
+	<insert id="insertJobPosting" parameterType="com.spring.app.company.domain.JobPostingDTO">
+	  <selectKey keyProperty="jobId" resultType="long" order="BEFORE">
+	    SELECT TEST_JOB_POSTING_SEQ.NEXTVAL FROM dual
+	  </selectKey>
+	
+	  INSERT INTO TBL_JOB_POSTING (
+	      JOB_ID,
+	      FK_MEMBERID,
+	      FK_CATEGORY_ID,
+	      FK_REGION_CODE,
+	      TITLE,
+	      CONTENT,
+	      WORK_TYPE,
+	      CAREER_TYPE,
+	      FK_EDU_CODE,
+	      SALARY,
+	      HEADCOUNT,
+	      STATUS,
+	      DEADLINE_TYPE,
+	      DEADLINE_AT,
+	      OPENED_AT,
+	      CLOSED_AT,
+	      CREATED_AT,
+	      UPDATED_AT
+	  )
+	  VALUES (
+	      #{jobId},
+	      #{memberId},
+	      #{categoryId},
+	      #{regionCode},
+	      #{title},
+	      #{content},
+	      #{workType},
+	      #{careerType},
+	      #{eduCode},
+	      #{salary},
+	      #{headcount},
+	      #{status},
+	      #{deadlineType},
+	      <choose>
+		    <when test="deadlineAt != null">#{deadlineAt}</when>
+		    <otherwise>NULL</otherwise>
+		  </choose>,
+		  <choose>
+		    <when test="openedAt != null">#{openedAt}</when>
+		    <otherwise>NULL</otherwise>
+		  </choose>,
+		  <choose>
+		    <when test="closedAt != null">#{closedAt}</when>
+		    <otherwise>NULL</otherwise>
+		  </choose>,
+	      SYSDATE,
+	      SYSDATE
+	  )
+	</insert>
+	
+	
+	
+	<!-- 공고 수정 시 기존 공고 데이터 조회하기 -->
+	<select id="getJobPostingForEdit"
+        parameterType="long"
+        resultType="com.spring.app.company.domain.JobPostingEditResponseDTO">
+	  SELECT
+	      j.job_id           AS jobId,
+	      j.title            AS title,
+	
+	      j.work_type        AS workType,
+	      j.career_type      AS careerType,
+	      j.salary           AS salary,
+	      j.headcount        AS headcount,
+	      j.fk_edu_code      AS eduCode,
+	      j.content          AS content,
+	      j.status           AS status,
+	
+	      j.deadline_type    AS deadlineType,
+	      TO_CHAR(j.deadline_at, 'YYYY-MM-DD"T"HH24:MI') AS deadlineAt,
+	      TO_CHAR(j.opened_at,  'YYYY-MM-DD"T"HH24:MI') AS openedAt,
+	      TO_CHAR(j.closed_at,  'YYYY-MM-DD"T"HH24:MI') AS closedAt,
+	
+	      j.fk_category_id   AS categoryId,
+	      c.fk_parent_id     AS parentCategoryId,
+	
+	      j.fk_region_code   AS regionCode
+	  FROM tbl_job_posting j
+	  LEFT JOIN tbl_job_category c
+	         ON c.category_id = j.fk_category_id
+	  WHERE j.job_id = #{jobId}
+	</select>
+	
+	
+	<!-- 공고 수정 기 기존 공고의 스킬 조회하기 -->
+	<select id="getSkillIdsByJobId"
+        parameterType="long"
+        resultType="long">
+	  SELECT fk_skill_id
+	  FROM tbl_job_posting_skill
+	  WHERE fk_job_id = #{jobId}
+	</select>
+	
+	
+	<!-- 공고 수정 시 기존 공고의 지역 조회하기 -->
+	<select id="getRegionChain"
+        parameterType="string"
+        resultType="com.spring.app.company.domain.RegionChainDTO">
+	  SELECT
+	    CASE
+	      WHEN lv3.region_level = 1 THEN lv3.region_code
+	      WHEN lv3.region_level = 2 THEN lv2.region_code
+	      ELSE lv1.region_code
+	    END AS regionLv1,
+	    CASE
+	      WHEN lv3.region_level = 1 THEN NULL
+	      WHEN lv3.region_level = 2 THEN lv3.region_code
+	      ELSE lv2.region_code
+	    END AS regionLv2,
+	    CASE
+	      WHEN lv3.region_level = 3 THEN lv3.region_code
+	      ELSE NULL
+	    END AS regionLv3
+	  FROM tbl_region lv3
+	  LEFT JOIN tbl_region lv2 ON lv2.region_code = lv3.fk_parent_region_code
+	  LEFT JOIN tbl_region lv1 ON lv1.region_code = lv2.fk_parent_region_code
+	  WHERE lv3.region_code = #{regionCode}
+	</select>
+	
+	
+	
+	<!-- 채용공고 수정하기 -->
+	<update id="updateJobPosting" parameterType="com.spring.app.company.domain.JobPostingDTO">
+	  UPDATE tbl_job_posting
+	  <set>
+	    <if test="categoryId != null">fk_category_id = #{categoryId},</if>
+	    <if test="regionCode != null">fk_region_code = #{regionCode},</if>
+	    <if test="title != null">title = #{title},</if>
+	    <if test="content != null">content = #{content},</if>
+	    <if test="workType != null">work_type = #{workType},</if>
+	    <if test="careerType != null">career_type = #{careerType},</if>
+	    <if test="eduCode != null">fk_edu_code = #{eduCode},</if>
+	    <if test="salary != null">salary = #{salary},</if>
+	    <if test="headcount != null">headcount = #{headcount},</if>
+	    <if test="status != null">status = #{status},</if>
+	    <if test="deadlineType != null">deadline_type = #{deadlineType},</if>
+	
+	    <if test="deadlineAt != null">deadline_at = #{deadlineAt},</if>
+	    <if test="openedAt != null">opened_at = #{openedAt},</if>
+	    <if test="closedAt != null">closed_at = #{closedAt},</if>
+	
+	    updated_at = SYSDATE
+	  </set>
+	  WHERE job_id = #{jobId}
+	</update>
+
+
+	<!-- 1) 기존 매핑 삭제 -->
+	<delete id="deleteJobPostingSkills" parameterType="long">
+	  DELETE FROM TBL_JOB_POSTING_SKILL
+	  WHERE FK_JOB_ID = #{jobId}
+	</delete>
+	
+	
+	<!-- 2) 새 매핑 일괄 등록 (List<Long> skillIds) -->
+	<insert id="insertNewJobPostingSkills">
+	  INSERT INTO TBL_JOB_POSTING_SKILL (FK_JOB_ID, FK_SKILL_ID)
+	  <foreach collection="skillIds" item="sid" separator=" UNION ALL ">
+	    SELECT #{jobId}, #{sid} FROM dual
+	  </foreach>
+	</insert>
+	
+	
+	
+	<!-- 채용공고 삭제하기(소프트 삭제) -->
+	<update id="deleteJobPosting" parameterType="Long">
+	  UPDATE tbl_job_posting
+	  SET status = '삭제됨', updated_at = SYSDATE
+	  WHERE job_id = #{jobId}
+	</update>
+	
+	
+	
+	
+	<!-- 공고 마감/게시일 종료에 따른 상태 변경 -->
+	<update id="updateJobStatusToDeleted">
+	    UPDATE TBL_JOB_POSTING
+	       SET STATUS = '삭제됨',
+	           UPDATED_AT = SYSDATE
+	     WHERE STATUS != '삭제됨'
+	       AND CLOSED_AT IS NOT NULL
+	       AND CLOSED_AT &lt;= SYSDATE
+	</update>
+	
+	
+	<update id="updateJobStatusToClosed">
+	    UPDATE TBL_JOB_POSTING
+	       SET STATUS = '마감',
+	           UPDATED_AT = SYSDATE
+	     WHERE STATUS NOT IN ('삭제됨', '마감')
+	       AND (CLOSED_AT IS NULL OR CLOSED_AT > SYSDATE)
+	       AND DEADLINE_AT IS NOT NULL
+	       AND DEADLINE_AT &lt;= SYSDATE
+	</update>
+	
+	
+	<update id="updateJobStatusToOpen">
+	    UPDATE TBL_JOB_POSTING
+	       SET STATUS = '게시중',
+	           UPDATED_AT = SYSDATE
+	     WHERE STATUS NOT IN ('삭제됨', '마감', '게시중')
+	       AND OPENED_AT IS NOT NULL
+	       AND OPENED_AT &lt;= SYSDATE
+	       AND (CLOSED_AT IS NULL OR CLOSED_AT > SYSDATE)
+	       AND (DEADLINE_AT IS NULL OR DEADLINE_AT > SYSDATE)
+	</update>
+	
+	
+	<update id="updateJobStatusToWaiting">
+	    UPDATE TBL_JOB_POSTING
+	       SET STATUS = '대기',
+	           UPDATED_AT = SYSDATE
+	     WHERE STATUS NOT IN ('삭제됨', '마감', '대기')
+	       AND OPENED_AT IS NOT NULL
+	       AND OPENED_AT > SYSDATE
+	</update>
+	
+	
+	
+	
+</mapper>

@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/layout_admin :: layout(~{::title},~{::link},~{::style},~{::script},~{::section})}">
+
+<head>
+    <title th:fragment="title">신고 관리</title>
+    <link th:fragment="link"
+          href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
+          rel="stylesheet">
+
+    <style th:fragment="style">
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans KR', sans-serif; background: #f0f2f5; color: #1f2937; }
+        .dash { padding: 24px; width: 100%; box-sizing: border-box; }
+
+        .top-area { background: white; border-radius: 10px 10px 0 0; border: 1px solid #e5e7eb; border-bottom: none; padding: 20px 24px 0 24px; }
+        .page-title { font-size: 17px; font-weight: 700; margin-bottom: 16px; color: #111827; }
+
+        .summary-cards { display: flex; gap: 10px; margin-bottom: 16px; }
+        .summary-card { flex: 1; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+        .summary-card .card-icon { font-size: 20px; }
+        .summary-card .card-info { display: flex; flex-direction: column; gap: 1px; }
+        .summary-card .card-label { font-size: 11px; color: #9ca3af; font-weight: 500; }
+        .summary-card .card-value { font-size: 22px; font-weight: 700; color: #111827; }
+        .summary-card.job .card-value { color: #1e40af; }
+        .summary-card.post .card-value { color: #3730a3; }
+        .summary-card.comment .card-value { color: #6b21a8; }
+
+        .filters { display: flex; gap: 8px; padding: 12px 0; flex-wrap: wrap; border-top: 1px solid #f3f4f6; }
+        .search-input { flex: 1; min-width: 180px; padding: 8px 14px 8px 34px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 13px; font-family: inherit; background: #f9fafb url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 11px center; }
+        .search-input:focus { outline: none; border-color: #d1d5db; background-color: white; }
+        .filter-select { padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 13px; font-family: inherit; background: white; cursor: pointer; min-width: 110px; color: #374151; }
+        .filter-select:focus { outline: none; }
+
+        .table-container { background: white; border: 1px solid #e5e7eb; border-radius: 0 0 10px 10px; }
+        .report-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .report-table thead tr { border-bottom: 2px solid #e5e7eb; }
+        .report-table th { padding: 10px 14px; text-align: left; font-weight: 600; color: #6b7280; font-size: 11px; white-space: nowrap; letter-spacing: 0.05em; text-transform: uppercase; background: #f9fafb; }
+
+        .report-table tr.data-row { cursor: pointer; transition: background 0.1s; border-bottom: 1px solid #f3f4f6; }
+        .report-table tr.data-row:hover { background: #f9fafb; }
+        .report-table tr.data-row.row-open { background: #eff6ff; border-bottom: none; }
+        .report-table td { padding: 11px 14px; font-size: 13px; color: #374151; vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .report-table tr.detail-row td { padding: 0; background: #f8faff; border-bottom: 2px solid #bfdbfe; }
+        .detail-inner { padding: 20px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 0 40px; }
+        .detail-left { border-right: 1px solid #e0eaff; padding-right: 32px; }
+        .detail-right { padding-left: 8px; }
+        .detail-section-label { font-size: 10px; font-weight: 700; color: #93c5fd; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; }
+        .detail-meta-list { display: flex; flex-direction: column; gap: 8px; }
+        .detail-meta-row { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; }
+        .detail-meta-key { color: #9ca3af; font-weight: 500; min-width: 80px; flex-shrink: 0; padding-top: 1px; }
+        .detail-meta-val { color: #1f2937; }
+
+        .detail-content-text { background: white; border: 1px solid #dbeafe; border-radius: 6px; padding: 14px 16px; font-size: 13px; color: #374151; line-height: 1.85; white-space: pre-wrap; word-break: break-all; min-height: 80px; }
+        .detail-content-text.empty { color: #d1d5db; font-style: italic; }
+
+        .detail-row-relative { position: relative; }
+        .detail-close-btn { position: absolute; right: 20px; top: 16px; width: 26px; height: 26px; border: 1px solid #dbeafe; border-radius: 50%; background: white; color: #93c5fd; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: inherit; transition: all 0.12s; }
+        .detail-close-btn:hover { background: #eff6ff; color: #3b82f6; border-color: #93c5fd; }
+
+        .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+        .badge.type-job     { background: #dbeafe; color: #1e40af; }
+        .badge.type-post    { background: #e0e7ff; color: #3730a3; }
+        .badge.type-comment { background: #f3e8ff; color: #6b21a8; }
+        .badge.status-pending  { background: #fef3c7; color: #92400e; }
+        .badge.status-resolved { background: #d1fae5; color: #065f46; }
+        .badge.status-rejected { background: #fee2e2; color: #991b1b; }
+
+        .title-cell { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; color: #111827; vertical-align: middle; }
+        .preview-cell { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #9ca3af; font-size: 12px; }
+        .expand-arrow { display: inline-block; font-size: 10px; color: #9ca3af; margin-left: 6px; transition: transform 0.2s; }
+        tr.data-row.row-open .expand-arrow { transform: rotate(180deg); color: #3b82f6; }
+
+        .table-footer { padding: 8px 14px; font-size: 12px; color: #9ca3af; border-top: 1px solid #f3f4f6; display: flex; align-items: center; justify-content: space-between; background: #fafafa; border-radius: 0 0 10px 10px; }
+        .pagination { display: flex; align-items: center; gap: 3px; }
+        .pagination a { display: inline-block; width: 26px; height: 26px; border: 1px solid #e5e7eb; border-radius: 4px; background: white; font-size: 12px; color: #374151; cursor: pointer; display: flex; align-items: center; justify-content: center; text-decoration: none; }
+        .pagination a:hover { background: #f9fafb; }
+        .pagination a.active { background: #3b82f6; color: white; border-color: #3b82f6; font-weight: 700; }
+        .pagination a.disabled { color: #d1d5db; background: #f9fafb; pointer-events: none; }
+    </style>
+
+    <script th:fragment="script">
+    document.addEventListener('DOMContentLoaded', function () {
+
+        let openId = null;
+
+        /* ── 아코디언 토글 ── */
+        document.querySelectorAll('tr.data-row').forEach(tr => {
+            tr.addEventListener('click', function () {
+                const id = this.dataset.id;
+                if (openId === id) {
+                    closeDetail(id);
+                } else {
+                    if (openId !== null) closeDetail(openId);
+                    openId = id;
+                    this.classList.add('row-open');
+                    const detailTr = document.querySelector(`tr[data-detail-for="${id}"]`);
+                    if (detailTr) detailTr.style.display = '';
+                }
+            });
+        });
+
+        /* ── 닫기 ── */
+        function closeDetail(id) {
+            openId = null;
+            const dataTr   = document.querySelector(`tr.data-row[data-id="${id}"]`);
+            const detailTr = document.querySelector(`tr[data-detail-for="${id}"]`);
+            if (dataTr)   dataTr.classList.remove('row-open');
+            if (detailTr) detailTr.style.display = 'none';
+        }
+
+        /* ── 닫기 버튼 ── */
+        document.querySelectorAll('.detail-close-btn').forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                closeDetail(this.dataset.closeFor);
+            });
+        });
+
+        let pendingReportId = null;
+        let pendingStatus   = null;
+
+        /* ── 처리 버튼 클릭 → 모달 오픈 ── */
+        window.handleReport = function (reportId, status, e) {
+            e.stopPropagation();
+            pendingReportId = reportId;
+            pendingStatus   = status;
+
+            const modal     = document.getElementById('handleModal');
+            const title     = document.getElementById('handleModalTitle');
+            const confirmBtn = document.getElementById('handleConfirmBtn');
+
+            if (status === '승인') {
+                title.textContent        = '✅ 승인 확인';
+                confirmBtn.style.background = '#10b981';
+            } else {
+                title.textContent        = '❌ 반려 확인';
+                confirmBtn.style.background = '#ef4444';
+            }
+
+            document.getElementById('handleReason').value = '';
+            modal.style.display = 'flex';
+        };
+
+        /* ── 모달 닫기 ── */
+        window.closeHandleModal = function () {
+            document.getElementById('handleModal').style.display = 'none';
+            pendingReportId = null;
+            pendingStatus   = null;
+        };
+
+        /* ── 서버사이드 필터 ── */
+        window.applyFilters = function () {
+            const search = document.getElementById('searchInput').value.trim();
+            const type   = document.getElementById('typeFilter').value;
+            const reason = document.getElementById('reasonFilter').value;
+            const status = document.getElementById('statusFilter').value;
+
+            const params = new URLSearchParams();
+            params.set('page', '1');
+            if (search) params.set('search', search);
+            if (type)   params.set('type', type);
+            if (reason) params.set('reason', reason);
+            if (status) params.set('status', status);
+
+            window.location.href = '/finalProject/admin/reports?' + params.toString();
+        };
+
+        document.getElementById('searchInput').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') applyFilters();
+        });
+        
+        
+        /* ── 확인 버튼 → 실제 처리 ── */
+        document.getElementById('handleConfirmBtn').addEventListener('click', function () {
+            const reason = document.getElementById('handleReason').value.trim();
+            if (!reason) { alert('처리 사유를 입력해주세요.'); return; }
+
+            fetch('/finalProject/admin/reports/' + pendingReportId + '/status', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: pendingStatus, reason: reason })
+            })
+            .then(res => {
+                if (res.ok) { closeHandleModal(); location.reload(); }
+                else alert('처리 실패');
+            })
+            .catch(() => alert('서버 오류'));
+        });
+        
+    });
+    </script>
+</head>
+
+<body>
+<section class="dash" th:fragment="section">
+
+    <div class="top-area">
+        <h1 class="page-title">신고 관리</h1>
+
+        <!-- 요약 카드 -->
+        <div class="summary-cards">
+            <div class="summary-card total">
+                <span class="card-icon">📋</span>
+                <div class="card-info">
+                    <span class="card-label">전체 신고</span>
+                    <span class="card-value" th:text="${totalCount}">0</span>
+                </div>
+            </div>
+            <div class="summary-card job">
+                <span class="card-icon">💼</span>
+                <div class="card-info">
+                    <span class="card-label">채용공고</span>
+                    <span class="card-value" th:text="${jobCount}">0</span>
+                </div>
+            </div>
+            <div class="summary-card post">
+                <span class="card-icon">📝</span>
+                <div class="card-info">
+                    <span class="card-label">게시글</span>
+                    <span class="card-value" th:text="${postCount}">0</span>
+                </div>
+            </div>
+            <div class="summary-card comment">
+                <span class="card-icon">💬</span>
+                <div class="card-info">
+                    <span class="card-label">댓글</span>
+                    <span class="card-value" th:text="${commentCount}">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 필터 -->
+        <div class="filters">
+            <input type="text" class="search-input" id="searchInput"
+                   placeholder="신고자 ID 검색..."
+                   th:value="${param.search != null ? param.search[0] : ''}">
+            <select class="filter-select" id="typeFilter" onchange="applyFilters()">
+                <option value="" th:selected="${param.type == null or param.type == ''}">전체 유형</option>
+                <option value="1" th:selected="${param.type != null and param.type[0] == '1'}">채용공고</option>
+                <option value="2" th:selected="${param.type != null and param.type[0] == '2'}">게시글</option>
+                <option value="3" th:selected="${param.type != null and param.type[0] == '3'}">댓글</option>
+            </select>
+            <select class="filter-select" id="reasonFilter" onchange="applyFilters()">
+                <option value="" th:selected="${param.reason == null or param.reason == ''}">전체 사유</option>
+                <option th:selected="${param.reason != null and param.reason[0] == '스팸 / 광고성 내용'}">스팸 / 광고성 내용</option>
+                <option th:selected="${param.reason != null and param.reason[0] == '음란물 / 선정적 내용'}">음란물 / 선정적 내용</option>
+                <option th:selected="${param.reason != null and param.reason[0] == '욕설 / 혐오 표현'}">욕설 / 혐오 표현</option>
+                <option th:selected="${param.reason != null and param.reason[0] == '개인정보 침해'}">개인정보 침해</option>
+                <option th:selected="${param.reason != null and param.reason[0] == '허위 / 과장 정보'}">허위 / 과장 정보</option>
+                <option th:selected="${param.reason != null and param.reason[0] == '저작권 침해'}">저작권 침해</option>
+                <option th:selected="${param.reason != null and param.reason[0] == '불법 정보'}">불법 정보</option>
+                <option th:selected="${param.reason != null and param.reason[0] == '기타'}">기타</option>
+            </select>
+            <select class="filter-select" id="statusFilter" onchange="applyFilters()">
+                <option value="" th:selected="${param.status == null or param.status == ''}">전체 상태</option>
+                <option value="처리중"  th:selected="${param.status != null and param.status[0] == '처리중'}">처리중</option>
+                <option value="승인" th:selected="${param.status != null and param.status[0] == '승인'}">승인</option>
+                <option value="반려" th:selected="${param.status != null and param.status[0] == '반려'}">반려</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- 테이블 -->
+    <div class="table-container">
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th style="width:44px;">ID</th>
+                    <th style="width:80px;">유형</th>
+                    <th>신고 대상</th>
+                    <th style="width:140px;">신고 사유</th>
+                    <th>내용 미리보기</th>
+                    <th style="width:110px;">신고자 ID</th>
+                    <th style="width:90px;">처리 상태</th>
+                    <th style="width:120px;">신고 일시</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="report : ${reports}"
+                    class="data-row"
+                    th:data-id="${report.reportId}">
+                    <td style="color:#9ca3af;" th:text="${report.reportId}"></td>
+                    <td>
+                        <span class="badge"
+                              th:classappend="${report.targetType == 1} ? 'type-job' : (${report.targetType == 2} ? 'type-post' : 'type-comment')"
+                              th:text="${report.targetType == 1} ? '채용공고' : (${report.targetType == 2} ? '게시글' : '댓글')">
+                        </span>
+                    </td>
+                    <td>
+					    <span class="title-cell" 
+					          th:text="${report.reportedMemberId} ?: '-'"></span>
+					    <span class="expand-arrow">▼</span>
+					</td>
+                    <td th:text="${report.reasonName} ?: '-'"></td>
+                    <td>
+                        <span class="preview-cell"
+                              th:text="${report.reportContent} ?: ''"
+                              th:style="${report.reportContent == null or report.reportContent == ''} ? 'color:#e5e7eb;' : ''">
+                        </span>
+                    </td>
+                    <td style="font-size:12px; color:#6b7280;" th:text="${report.memberId}"></td>
+                    <td>
+                        <span class="badge"
+                             th:classappend="${report.status == '처리중'} ? 'status-pending' : (${report.status == '승인'} ? 'status-resolved' : 'status-rejected')"
+								th:text="${report.status}">
+                        </span>
+                    </td>
+                    <td style="color:#9ca3af; font-size:12px;"
+                        th:text="${report.createdAt != null} ? ${#strings.substring(report.createdAt.toString(), 0, 10)} : '-'">
+                    </td>
+                </tr>
+
+                <!-- 아코디언 상세 행 -->
+                <tr th:each="report : ${reports}"
+                    class="detail-row"
+                    th:data-detail-for="${report.reportId}"
+                    style="display:none;">
+                    <td colspan="8" class="detail-row-relative">
+                        <div class="detail-inner">
+                            <div class="detail-left">
+                            	<div class="detail-meta-row">
+								    <span class="detail-meta-key">누적 신고</span>
+								    <span class="detail-meta-val" style="color:#dc2626; font-weight:600;" 
+								          th:text="${report.reportCount} + '회'"></span>
+								</div>                         
+                                <div class="detail-section-label">신고 정보</div>
+                                <div class="detail-meta-list">
+                                    <div class="detail-meta-row">
+									    <span class="detail-meta-key">신고 대상</span>
+									    <span class="detail-meta-val" style="font-weight:600;" 
+									          th:text="${report.reportedMemberId} ?: '-'"></span>
+									</div>
+									<div class="detail-meta-row">
+									    <span class="detail-meta-key">신고 콘텐츠</span>
+									    <span class="detail-meta-val" 
+									          th:text="${report.targetTitle} ?: '-'"></span>
+									</div>
+                                    
+                                    
+                                    
+                                    
+                                    <div class="detail-meta-row">
+                                        <span class="detail-meta-key">대상 유형</span>
+                                        <span class="detail-meta-val">
+                                            <span class="badge"
+                                                  th:classappend="${report.targetType == 1} ? 'type-job' : (${report.targetType == 2} ? 'type-post' : 'type-comment')"
+                                                  th:text="${report.targetType == 1} ? '채용공고' : (${report.targetType == 2} ? '게시글' : '댓글')">
+                                            </span>
+                                        </span>
+                                    </div>
+                                    <div class="detail-meta-row">
+                                        <span class="detail-meta-key">신고 사유</span>
+                                        <span class="detail-meta-val" style="color:#dc2626; font-weight:600;" th:text="${report.reasonName} ?: '-'"></span>
+                                    </div>
+                                    <div class="detail-meta-row">
+                                        <span class="detail-meta-key">신고자 ID</span>
+                                        <span class="detail-meta-val" th:text="${report.memberId}"></span>
+                                    </div>
+                                    <div class="detail-meta-row">
+                                        <span class="detail-meta-key">신고 일시</span>
+                                        <span class="detail-meta-val" style="color:#9ca3af;"
+                                              th:text="${report.createdAt != null} ? ${#strings.substring(report.createdAt.toString(), 0, 10)} : '-'">
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="detail-right">
+                                <div class="detail-section-label">신고 내용 전문</div>
+                                <div class="detail-content-text"
+                                     th:classappend="${report.reportContent == null or report.reportContent == ''} ? 'empty'"
+                                     th:text="${report.reportContent != null and report.reportContent != ''} ? ${report.reportContent} : '신고자가 작성한 내용이 없습니다.'">
+                                </div>
+
+                                <!-- 처리 버튼 (PENDING일 때만 표시) -->
+                                <div th:if="${report.status == '처리중'}"
+                                     style="margin-top: 16px; display: flex; gap: 8px;">
+                                    <button th:onclick="'handleReport(' + ${report.reportId} + ', \'승인\', event)'"
+                                            style="padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">
+                                        ✅ 승인
+                                    </button>
+                                    <button th:onclick="'handleReport(' + ${report.reportId} + ', \'반려\', event)'"
+                                            style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">
+                                        ❌ 반려
+                                    </button>
+                                </div>
+                                <!-- 이미 처리된 경우 -->
+                                <!-- 변경 -->
+								<div th:if="${report.status != '처리중'}" style="margin-top: 16px; font-size: 13px;">
+								    <div style="color: #9ca3af; margin-bottom: 8px;">이미 처리된 신고입니다.</div>
+								    <div class="detail-meta-row">
+								        <span class="detail-meta-key">처리 사유</span>
+								        <span class="detail-meta-val" th:text="${report.processReason} ?: '-'"></span>
+								    </div>
+								    <div class="detail-meta-row" style="margin-top: 6px;">
+								        <span class="detail-meta-key">처리 일시</span>
+								        <span class="detail-meta-val" style="color:#9ca3af;"
+								              th:text="${report.processAt != null} ? ${#strings.substring(report.processAt.toString(), 0, 10)} : '-'">
+								        </span>
+								    </div>
+								</div>	
+                            </div>
+                        </div>
+                        <button class="detail-close-btn" th:data-close-for="${report.reportId}">✕</button>
+                    </td>
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(reports)}">
+                    <td colspan="8" style="text-align:center; padding:40px; color:#9ca3af;">
+                        신고 내역이 없습니다.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- 페이지바 -->
+        <div class="table-footer">
+            <span>총 <span th:text="${totalCount}">0</span>건</span>
+            <div class="pagination">
+                <a th:href="@{/admin/reports(page=1,search=${param.search},type=${param.type},reason=${param.reason},status=${param.status})}"
+                   th:classappend="${currentPage == 1} ? 'disabled'">«</a>
+                <a th:href="@{/admin/reports(page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search},type=${param.type},reason=${param.reason},status=${param.status})}"
+                   th:classappend="${currentPage == 1} ? 'disabled'">‹</a>
+                <span th:each="i : ${#numbers.sequence(1, totalPages)}">
+                    <a th:href="@{/admin/reports(page=${i},search=${param.search},type=${param.type},reason=${param.reason},status=${param.status})}"
+                       th:text="${i}"
+                       th:classappend="${i == currentPage} ? 'active'"></a>
+                </span>
+                <a th:href="@{/admin/reports(page=${currentPage < totalPages ? currentPage+1 : totalPages},search=${param.search},type=${param.type},reason=${param.reason},status=${param.status})}"
+                   th:classappend="${currentPage == totalPages} ? 'disabled'">›</a>
+                <a th:href="@{/admin/reports(page=${totalPages},search=${param.search},type=${param.type},reason=${param.reason},status=${param.status})}"
+                   th:classappend="${currentPage == totalPages} ? 'disabled'">»</a>
+            </div>
+        </div>
+    </div>
+	
+	<!-- 처리 확인 모달 -->
+	<div id="handleModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+	    <div style="background:white; border-radius:12px; padding:24px; width:400px;">
+	        <h3 id="handleModalTitle" style="font-size:16px; font-weight:600; margin-bottom:16px;"></h3>
+	        <div style="margin-bottom:16px;">
+	            <label style="font-size:13px; color:#374151; font-weight:500;">처리 사유</label>
+	            <textarea id="handleReason" placeholder="처리 사유를 입력하세요..."
+	                style="width:100%; margin-top:6px; padding:10px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; font-family:inherit; min-height:80px; resize:vertical;">
+	            </textarea>
+	        </div>
+	        <div style="display:flex; justify-content:flex-end; gap:8px;">
+	            <button onclick="closeHandleModal()"
+	                style="padding:8px 16px; background:#f3f4f6; border:none; border-radius:6px; font-size:13px; cursor:pointer;">
+	                취소
+	            </button>
+	            <button id="handleConfirmBtn"
+	                style="padding:8px 16px; color:white; border:none; border-radius:6px; font-size:13px; cursor:pointer;">
+	                확인
+	            </button>
+	        </div>
+	    </div>
+	</div>
+
+</section>
+</body>
+</html>

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring.app.jobseeker.model.OfferDAO">
+
+    <!-- 구직자가 받은 제안 전체 목록 조회 -->
+    <select id="selectReceivedOffers"
+            resultType="com.spring.app.jobseeker.domain.OfferReceivedDTO">
+      SELECT
+          r.fk_offer_submit_id    AS offerSubmitId,
+          r.fk_memberid           AS memberId,
+          TO_CHAR(r.viewed_at, 'YYYY.MM.DD HH24:MI')   AS viewedAt,
+          r.response_status       AS responseStatus,
+          TO_CHAR(r.responded_at, 'YYYY.MM.DD HH24:MI') AS respondedAt,
+
+          s.title                 AS title,
+          s.message               AS message,
+          TO_CHAR(s.expire_at, 'YYYY.MM.DD')   AS expireAt,
+          TO_CHAR(s.send_at, 'YYYY.MM.DD HH24:MI')     AS sendAt,
+
+          s.fk_offer_letter_id    AS offerLetterId,
+
+          jp.job_id               AS jobId,
+          jp.title                AS postTitle,
+          jp.work_type            AS workType,
+          jp.career_type          AS careerType,
+          jp.salary               AS salary,
+
+          c.fk_memberid           AS companyMemberId,
+          c.company_name          AS companyName,
+          c.ceo_name              AS ceoName,
+          c.industry_code         AS industryCode,
+          c.addr1                 AS addr1,
+          c.addr2                 AS addr2,
+
+          ci.company_type         AS companyType,
+          ci.homepage_url         AS homepageUrl,
+          TO_CHAR(ci.open_date, 'YYYY.MM.DD') AS openDate,
+
+          rg.region_name          AS regionName,
+
+          (SELECT I.file_url
+           FROM tbl_image_file I
+           WHERE I.target_type = 'company'
+             AND I.filecategory = 'logo'
+             AND I.target_id = ci.company_intro_id
+             AND ROWNUM = 1) AS companyLogo
+
+      FROM tbl_offer_response r
+
+      JOIN tbl_offer_submit s
+        ON s.offer_submit_id = r.fk_offer_submit_id
+
+      JOIN tbl_job_posting jp
+        ON jp.job_id = s.fk_job_id
+
+      JOIN tbl_company c
+        ON c.fk_memberid = jp.fk_memberid
+
+      LEFT JOIN tbl_company_intro ci
+        ON ci.fk_memberid = c.fk_memberid
+
+      LEFT JOIN tbl_region rg
+        ON rg.region_code = jp.fk_region_code
+
+      WHERE r.fk_memberid = #{memberId}
+
+      ORDER BY s.send_at DESC
+    </select>
+
+
+    <!-- 상태별 건수 조회 -->
+    <select id="selectOfferCounts"
+            resultType="map">
+      SELECT
+          COUNT(*)                                                              AS "totalCount",
+          NVL(SUM(CASE WHEN r.response_status = 0 THEN 1 ELSE 0 END), 0)      AS "pendingCount",
+          NVL(SUM(CASE WHEN r.response_status = 1 THEN 1 ELSE 0 END), 0)      AS "acceptedCount",
+          NVL(SUM(CASE WHEN r.response_status = 2 THEN 1 ELSE 0 END), 0)      AS "rejectedCount"
+      FROM tbl_offer_response r
+      WHERE r.fk_memberid = #{memberId}
+    </select>
+
+
+    <!-- 제안 열람 처리 (최초 열람 시에만 업데이트) -->
+    <update id="updateViewedAt">
+      UPDATE tbl_offer_response
+         SET viewed_at = SYSDATE
+       WHERE fk_offer_submit_id = #{offerSubmitId}
+         AND fk_memberid = #{memberId}
+         AND viewed_at IS NULL
+    </update>
+
+
+    <!-- 제안 수락 처리 -->
+    <update id="updateAccept">
+      UPDATE tbl_offer_response
+         SET response_status = 1,
+             responded_at = SYSDATE
+       WHERE fk_offer_submit_id = #{offerSubmitId}
+         AND fk_memberid = #{memberId}
+         AND response_status = 0
+    </update>
+
+
+    <!-- 제안 거절 처리 -->
+    <update id="updateReject">
+      UPDATE tbl_offer_response
+         SET response_status = 2,
+             responded_at = SYSDATE
+       WHERE fk_offer_submit_id = #{offerSubmitId}
+         AND fk_memberid = #{memberId}
+         AND response_status = 0
+    </update>
+
+</mapper>

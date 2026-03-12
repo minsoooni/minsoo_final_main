@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html th:replace="~{layout/layout_main :: layout(~{::title}, ~{::link}, ~{::style}, ~{::script}, ~{::section})}"
+      lang="ko"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8">
+  <title>계정 찾기 | 잡파인더</title>
+
+  <link rel="stylesheet" th:href="@{/css/index.css}">
+  <link rel="stylesheet" th:href="@{/css/member/login.css}">
+  <style>
+    .jp-find-subtabs {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+      margin-bottom: 20px;
+    }
+
+    .jp-find-subtab {
+      flex: 1;
+      border: 1px solid #d9d9d9;
+      background: #fff;
+      border-radius: 12px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: all .2s ease;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .jp-find-subtab.active {
+      border-color: #0d6efd;
+      background: #f3f8ff;
+      color: #0d6efd;
+    }
+
+    .jp-find-result-box {
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      font-size: 14px;
+    }
+
+    .jp-find-help-links {
+      margin-top: 14px;
+      font-size: 13px;
+      color: #6c757d;
+    }
+
+    .jp-find-help-links a {
+      text-decoration: none;
+    }
+
+    .jp-radio-group {
+      display: flex;
+      gap: 16px;
+      margin-top: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .jp-radio-group label {
+      font-size: 14px;
+      cursor: pointer;
+    }
+  </style>
+
+  <script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+
+      const ctx = /*[[@{/}]]*/ "";
+      const base = (ctx || "").replace(/\/$/, "");
+
+      const memberTabs = document.querySelectorAll('.jp-login-tab');
+      const findTabs = document.querySelectorAll('.jp-find-subtab');
+
+      const panelCompanyId = document.getElementById('panel-company-id');
+      const panelCompanyPw = document.getElementById('panel-company-pw');
+      const panelMemberId = document.getElementById('panel-member-id');
+      const panelMemberPw = document.getElementById('panel-member-pw');
+
+      const title = document.getElementById('findPanelTitle');
+      const desc = document.getElementById('findPanelDesc');
+
+      let currentMemberType = 'company';
+      let currentFindType = 'id';
+
+      function hideAllPanels() {
+        panelCompanyId.classList.add('d-none');
+        panelCompanyPw.classList.add('d-none');
+        panelMemberId.classList.add('d-none');
+        panelMemberPw.classList.add('d-none');
+      }
+
+      function updateTitle() {
+        if (currentMemberType === 'company' && currentFindType === 'id') {
+          title.textContent = '기업 회원 아이디 찾기';
+          desc.textContent = '사업자 정보와 담당자 정보를 확인하여 기업 아이디를 찾습니다.';
+        } else if (currentMemberType === 'company' && currentFindType === 'password') {
+          title.textContent = '기업 회원 비밀번호 찾기';
+          desc.textContent = '기업 아이디, 사업자등록번호, 휴대폰번호 확인 후 SMS 인증으로 비밀번호를 재설정합니다.';
+        } else if (currentMemberType === 'member' && currentFindType === 'id') {
+          title.textContent = '개인 회원 아이디 찾기';
+          desc.textContent = '이름과 이메일 정보를 확인하여 개인 아이디를 찾습니다.';
+        } else {
+          title.textContent = '개인 회원 비밀번호 찾기';
+          desc.textContent = '개인 아이디, 이름, 휴대폰번호 확인 후 SMS 인증으로 비밀번호를 재설정합니다.';
+        }
+      }
+
+      function renderPanel() {
+        hideAllPanels();
+
+        memberTabs.forEach(t => t.classList.remove('active'));
+        document.querySelector(`.jp-login-tab[data-target="${currentMemberType}"]`)?.classList.add('active');
+
+        findTabs.forEach(t => t.classList.remove('active'));
+        document.querySelector(`.jp-find-subtab[data-find="${currentFindType}"]`)?.classList.add('active');
+
+        if (currentMemberType === 'company' && currentFindType === 'id') {
+          panelCompanyId.classList.remove('d-none');
+        } else if (currentMemberType === 'company' && currentFindType === 'password') {
+          panelCompanyPw.classList.remove('d-none');
+        } else if (currentMemberType === 'member' && currentFindType === 'id') {
+          panelMemberId.classList.remove('d-none');
+        } else {
+          panelMemberPw.classList.remove('d-none');
+        }
+
+        updateTitle();
+      }
+
+      const serverMemberType = /*[[${memberType}]]*/ null;
+      const serverFindType = /*[[${findType}]]*/ null;
+
+      const params = new URLSearchParams(window.location.search);
+      const urlMemberType = params.get('memberType');
+      const urlFindType = params.get('findType');
+
+      const memberType = serverMemberType || urlMemberType;
+      const findType = serverFindType || urlFindType;
+
+      if (memberType === 'member') currentMemberType = 'member';
+      else currentMemberType = 'company';
+
+      if (findType === 'password') currentFindType = 'password';
+      else currentFindType = 'id';
+
+      renderPanel();
+
+      memberTabs.forEach(btn => {
+        btn.addEventListener('click', function () {
+          currentMemberType = btn.dataset.target;
+          renderPanel();
+        });
+      });
+
+      findTabs.forEach(btn => {
+        btn.addEventListener('click', function () {
+          currentFindType = btn.dataset.find;
+          renderPanel();
+        });
+      });
+
+      function startTimer(timerElement, timerRefObj, sec) {
+        let remainSec = sec;
+
+        if (timerRefObj.timerId) {
+          clearInterval(timerRefObj.timerId);
+        }
+
+        timerRefObj.timerId = setInterval(() => {
+          const m = String(Math.floor(remainSec / 60)).padStart(2, "0");
+          const s = String(remainSec % 60).padStart(2, "0");
+          timerElement.textContent = `남은 시간 ${m}:${s}`;
+
+          remainSec--;
+
+          if (remainSec < 0) {
+            clearInterval(timerRefObj.timerId);
+            timerElement.textContent = "인증코드가 만료되었습니다. 다시 발송해주세요.";
+          }
+        }, 1000);
+      }
+
+      const memberTimerRef = { timerId: null };
+      const companyTimerRef = { timerId: null };
+
+      // ========================= 개인회원 비밀번호 찾기 =========================
+      const btnSendCodeMember = document.getElementById("btnSendCodeMember");
+      const btnVerifyMember = document.getElementById("btnVerifyMember");
+      const verifyAreaMember = document.getElementById("verifyAreaMember");
+      const smsMsgMember = document.getElementById("smsMsgMember");
+      const timerMember = document.getElementById("timerMember");
+      const codeMember = document.getElementById("codeMember");
+
+      btnSendCodeMember?.addEventListener("click", async () => {
+        const memberId = document.getElementById("memberIdMember").value.trim();
+        const name = document.getElementById("nameMember").value.trim();
+        const phone = document.getElementById("phoneMember").value.trim();
+
+        if (!memberId) {
+          smsMsgMember.textContent = "개인 아이디를 입력해주세요.";
+          return;
+        }
+
+        if (!name) {
+          smsMsgMember.textContent = "이름을 입력해주세요.";
+          return;
+        }
+
+        if (!phone) {
+          smsMsgMember.textContent = "휴대폰번호를 입력해주세요.";
+          return;
+        }
+
+        smsMsgMember.textContent = "입력 정보 확인 후 인증코드 발송 중...";
+        timerMember.textContent = "";
+        codeMember.value = "";
+
+        try {
+          const res = await fetch(base + "/member/password/send-code", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              memberType: "member",
+              memberId,
+              name,
+              phone
+            })
+          });
+
+          const text = await res.text();
+
+          if (!res.ok) {
+            smsMsgMember.textContent = text;
+            return;
+          }
+
+          smsMsgMember.textContent = "회원 정보가 확인되었습니다. 인증코드를 발송했습니다.";
+          verifyAreaMember.style.display = "block";
+          startTimer(timerMember, memberTimerRef, 5 * 60);
+
+        } catch (e) {
+          smsMsgMember.textContent = "발송 중 오류가 발생했습니다.";
+          console.error(e);
+        }
+      });
+
+      btnVerifyMember?.addEventListener("click", async () => {
+        const memberId = document.getElementById("memberIdMember").value.trim();
+        const code = codeMember.value.trim();
+
+        if (!memberId) {
+          smsMsgMember.textContent = "개인 아이디를 입력해주세요.";
+          return;
+        }
+
+        if (code.length !== 6) {
+          smsMsgMember.textContent = "인증번호 6자리를 입력해주세요.";
+          return;
+        }
+
+        smsMsgMember.textContent = "인증 확인 중...";
+
+        try {
+          const res = await fetch(base + "/member/password/verify-code", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ memberId, code })
+          });
+
+          const text = await res.text();
+
+          if (!res.ok) {
+            smsMsgMember.textContent = text;
+            return;
+          }
+
+          smsMsgMember.textContent = "인증 성공! 비밀번호 재설정 페이지로 이동합니다.";
+          window.location.href = base + "/member/password/reset";
+
+        } catch (e) {
+          smsMsgMember.textContent = "인증 처리 중 오류가 발생했습니다.";
+          console.error(e);
+        }
+      });
+
+      // ========================= 기업회원 비밀번호 찾기 =========================
+      const btnSendCodeCompany = document.getElementById("btnSendCodeCompany");
+      const btnVerifyCompany = document.getElementById("btnVerifyCompany");
+      const verifyAreaCompany = document.getElementById("verifyAreaCompany");
+      const smsMsgCompany = document.getElementById("smsMsgCompany");
+      const timerCompany = document.getElementById("timerCompany");
+      const codeCompany = document.getElementById("codeCompany");
+
+      btnSendCodeCompany?.addEventListener("click", async () => {
+        const memberId = document.getElementById("memberIdCompany").value.trim();
+        const bizNo = document.getElementById("bizNoCompany").value.trim();
+        const phone = document.getElementById("phoneCompany").value.trim();
+
+        if (!memberId) {
+          smsMsgCompany.textContent = "기업 아이디를 입력해주세요.";
+          return;
+        }
+
+        if (!bizNo) {
+          smsMsgCompany.textContent = "사업자등록번호를 입력해주세요.";
+          return;
+        }
+
+        if (!phone) {
+          smsMsgCompany.textContent = "담당자 휴대폰번호를 입력해주세요.";
+          return;
+        }
+
+        smsMsgCompany.textContent = "입력 정보 확인 후 인증코드 발송 중...";
+        timerCompany.textContent = "";
+        codeCompany.value = "";
+
+        try {
+          const res = await fetch(base + "/member/password/send-code", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              memberType: "company",
+              memberId,
+              bizNo,
+              phone
+            })
+          });
+
+          const text = await res.text();
+
+          if (!res.ok) {
+            smsMsgCompany.textContent = text;
+            return;
+          }
+
+          smsMsgCompany.textContent = "회원 정보가 확인되었습니다. 인증코드를 발송했습니다.";
+          verifyAreaCompany.style.display = "block";
+          startTimer(timerCompany, companyTimerRef, 5 * 60);
+
+        } catch (e) {
+          smsMsgCompany.textContent = "발송 중 오류가 발생했습니다.";
+          console.error(e);
+        }
+      });
+
+      btnVerifyCompany?.addEventListener("click", async () => {
+        const memberId = document.getElementById("memberIdCompany").value.trim();
+        const code = codeCompany.value.trim();
+
+        if (!memberId) {
+          smsMsgCompany.textContent = "기업 아이디를 입력해주세요.";
+          return;
+        }
+
+        if (code.length !== 6) {
+          smsMsgCompany.textContent = "인증번호 6자리를 입력해주세요.";
+          return;
+        }
+
+        smsMsgCompany.textContent = "인증 확인 중...";
+
+        try {
+          const res = await fetch(base + "/member/password/verify-code", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ memberId, code })
+          });
+
+          const text = await res.text();
+
+          if (!res.ok) {
+            smsMsgCompany.textContent = text;
+            return;
+          }
+
+          smsMsgCompany.textContent = "인증 성공! 비밀번호 재설정 페이지로 이동합니다.";
+          window.location.href = base + "/member/password/reset";
+
+        } catch (e) {
+          smsMsgCompany.textContent = "인증 처리 중 오류가 발생했습니다.";
+          console.error(e);
+        }
+      });
+    });
+  </script>
+</head>
+
+<body>
+<section class="jp-login-page">
+
+  <section class="jp-login-hero">
+    <div class="container-fluid jp-container">
+      <h1 class="jp-login-hero__title">계정 찾기</h1>
+      <div class="jp-login-hero__sub">기업 회원 / 개인 회원 계정의 아이디 또는 비밀번호를 찾을 수 있습니다.</div>
+    </div>
+  </section>
+
+  <section class="jp-section" style="background:#fff;">
+    <div class="container-fluid jp-container">
+      <div class="row">
+
+        <!-- 좌측 회원 유형 선택 -->
+        <div class="col-md-6 mb-3">
+          <div class="jp-login-card__head">
+            <div class="jp-login-card__title">회원 유형 선택</div>
+            <div class="jp-login-card__desc">찾을 계정 유형을 선택하세요.</div>
+          </div>
+
+          <div class="jp-login-tabs mt-3">
+            <button type="button" class="jp-login-tab active" data-target="company">
+              <div class="jp-login-tab__big">기업 회원</div>
+              <div class="jp-login-tab__small">기업 아이디 / 비밀번호 찾기</div>
+            </button>
+
+            <button type="button" class="jp-login-tab" data-target="member">
+              <div class="jp-login-tab__big">개인 회원</div>
+              <div class="jp-login-tab__small">개인 아이디 / 비밀번호 찾기</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- 우측 찾기 영역 -->
+        <div class="col-md-6 mb-3">
+          <div class="jp-card jp-login-card h-100">
+
+            <div class="jp-login-card__head">
+              <div class="jp-login-card__title" id="findPanelTitle">기업 회원 아이디 찾기</div>
+              <div class="jp-login-card__desc" id="findPanelDesc">사업자 정보와 담당자 정보를 확인하여 기업 아이디를 찾습니다.</div>
+
+              <div class="jp-find-subtabs">
+                <button type="button" class="jp-find-subtab active" data-find="id">아이디 찾기</button>
+                <button type="button" class="jp-find-subtab" data-find="password">비밀번호 찾기</button>
+              </div>
+            </div>
+
+            <!-- 기업 아이디 찾기 -->
+            <div id="panel-company-id" class="jp-login-panel">
+              <form th:action="@{/member/find/companyId}" method="post" novalidate>
+                <input type="hidden" name="memberType" value="company">
+                <input type="hidden" name="findType" value="id">
+
+                <div class="form-group">
+                  <label class="jp-label">사업자등록번호</label>
+                  <input type="text" name="bizNo" class="form-control jp-input" placeholder="사업자등록번호 입력">
+                </div>
+
+                <div class="form-group">
+                  <label class="jp-label">담당자명</label>
+                  <input type="text" name="name" class="form-control jp-input mt-2" placeholder="담당자명 입력">
+                </div>
+
+                <div class="form-group">
+                  <label class="jp-label">담당자 이메일</label>
+                  <input type="email" name="email" class="form-control jp-input mt-2" placeholder="담당자 이메일 입력">
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block jp-login-btn mt-3">기업 아이디 찾기</button>
+
+                <div class="jp-find-help-links">
+                  로그인 페이지로 돌아가기
+                  <a class="jp-link" th:href="@{/member/login(tab='company')}">기업 로그인</a>
+                </div>
+
+                <div class="jp-find-result-box" th:if="${resultType == 'companyId' and foundMemberId != null}">
+                  조회 결과:
+                  <span th:text="${foundMemberId}">company123</span>
+                </div>
+
+                <div class="text-danger mt-2" th:if="${resultType == 'companyId' and notFound == true}">
+                  일치하는 계정이 없습니다.
+                </div>
+              </form>
+            </div>
+
+            <!-- 기업 비밀번호 찾기 -->
+            <div id="panel-company-pw" class="jp-login-panel d-none">
+              <form onsubmit="return false;" novalidate>
+                <input type="hidden" name="memberType" value="company">
+                <input type="hidden" name="findType" value="password">
+
+                <div class="form-group">
+                  <label class="jp-label">기업 아이디</label>
+                  <input type="text" id="memberIdCompany" name="memberId" class="form-control jp-input" placeholder="기업 아이디 입력">
+                </div>
+
+                <div class="form-group">
+                  <label class="jp-label">사업자등록번호</label>
+                  <input type="text" id="bizNoCompany" name="bizNo" class="form-control jp-input mt-2" placeholder="사업자등록번호 입력">
+                </div>
+
+                <div class="form-group">
+                  <label class="jp-label">담당자 휴대폰번호</label>
+                  <input type="text" id="phoneCompany" name="phone" class="form-control jp-input mt-2" placeholder="010-1234-5678" maxlength="13">
+                </div>
+
+                <div class="mt-3">
+                  <button type="button" id="btnSendCodeCompany" class="btn btn-outline-primary btn-block">
+                    정보 확인 후 인증코드 발송
+                  </button>
+
+                  <div id="smsMsgCompany" class="mt-2 text-muted" style="font-size:13px;"></div>
+
+                  <div id="verifyAreaCompany" class="mt-3" style="display:none;">
+                    <div class="form-group">
+                      <label style="font-weight:600;">인증번호</label>
+                      <input type="text"
+                             id="codeCompany"
+                             class="form-control"
+                             placeholder="6자리 인증번호 입력"
+                             maxlength="6">
+                      <div class="mt-2 text-danger" id="timerCompany" style="font-size:13px;"></div>
+                    </div>
+
+                    <button type="button" id="btnVerifyCompany" class="btn btn-primary btn-block jp-login-btn">
+                      인증 확인
+                    </button>
+                  </div>
+                </div>
+
+                <div class="jp-find-help-links">
+                  로그인 페이지로 돌아가기
+                  <a class="jp-link" th:href="@{/member/login(tab='company')}">기업 로그인</a>
+                </div>
+              </form>
+            </div>
+
+            <!-- 개인 아이디 찾기 -->
+            <div id="panel-member-id" class="jp-login-panel d-none">
+              <form th:action="@{/member/find/memberId}" method="post" novalidate>
+                <input type="hidden" name="memberType" value="member">
+                <input type="hidden" name="findType" value="id">
+
+                <div class="form-group">
+                  <label class="jp-label">이름</label>
+                  <input type="text" name="name" class="form-control jp-input" placeholder="이름 입력">
+                </div>
+
+                <div class="form-group">
+                  <label class="jp-label">이메일</label>
+                  <input type="email" name="email" class="form-control jp-input mt-2" placeholder="이메일 입력">
+                </div>
+
+                <div class="form-group">
+                  <label class="jp-label">휴대폰번호</label>
+                  <input type="text" name="phone" class="form-control jp-input mt-2" placeholder="010-1234-5678" maxlength="13">
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block jp-login-btn mt-3">개인 아이디 찾기</button>
+
+                <div class="jp-find-help-links">
+                  로그인 페이지로 돌아가기
+                  <a class="jp-link" th:href="@{/member/login(tab='member')}">개인 로그인</a>
+                </div>
+
+                <div class="jp-find-result-box" th:if="${resultType == 'memberId' and foundMemberId != null}">
+                  조회 결과:
+                  <span th:text="${foundMemberId}">member123</span>
+                </div>
+
+                <div class="text-danger mt-2" th:if="${resultType == 'memberId' and notFound == true}">
+                  일치하는 계정이 없습니다.
+                </div>
+              </form>
+            </div>
+
+            <!-- 개인 비밀번호 찾기 -->
+            <div id="panel-member-pw" class="jp-login-panel d-none">
+              <form onsubmit="return false;" novalidate>
+                <input type="hidden" name="memberType" value="member">
+                <input type="hidden" name="findType" value="password">
+
+                <div class="form-group">
+                  <label class="jp-label">개인 아이디</label>
+                  <input type="text" id="memberIdMember" name="memberId" class="form-control jp-input" placeholder="개인 아이디 입력">
+                </div>
+
+                <div class="form-group">
+                  <label class="jp-label">이름</label>
+                  <input type="text" id="nameMember" name="name" class="form-control jp-input mt-2" placeholder="이름 입력">
+                </div>
+
+                <div class="form-group">
+                  <label class="jp-label">휴대폰번호</label>
+                  <input type="text" id="phoneMember" name="phone" class="form-control jp-input mt-2" placeholder="010-1234-5678" maxlength="13">
+                </div>
+
+                <div class="mt-3">
+                  <button type="button" id="btnSendCodeMember" class="btn btn-outline-primary btn-block">
+                    정보 확인 후 인증코드 발송
+                  </button>
+
+                  <div id="smsMsgMember" class="mt-2 text-muted" style="font-size:13px;"></div>
+
+                  <div id="verifyAreaMember" class="mt-3" style="display:none;">
+                    <div class="form-group">
+                      <label style="font-weight:600;">인증번호</label>
+                      <input type="text"
+                             id="codeMember"
+                             class="form-control"
+                             placeholder="6자리 인증번호 입력"
+                             maxlength="6">
+                      <div class="mt-2 text-danger" id="timerMember" style="font-size:13px;"></div>
+                    </div>
+
+                    <button type="button" id="btnVerifyMember" class="btn btn-primary btn-block jp-login-btn">
+                      인증 확인
+                    </button>
+                  </div>
+                </div>
+
+                <div class="jp-find-help-links">
+                  로그인 페이지로 돌아가기
+                  <a class="jp-link" th:href="@{/member/login(tab='member')}">개인 로그인</a>
+                </div>
+              </form>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</section>
+</body>
+</html>

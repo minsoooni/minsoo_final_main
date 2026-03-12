@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring.app.member.mapper.MemberMapper">
+
+    <select id="countByMemberId" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+        FROM TBL_MEMBER
+        WHERE MEMBERID = #{memberId}
+    </select>
+
+    <select id="countByEmail" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+        FROM TBL_MEMBER
+        WHERE EMAIL = #{email}
+    </select>
+
+    <insert id="insertMember" parameterType="com.spring.app.member.domain.MemberDTO">
+        INSERT INTO TBL_MEMBER (
+            MEMBERID,
+            EMAIL,
+            PASSWORD,
+            NAME,
+            PHONE,
+            TYPE,
+            STATUS,
+            LAST_LOGIN_AT,
+            DORMANT_AT,
+            CREATED_AT,
+            UPDATED_AT,
+            MUST_CHANGE_PASSWORD_YN,
+            BIRTH_DATE,
+            GENDER
+        ) VALUES (
+            #{memberId},
+            #{email},
+            #{password},
+            #{name},
+            #{phone},
+            #{type},
+            #{status},
+            NULL,
+            NULL,
+            SYSDATE,
+            SYSDATE,
+            #{mustChangePasswordYn},
+            #{birthDate, jdbcType=DATE},
+            #{gender, jdbcType=NUMERIC}
+        )
+    </insert>
+
+
+    <!-- 회원 권한 부여 (회원가입 시) -->
+    <insert id="insertAuthority">
+        INSERT INTO TBL_MEMBER_AUTHORITY (AUTH_NUM, FK_MEMBERID, AUTHORITY)
+        VALUES (SEQ_MEMBER_AUTHORITY_AUTH_NUM.NEXTVAL, #{memberId}, #{authority})
+    </insert>
+
+    
+        <!-- 사업자번호 중복 체크 (TBL_COMPANY) -->
+    <select id="countCompanyByBizNo" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+        FROM TBL_COMPANY
+        WHERE BIZ_NO = #{bizNo}
+    </select>
+
+    <!-- 기업 정보 저장 (TBL_COMPANY) -->
+    <insert id="insertCompany" parameterType="com.spring.app.member.domain.CompanyMemberDTO">
+        INSERT INTO TBL_COMPANY (
+            FK_MEMBERID,
+            COMPANY_NAME,
+            BIZ_NO,
+            INDUSTRY_CODE,
+            CEO_NAME,
+            APPROVED_YN,
+            APPROVAL_AT,
+            REJECT_REASON,
+            INFO_CREATED_AT,
+            INFO_UPDATED_AT,
+            ZIP_CODE,
+            ADDR1,
+            ADDR2,
+            LAT,
+            LNG
+        ) VALUES (
+            #{memberId},
+            #{companyName},
+            #{bizNo},
+            #{industryCode},
+            #{ceoName},
+            0,
+            NULL,
+            NULL,
+            SYSDATE,
+            SYSDATE,
+            #{zipCode},
+            #{addr1},
+            #{addr2},
+            #{lat, jdbcType=NUMERIC},
+            #{lng, jdbcType=NUMERIC}
+        )
+    </insert>
+    
+    <select id="selectByMemberId" parameterType="string" resultType="com.spring.app.member.domain.MemberDTO">
+        SELECT MEMBERID AS memberId
+             , PASSWORD AS password
+             , TYPE     AS type
+             , STATUS   AS status
+        FROM TBL_MEMBER
+        WHERE MEMBERID = #{memberId}
+    </select>
+
+    <!-- 권한 목록 조회 (TBL_MEMBER_AUTHORITY) -->
+    <select id="selectAuthorities" parameterType="string" resultType="string">
+        SELECT AUTHORITY
+        FROM TBL_MEMBER_AUTHORITY
+        WHERE FK_MEMBERID = #{memberId}
+        ORDER BY AUTH_NUM
+    </select>
+
+
+</mapper>

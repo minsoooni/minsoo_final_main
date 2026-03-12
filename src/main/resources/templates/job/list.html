@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      lang="ko"
+      th:replace="~{layout/layout_main :: layout(~{::title}, ~{::th:block[@data-slot='link']}, ~{::th:block[@data-slot='css']}, ~{::th:block[@data-slot='script']}, ~{::div#jobPostList})}">
+
+<head>
+  <title>채용공고 | 구인구직</title>
+
+  <!-- link slot -->
+  <th:block data-slot="link">
+    <!-- 예) <link rel="stylesheet" th:href="@{/css/job/job.css}"> -->
+  </th:block>
+
+  <!-- css slot -->
+  <th:block data-slot="css">
+    <style>
+     
+      .gap-2 { gap: .5rem; }
+      .gap-4 { gap: 1rem; }
+
+      .hover-card { transition: box-shadow .3s; }
+      .hover-card:hover { box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important; }
+
+      .badge-sm { font-size: .75rem; padding: .25rem .5rem; }
+
+      .jp-joblist-wrap{
+        max-width: 1200px;
+        padding-left: 15px;
+        padding-right: 15px;
+      }
+
+   
+      :root{
+        --jp-side-w: 170px;  /* 우측 컬럼 폭 */
+        --jp-side-gap: 30px; /* 메인-우측 간격 */
+      }
+
+      @media (min-width: 992px){
+        .jp-joblist-row{
+          display: flex !important;
+          flex-wrap: nowrap !important;
+          align-items: flex-start;
+        }
+        .jp-main-col{
+          flex: 1 1 auto !important;
+          max-width: none !important;
+          min-width: 0 !important;
+          padding-right: var(--jp-side-gap) !important;
+        }
+        .jp-recent-col{
+          flex: 0 0 var(--jp-side-w) !important;
+          max-width: var(--jp-side-w) !important;
+          width: var(--jp-side-w) !important;
+        }
+      }
+
+      /* 모바일/태블릿에서는 아래로 내려가도록 */
+      @media (max-width: 991.98px){
+        .jp-joblist-row{ display:block !important; }
+        .jp-main-col{ padding-right: 0 !important; }
+        .jp-recent-col{ width:100% !important; max-width:100% !important; }
+      }
+
+      /* ===== 최근본공고 ===== */
+      .jp-recent-col { position: relative; } /* absolute 멈춤 기준 */
+      .jp-recent-card{
+        border: 1px solid #e9ecef;
+        background: #fff;
+      }
+      .jp-recent-card .card-header{
+        background: #fff !important;
+        color: #212529 !important;
+        border-bottom: 1px solid #e9ecef;
+        padding: .65rem .7rem;
+      }
+      .jp-recent-head{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+      }
+      .jp-recent-title{
+        font-size: 13px;
+        font-weight: 800;
+        margin: 0;
+        display:flex;
+        align-items:center;
+        gap:.35rem;
+      }
+      .jp-recent-more{
+        font-size: 12px;
+        color: #6c757d;
+        text-decoration: none;
+      }
+      .jp-recent-more:hover{ text-decoration: underline; }
+
+      .jp-recent-item{
+        padding: .65rem .7rem;
+        border-bottom: 1px solid #f1f3f5;
+        cursor: pointer;
+      }
+      .jp-recent-item:hover{ background: #f8f9fa; }
+      .jp-recent-item:last-child{ border-bottom: 0; }
+      #recentViewedList{
+        max-height: 280px;
+        overflow-y: auto;
+      }
+
+      .jp-recent-company{
+        font-size: 12px;
+        color: #6c757d;
+        font-weight: 600;
+        margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .jp-recent-row{
+        display:flex;
+        align-items:flex-start;
+        justify-content:space-between;
+        gap: 8px;
+      }
+      .jp-recent-jobtitle{
+        font-size: 12.5px;
+        font-weight: 700;
+        color: #212529;
+        line-height: 1.25;
+        margin: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .jp-recent-scrap{
+        border: 0;
+        background: transparent;
+        padding: 0;
+        line-height: 1;
+        cursor: pointer;
+        color: #adb5bd;
+        flex: 0 0 auto;
+      }
+      .jp-recent-scrap:hover{ color: #f0ad4e; }
+      .jp-recent-deadline{
+        margin-top: 6px;
+        font-size: 12px;
+        color: #6c757d;
+        display:flex;
+        justify-content:flex-end;
+      }
+
+      /* ✅ JS 고정용 클래스 */
+      .jp-pin-fixed{ position: fixed !important; z-index: 9999; }
+      .jp-pin-abs{ position: absolute !important; }
+
+      /* ===== 채용정보 배너 ===== */
+      .jp-banner {
+        background: linear-gradient(135deg, #3b9fd8 0%, #29b6f6 55%, #a8e6ff 100%);
+        padding: 48px 0 40px;
+        color: #fff;
+      }
+      .jp-banner__title { font-size: 28px; font-weight: 900; margin-bottom: 6px; }
+      .jp-banner__sub   { font-size: 14px; opacity: .75; }
+
+      /* D-day 배지 */
+      .jp-dday { font-size: 11px; font-weight: 700; border-radius: 5px; padding: 2px 7px; display: inline-block; }
+      .jp-dday-urgent { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+      .jp-dday-normal { background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd; }
+      .jp-dday-closed { background: #f3f4f6; color: #6b7280; border: 1px solid #d1d5db; }
+
+      /* 전체 채용공고 리스트 아이템 여백 통일 */
+      .list-group-item { padding: 20px 24px; margin-bottom: 8px; border-radius: 10px !important; }
+      .list-group-item .font-weight-bold.salary-text { font-size: 0.875rem; }
+    </style>
+  </th:block>
+
+  <!-- script slot -->
+  <th:block data-slot="script">
+    <script th:inline="javascript">
+      // 채용공고 상세 새창 열기
+      // context path 설정 (컨텍스트 루트 대응)
+      var CTX = /*[[@{/}]]*/ '/';
+      if (CTX.endsWith('/')) { CTX = CTX.slice(0, -1); }
+
+      function openDetail(id) {
+        var url = CTX + '/job/detail/' + id;
+        window.open(url, '_blank');
+      }
+
+      // === 마스터 데이터 (Thymeleaf inline) === //
+      const regionListData    = /*[[${regionList}]]*/ [];
+      const categoryListData  = /*[[${categoryList}]]*/ [];
+      const skillGroupData    = /*[[${skillGroupList}]]*/ [];
+
+      // 체크박스 변경 시 form 자동 submit (디바운스 적용)
+      var submitTimer = null;
+      function autoSubmit() {
+        clearTimeout(submitTimer);
+        submitTimer = setTimeout(function() {
+          updateFilterBadges();
+          document.getElementById('pageInput').value = 1;
+          $('#searchForm').submit();
+        }, 300);
+      }
+
+      // 필터 배지 업데이트
+      function updateFilterBadges() {
+        var badges = '';
+        var hasFilter = false;
+
+        // 각 필터 그룹의 체크된 항목을 배지로 표시
+        var filterGroups = [
+          { name: 'regions', label: '지역' },
+          { name: 'regionDetails', label: '상세지역' },
+          { name: 'careers', label: '경력' },
+          { name: 'eduLevels', label: '학력' },
+          { name: 'empTypes', label: '고용형태' },
+          { name: 'roles', label: '직무' },
+          { name: 'companyTypes', label: '기업형태' },
+          { name: 'techStacks', label: '기술스택' }
+        ];
+
+        filterGroups.forEach(function(group) {
+          $('input[name="' + group.name + '"]:checked').each(function() {
+            var val = $(this).val();
+            // 학력은 label 텍스트로 표시
+            var displayText = $(this).next('label').text() || val;
+            badges += '<span class="badge badge-primary mr-1 mb-1 px-2 py-1" style="font-size: 0.8rem;">' +
+              displayText +
+              ' <a href="#" class="text-white ml-1" onclick="removeFilter(\'' + group.name + '\', \'' + val.replace(/'/g, "\\'") + '\'); return false;">&times;</a>' +
+              '</span>';
+            hasFilter = true;
+          });
+        });
+
+        // 최소연봉
+        var salaryVal = $('input[name="salaryMin"]').val();
+        if (salaryVal && Number(salaryVal) > 0) {
+          badges += '<span class="badge badge-primary mr-1 mb-1 px-2 py-1" style="font-size: 0.8rem;">' +
+            '연봉 ' + salaryVal + '만원+' +
+            ' <a href="#" class="text-white ml-1" onclick="removeSalaryFilter(); return false;">&times;</a>' +
+            '</span>';
+          hasFilter = true;
+        }
+
+        if (hasFilter) {
+          $('#filterBadges').html(badges);
+          $('#filterBadgeArea').show();
+        } else {
+          $('#filterBadgeArea').hide();
+        }
+      }
+
+      // 특정 필터 제거
+      function removeFilter(name, value) {
+        $('input[name="' + name + '"][value="' + value + '"]').prop('checked', false);
+        autoSubmit();
+      }
+
+      // 연봉 필터 제거
+      function removeSalaryFilter() {
+        $('input[name="salaryMin"]').val(0);
+        $('#salaryDisplay').text('전체');
+        autoSubmit();
+      }
+
+      // 전체 필터 해제
+      function clearAllFilters() {
+        $('input[type="checkbox"]').prop('checked', false);
+        $('input[name="salaryMin"]').val(0);
+        $('input[name="keyword"]').val('');
+        $('#regionDetailSection').hide();
+        $('#searchForm').submit();
+      }
+
+      $(function () {
+        // ===== 1. 지역 필터 동적 생성 (시/도 = regionLevel 1) =====
+        var level1 = regionListData.filter(function(r) { return r.regionLevel === 1; });
+        var regionHtml = '';
+        level1.forEach(function(r, idx) {
+          if (idx % 2 === 0) regionHtml += '<div class="col-6">';
+          regionHtml += '<div class="custom-control custom-checkbox mb-2">' +
+            '<input type="checkbox" class="custom-control-input" id="region_' + idx + '" name="regions" value="' + r.regionName + '">' +
+            '<label class="custom-control-label small" for="region_' + idx + '">' + r.regionName + '</label>' +
+            '</div>';
+          if (idx % 2 === 0 && idx + 1 >= level1.length) regionHtml += '</div>';
+          if (idx % 2 === 1) regionHtml += '</div>';
+        });
+        if (level1.length % 2 === 1) regionHtml += '</div>';
+        $('#regionLevel1List').html(regionHtml);
+
+        // ===== 2. 직무 필터 동적 생성 (대분류 → 중분류) =====
+        var parents = categoryListData.filter(function(c) { return c.depth === 0; });
+        var catHtml = '';
+        var roleIdx = 0;
+        parents.forEach(function(parent) {
+          var children = categoryListData.filter(function(c) { return c.parentId == parent.categoryId && c.depth === 1; });
+          if (children.length === 0) return;
+          catHtml += '<p class="small font-weight-bold mb-2 mt-2">' + parent.categoryName + '</p><div class="row">';
+          children.forEach(function(child) {
+            catHtml += '<div class="col-6 mb-1"><div class="custom-control custom-checkbox">' +
+              '<input type="checkbox" class="custom-control-input" id="role_' + roleIdx + '" name="roles" value="' + child.categoryName + '">' +
+              '<label class="custom-control-label small" for="role_' + roleIdx + '">' + child.categoryName + '</label>' +
+              '</div></div>';
+            roleIdx++;
+          });
+          catHtml += '</div>';
+        });
+        $('#categoryFilterList').html(catHtml);
+
+        // ===== 3. 기술스택 필터 동적 생성 (카테고리별 그룹) =====
+        var categories = {};
+        skillGroupData.forEach(function(s) {
+          var catName = s.categoryName || '기타';
+          if (!categories[catName]) categories[catName] = [];
+          categories[catName].push(s);
+        });
+        var skillHtml = '';
+        var techIdx = 0;
+        Object.keys(categories).forEach(function(catName, catIdx) {
+          if (catIdx > 0) skillHtml += '<div class="border-top pt-3 mb-3">';
+          else skillHtml += '<div class="mb-3">';
+          skillHtml += '<p class="small font-weight-bold mb-2">' + catName + '</p><div class="row">';
+          categories[catName].forEach(function(skill) {
+            skillHtml += '<div class="col-6 mb-1"><div class="custom-control custom-checkbox">' +
+              '<input type="checkbox" class="custom-control-input" id="tech_' + techIdx + '" name="techStacks" value="' + skill.skillName + '">' +
+              '<label class="custom-control-label small" for="tech_' + techIdx + '">' + skill.skillName + '</label>' +
+              '</div></div>';
+            techIdx++;
+          });
+          skillHtml += '</div></div>';
+        });
+        $('#skillFilterList').html(skillHtml);
+
+        // ===== 필터 체크박스 상태 복원 =====
+        var selectedRegions    = /*[[${regions}]]*/ [];
+        var selectedCareers    = /*[[${careers}]]*/ [];
+        var selectedEduLevels  = /*[[${eduLevels}]]*/ [];
+        var selectedEmpTypes   = /*[[${empTypes}]]*/ [];
+        var selectedRoles      = /*[[${roles}]]*/ [];
+        var selectedCompanyTypes = /*[[${companyTypes}]]*/ [];
+        var selectedTechStacks = /*[[${techStacks}]]*/ [];
+        var selectedRegionDetails = /*[[${regionDetails}]]*/ [];
+        var includeClosed      = /*[[${includeClosed}]]*/ '';
+
+        function restoreCheckboxes(name, values) {
+          if (values) {
+            values.forEach(function(v) {
+              $('input[name="' + name + '"][value="' + v + '"]').prop('checked', true);
+            });
+          }
+        }
+        restoreCheckboxes('regions', selectedRegions);
+        restoreCheckboxes('careers', selectedCareers);
+        restoreCheckboxes('eduLevels', selectedEduLevels);
+        restoreCheckboxes('empTypes', selectedEmpTypes);
+        restoreCheckboxes('roles', selectedRoles);
+        restoreCheckboxes('companyTypes', selectedCompanyTypes);
+        restoreCheckboxes('techStacks', selectedTechStacks);
+        if (includeClosed === 'on') {
+          $('#includeClosed').prop('checked', true);
+        }
+
+        // 상세지역 복원: 시/도가 선택되어 있으면 상세지역 패널도 복원
+        if (selectedRegions && selectedRegions.length > 0) {
+          var lastRegion = selectedRegions[selectedRegions.length - 1];
+          var parentRegion = regionListData.find(function(r) {
+            return r.regionLevel === 1 && r.regionName === lastRegion;
+          });
+          if (parentRegion) {
+            var children = regionListData.filter(function(r) {
+              return r.parentRegionCode === parentRegion.regionCode;
+            });
+            if (children.length > 0) {
+              $('#selectedRegion').text(lastRegion);
+              $('#regionDetailList').empty();
+              children.forEach(function(child, index) {
+                $('#regionDetailList').append(
+                  '<div class="col-6">' +
+                  '<div class="custom-control custom-checkbox mb-2">' +
+                  '<input type="checkbox" class="custom-control-input" id="detail_' + index + '" name="regionDetails" value="' + child.regionName + '">' +
+                  '<label class="custom-control-label small" for="detail_' + index + '">' + child.regionName + '</label>' +
+                  '</div></div>'
+                );
+              });
+              $('#regionDetailSection').show();
+              restoreCheckboxes('regionDetails', selectedRegionDetails);
+            }
+          }
+        }
+
+        // 드롭다운 닫힘 방지
+        $(document).on('click', '.dropdown-menu', function(e){
+          e.stopPropagation();
+        });
+
+        // 체크박스 변경 시 배지만 업데이트 (드롭다운 닫힐 때 submit)
+        var filterChanged = false;
+        $(document).on('change', '#searchForm input[type="checkbox"]', function() {
+          filterChanged = true;
+          // 지역 시/도 체크 시 상세지역 패널 표시
+          if ($(this).attr('name') === 'regions') {
+            showRegionDetail();
+            return;
+          }
+          updateFilterBadges();
+        });
+
+        // 드롭다운이 닫힐 때 변경사항이 있으면 submit
+        $(document).on('hide.bs.dropdown', function() {
+          if (filterChanged) {
+            filterChanged = false;
+            autoSubmit();
+          }
+        });
+
+        // 지역 체크박스 변경 시 상세지역(구/시/군) 뿌리기
+        function showRegionDetail() {
+          var checked = $('input[name="regions"]:checked');
+
+          if (checked.length > 0) {
+            var regionName = checked.last().val();
+            var parentRegion = regionListData.find(function(r) {
+              return r.regionLevel === 1 && r.regionName === regionName;
+            });
+
+            if (parentRegion) {
+              var children = regionListData.filter(function(r) {
+                return r.parentRegionCode === parentRegion.regionCode;
+              });
+
+              if (children.length > 0) {
+                $('#selectedRegion').text(regionName);
+                $('#regionDetailList').empty();
+
+                children.forEach(function(child, index) {
+                  $('#regionDetailList').append(
+                    '<div class="col-6">' +
+                    '<div class="custom-control custom-checkbox mb-2">' +
+                    '<input type="checkbox" class="custom-control-input" id="detail_' + index + '" name="regionDetails" value="' + child.regionName + '">' +
+                    '<label class="custom-control-label small" for="detail_' + index + '">' + child.regionName + '</label>' +
+                    '</div></div>'
+                  );
+                });
+                $('#regionDetailSection').show();
+              }
+            }
+          } else {
+            $('#regionDetailSection').hide();
+          }
+        }
+
+        // 연봉 슬라이더 표시 복원
+        var initSalary = document.getElementById('salaryRange').value;
+        if (Number(initSalary) > 0) {
+          updateSalary(initSalary);
+        }
+
+        // 배지 초기 표시
+        updateFilterBadges();
+
+        // 스크랩 별 토글
+        $(document).on('click', '.jp-recent-scrap', function(e){
+          e.preventDefault();
+          e.stopPropagation();
+          $(this).find('i').toggleClass('fa-regular fa-solid');
+        });
+
+        // 최근본공고 클릭 → detail 새탭 이동
+        $(document).on('click', '.jp-recent-item', function(){
+          var id = $(this).data('id');
+          window.open('/finalProject/job/detail/' + id, '_blank');
+        });
+
+        // 최근본공고 항상 고정
+        pinRecentCard();
+        $(window).on('scroll resize', pinRecentCard);
+
+        // 최근본 공고 AJAX 로딩
+        loadRecentViewed();
+
+        // 탭 전환(detail 보고 돌아올 때) 자동 갱신
+        $(window).on('focus', function() {
+          loadRecentViewed();
+        });
+      });
+
+      // 필터 초기화
+      function resetFilters() {
+        clearAllFilters();
+      }
+
+      // 페이징 - form submit으로 필터 파라미터 유지
+      function goPage(el) {
+        var page = el.getAttribute('data-page');
+        document.getElementById('pageInput').value = page;
+        document.getElementById('searchForm').submit();
+      }
+
+      // 최근본 공고 AJAX 로딩
+      function loadRecentViewed() {
+        $.ajax({
+          url: CTX + '/api/job/recent-viewed',
+          type: 'GET',
+          dataType: 'json',
+          success: function(data) {
+            var container = $('#recentViewedList');
+            container.empty();
+
+            if (data && data.length > 0) {
+              data.forEach(function(rv) {
+                var html =
+                  '<div class="jp-recent-item" data-id="' + rv.jobId + '">' +
+                    '<div class="jp-recent-company">' + rv.companyName + '</div>' +
+                    '<div class="jp-recent-row">' +
+                      '<p class="jp-recent-jobtitle">' + rv.title + '</p>' +
+                      '<button type="button" class="jp-recent-scrap" aria-label="스크랩">' +
+                        '<i class="fa-regular fa-star"></i>' +
+                      '</button>' +
+                    '</div>' +
+                    '<div class="jp-recent-deadline">' + rv.dDay + '</div>' +
+                  '</div>';
+                container.append(html);
+              });
+            } else {
+              container.html(
+                '<div class="p-4 text-center text-muted" id="recentEmpty">' +
+                  '<i class="fas fa-eye-slash mb-2" style="font-size: 1.5rem;"></i>' +
+                  '<p class="small mb-0">최근 본 공고가 없습니다.</p>' +
+                  '<p class="small text-muted mb-0">공고를 클릭하면 여기에 기록됩니다.</p>' +
+                '</div>'
+              );
+            }
+          },
+          error: function() {
+            // API 실패해도 기존 내용 유지
+          }
+        });
+      }
+
+      // 급여 슬라이더 업데이트
+      function updateSalary(value) {
+        const display = document.getElementById('salaryDisplay');
+        const btn = document.getElementById('salaryBtn');
+        if (!display || !btn) return;
+
+        if (Number(value) > 0) {
+          display.textContent = value + '만원+';
+          display.classList.add('text-primary');
+          btn.classList.add('btn-primary');
+          btn.classList.remove('btn-outline-secondary');
+        } else {
+          display.textContent = '전체';
+          display.classList.remove('text-primary');
+          btn.classList.remove('btn-primary');
+          btn.classList.add('btn-outline-secondary');
+        }
+        updateFilterBadges();
+      }
+
+      function resetSalary() {
+        const range = document.getElementById('salaryRange');
+        if (!range) return;
+        range.value = 0;
+        updateSalary(0);
+      }
+
+     
+      function pinRecentCard(){
+        if (window.innerWidth < 992) {
+          $('#recentCard').removeClass('jp-pin-fixed jp-pin-abs').css({top:'',left:'',width:''});
+          $('#recentPinArea').css('height','');
+          return;
+        }
+
+        const $area = $('#recentPinArea');  // 우측 컬럼
+        const $card = $('#recentCard');
+        const $main = $('#mainCol');        // 메인 컬럼
+        const header = document.getElementById('myheader');
+        const footer = document.getElementById('myfooter');
+
+        if ($area.length === 0 || $card.length === 0 || $main.length === 0) return;
+
+        // 우측 컬럼 높이를 메인 높이와 동일하게 (footer 멈춤 계산 안정화)
+        $area.css('height', $main.outerHeight());
+
+        // 카드 폭/좌표 계산
+        const areaRect = $area[0].getBoundingClientRect();
+        const left = areaRect.left;               // viewport 기준
+        const width = $area.outerWidth();
+
+        $card.css('width', width + 'px');
+
+        const headerH = header ? header.getBoundingClientRect().height : 0;
+        const bannerEl = document.querySelector('.jp-banner');
+        // 배너 하단이 viewport에서 얼마나 보이는지 (0 이하면 완전히 스크롤됨)
+        const bannerBottom = bannerEl
+          ? Math.max(headerH, bannerEl.getBoundingClientRect().bottom)
+          : headerH;
+        const topGap = bannerBottom + 16;  // 배너 하단 + 여백
+
+        const cardH = $card.outerHeight();
+
+        // footerTop (문서 기준)
+        let footerTop = Number.MAX_SAFE_INTEGER;
+        if (footer) {
+          footerTop = footer.getBoundingClientRect().top + window.pageYOffset;
+        }
+
+        // fixed 기준 y (문서 기준)
+        const fixedTopDocY = window.pageYOffset + topGap;
+
+        // footer와 겹치기 시작하는 y
+        const stopDocY = footerTop - 16 - cardH;
+
+        if (fixedTopDocY >= stopDocY) {
+          // footer 위에서 멈추기: absolute로 전환
+          const areaTopDocY = $area[0].getBoundingClientRect().top + window.pageYOffset;
+          const topInArea = stopDocY - areaTopDocY; // area 내부에서의 top
+
+          $card.removeClass('jp-pin-fixed').addClass('jp-pin-abs').css({
+            top: topInArea + 'px',
+            left: '0px'
+          });
+        } else {
+          // 항상 고정(fixed)
+          $card.removeClass('jp-pin-abs').addClass('jp-pin-fixed').css({
+            top: topGap + 'px',
+            left: left + 'px'
+          });
+        }
+      }
+    </script>
+  </th:block>
+</head>
+
+<body>
+<div id="jobPostList">
+  <!-- ===== 채용정보 배너 ===== -->
+  <div class="jp-banner">
+    <div class="container jp-joblist-wrap">
+      <h1 class="jp-banner__title">
+        <i class="fas fa-briefcase mr-2"></i>채용정보
+      </h1>
+      <p class="jp-banner__sub">믿을 수 있는 채용정보, 나에게 맞는 일자리를 찾아보세요</p>
+    </div>
+  </div>
+
+  <div class="container jp-joblist-wrap py-4">
+
+    <div class="row jp-joblist-row">
+
+      <!-- ===================== 메인(좌) ===================== -->
+      <div class="col-12 jp-main-col" id="mainCol">
+
+        <!-- 검색/필터 카드 -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+
+            <form th:action="@{/job/list}" method="get" id="searchForm">
+              <input type="hidden" name="page" id="pageInput" value="1">
+
+              <!-- 검색창 -->
+              <div class="d-flex gap-2 mb-4">
+                <div class="flex-fill position-relative">
+                  <i class="fas fa-search position-absolute"
+                     style="left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af;"></i>
+
+                  <input type="text"
+                         name="keyword"
+                         th:value="${keyword}"
+                         class="form-control form-control-lg"
+                         placeholder="직무, 회사명, 키워드로 검색"
+                         maxlength="100"
+                         style="padding-left: 40px;">
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg px-4">검색</button>
+              </div>
+
+              <!-- 필터 섹션 -->
+              <div class="border-top pt-4">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                  <i class="fas fa-filter text-secondary"></i>
+                  <span class="font-weight-bold small">상세 필터</span>
+                  <button type="button"
+                          class="btn btn-sm btn-link text-danger p-0 ml-2"
+                          onclick="resetFilters()">
+                    <small>전체 초기화</small>
+                  </button>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 mb-4">
+
+                  <!-- 지역 -->
+                  <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                            type="button" data-toggle="dropdown">
+                      <i class="fas fa-map-marker-alt"></i> 지역
+                    </button>
+
+                    <div class="dropdown-menu p-3" style="width: 320px; max-height: 400px; overflow-y: auto;">
+                      <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                        <strong class="small">지역 선택</strong>
+                        <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="resetFilters()">
+                          <small>초기화</small>
+                        </button>
+                      </div>
+
+                      <p class="small font-weight-bold mb-2">시/도</p>
+                      <div class="row mb-3" id="regionLevel1List">
+                        <!-- JS에서 regionListData 기반으로 동적 생성 -->
+                      </div>
+
+                      <div class="border-top pt-3" id="regionDetailSection" style="display: none;">
+                        <p class="small font-weight-bold mb-2"><span id="selectedRegion"></span> 상세지역</p>
+                        <div class="row" id="regionDetailList"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 경력 -->
+                  <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">경력</button>
+                    <div class="dropdown-menu p-3" style="width: 250px;">
+                      <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                        <strong class="small">경력 선택</strong>
+                        <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="resetFilters()"><small>초기화</small></button>
+                      </div>
+                      <div class="custom-control custom-checkbox mb-2">
+                        <input type="checkbox" class="custom-control-input" id="career1" name="careers" value="신입">
+                        <label class="custom-control-label small" for="career1">신입</label>
+                      </div>
+                      <div class="custom-control custom-checkbox mb-2">
+                        <input type="checkbox" class="custom-control-input" id="career2" name="careers" value="무관">
+                        <label class="custom-control-label small" for="career2">경력 무관</label>
+                      </div>
+                      <div class="custom-control custom-checkbox mb-2">
+                        <input type="checkbox" class="custom-control-input" id="career3" name="careers" value="경력 1년 ↑">
+                        <label class="custom-control-label small" for="career3">경력 1년 ↑</label>
+                      </div>
+                      <div class="custom-control custom-checkbox mb-2">
+                        <input type="checkbox" class="custom-control-input" id="career4" name="careers" value="경력 2년 ↑">
+                        <label class="custom-control-label small" for="career4">경력 2년 ↑</label>
+                      </div>
+                      <div class="custom-control custom-checkbox mb-2">
+                        <input type="checkbox" class="custom-control-input" id="career5" name="careers" value="경력 3년 ↑">
+                        <label class="custom-control-label small" for="career5">경력 3년 ↑</label>
+                      </div>
+                      <div class="custom-control custom-checkbox mb-2">
+                        <input type="checkbox" class="custom-control-input" id="career6" name="careers" value="경력 5년 ↑">
+                        <label class="custom-control-label small" for="career6">경력 5년 ↑</label>
+                      </div>
+                      <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="career7" name="careers" value="경력 10년 ↑">
+                        <label class="custom-control-label small" for="career7">경력 10년 ↑</label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 학력 -->
+                  <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">학력</button>
+                    <div class="dropdown-menu p-3" style="width: 250px;">
+                      <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                        <strong class="small">학력 선택</strong>
+                        <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="resetFilters()"><small>초기화</small></button>
+                      </div>
+                      <th:block th:each="edu, stat : ${eduLevelList}">
+                        <div class="custom-control custom-checkbox mb-2">
+                          <input type="checkbox" class="custom-control-input"
+                                 th:id="'edu' + ${stat.count}" name="eduLevels" th:value="${edu.eduCode}">
+                          <label class="custom-control-label small" th:for="'edu' + ${stat.count}" th:text="${edu.eduName}">학력명</label>
+                        </div>
+                      </th:block>
+                    </div>
+                  </div>
+
+                  <!-- 고용형태 -->
+                  <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">
+                      <i class="fas fa-clock"></i> 고용형태
+                    </button>
+                    <div class="dropdown-menu p-3" style="width: 250px;">
+                      <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                        <strong class="small">고용형태 선택</strong>
+                        <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="resetFilters()"><small>초기화</small></button>
+                      </div>
+                      <div class="custom-control custom-checkbox mb-2">
+                        <input type="checkbox" class="custom-control-input" id="emp1" name="empTypes" value="정규직">
+                        <label class="custom-control-label small" for="emp1">정규직</label>
+                      </div>
+                      <div class="custom-control custom-checkbox mb-2">
+                        <input type="checkbox" class="custom-control-input" id="emp2" name="empTypes" value="계약직">
+                        <label class="custom-control-label small" for="emp2">계약직</label>
+                      </div>
+                      <div class="custom-control custom-checkbox mb-2">
+                        <input type="checkbox" class="custom-control-input" id="emp4" name="empTypes" value="인턴">
+                        <label class="custom-control-label small" for="emp4">인턴</label>
+                      </div>
+                      <div class="custom-control custom-checkbox mb-2">
+                        <input type="checkbox" class="custom-control-input" id="emp5" name="empTypes" value="프리랜서">
+                        <label class="custom-control-label small" for="emp5">프리랜서</label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 직무 -->
+                  <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">
+                      <i class="fas fa-briefcase"></i> 직무
+                    </button>
+                    <div class="dropdown-menu p-3" style="width: 320px; max-height: 400px; overflow-y: auto;">
+                      <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                        <strong class="small">직무 선택</strong>
+                        <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="resetFilters()"><small>초기화</small></button>
+                      </div>
+                      <div id="categoryFilterList">
+                        <!-- JS에서 categoryListData 기반으로 동적 생성 -->
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 기업형태 -->
+                  <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">기업형태</button>
+                    <div class="dropdown-menu p-3" style="width: 200px;">
+                      <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                        <strong class="small">기업형태 선택</strong>
+                        <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="resetFilters()"><small>초기화</small></button>
+                      </div>
+                      <div class="custom-control custom-checkbox mb-2">
+                        <input type="checkbox" class="custom-control-input" id="comp1" name="companyTypes" value="스타트업">
+                        <label class="custom-control-label small" for="comp1">스타트업</label>
+                      </div>
+                      <div class="custom-control custom-checkbox mb-2">
+                        <input type="checkbox" class="custom-control-input" id="comp2" name="companyTypes" value="중소기업">
+                        <label class="custom-control-label small" for="comp2">중소기업</label>
+                      </div>
+                      <div class="custom-control custom-checkbox mb-2">
+                        <input type="checkbox" class="custom-control-input" id="comp3" name="companyTypes" value="중견기업">
+                        <label class="custom-control-label small" for="comp3">중견기업</label>
+                      </div>
+                      <div class="custom-control custom-checkbox mb-2">
+                        <input type="checkbox" class="custom-control-input" id="comp4" name="companyTypes" value="대기업">
+                        <label class="custom-control-label small" for="comp4">대기업</label>
+                      </div>
+                      <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="comp5" name="companyTypes" value="외국계">
+                        <label class="custom-control-label small" for="comp5">외국계</label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 기술스택 -->
+                  <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown">기술스택</button>
+
+                    <div class="dropdown-menu p-3" style="width: 350px; max-height: 400px; overflow-y: auto;">
+                      <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                        <strong class="small">기술스택 선택</strong>
+                        <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="resetFilters()"><small>초기화</small></button>
+                      </div>
+                      <div id="skillFilterList">
+                        <!-- JS에서 skillGroupData 기반으로 동적 생성 -->
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 최소 연봉 -->
+                  <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                            type="button" data-toggle="dropdown" id="salaryBtn">
+                      최소 연봉
+                    </button>
+                    <div class="dropdown-menu p-3" style="width: 320px;">
+                      <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                        <strong class="small">최소 연봉 설정</strong>
+                        <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="resetSalary()">
+                          <small>초기화</small>
+                        </button>
+                      </div>
+
+                      <input type="range" class="custom-range" id="salaryRange" name="salaryMin"
+                             min="0" max="10000" step="500" th:value="${salaryMin != null ? salaryMin : 0}"
+                             oninput="updateSalary(this.value)" onchange="autoSubmit()">
+
+                      <div class="d-flex justify-content-between text-muted small mt-2">
+                        <span>0</span>
+                        <span class="font-weight-bold text-primary" id="salaryDisplay">전체</span>
+                        <span>1억</span>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- 마감 공고 포함 & 정렬 -->
+              <div class="d-flex align-items-center gap-4 flex-wrap">
+                <div class="custom-control custom-checkbox">
+                  <input type="checkbox" class="custom-control-input" id="includeClosed" name="includeClosed" onchange="this.form.submit()">
+                  <label class="custom-control-label small" for="includeClosed">마감 공고 포함</label>
+                </div>
+
+                <div class="ml-auto">
+                  <select class="form-control form-control-sm" name="sort" onchange="this.form.submit()">
+                    <option value="latest" th:selected="${sort == 'latest'}">최신순</option>
+                    <option value="deadline" th:selected="${sort == 'deadline'}">마감임박순</option>
+                    <option value="popular" th:selected="${sort == 'popular'}">인기순</option>
+                  </select>
+                </div>
+              </div>
+
+            </form>
+          </div>
+        </div>
+
+        <!-- 적용된 필터 배지 -->
+        <div class="mb-3" id="filterBadgeArea" style="display: none;">
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            <small class="text-muted mr-2"><i class="fas fa-filter"></i> 적용 필터:</small>
+            <span id="filterBadges"></span>
+            <button type="button" class="btn btn-sm btn-link text-danger p-0 ml-2" onclick="clearAllFilters()">
+              <small>전체 해제</small>
+            </button>
+          </div>
+        </div>
+
+        <!-- 결과 개수 -->
+        <div class="mb-4">
+          <p class="text-secondary mb-0">
+            총 <span class="font-weight-bold text-primary" th:text="${totalCount}">0</span>개의 채용공고
+          </p>
+        </div>
+
+        <!-- ===== 추천 채용공고 (구직자 또는 비로그인만 표시) ===== -->
+        <div class="mb-5" sec:authorize="!hasRole('COMPANY') and !hasRole('ADMIN')">
+          <h2 class="h4 font-weight-bold mb-4">
+            <i class="fas fa-star text-warning"></i> 추천 채용공고
+          </h2>
+
+          <!-- 비로그인: 로그인 안내 카드 -->
+          <div th:if="${isLoggedIn == null or !isLoggedIn}"
+               class="mb-4" style="background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%); border: 1px dashed #b0c4f5; border-radius: 12px; padding: 28px; text-align: center;">
+            <div class="mb-2">
+              <span style="display:inline-flex; width:48px; height:48px; background:#fff; border-radius:50%; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(37,99,235,0.10);">
+                <i class="fas fa-user-lock" style="font-size:20px; color:#2563EB;"></i>
+              </span>
+            </div>
+            <h6 class="font-weight-bold mb-1">나에게 딱 맞는 공고를 추천해드려요</h6>
+            <p class="text-muted small mb-3">로그인 후 이력서를 등록하면 희망지역, 희망직무, 기술스택, 희망연봉을 분석하여 맞춤 채용공고를 추천합니다.</p>
+            <a th:href="@{/member/login}" class="btn btn-primary btn-sm" style="border-radius:8px; padding:8px 24px; font-weight:600;">
+              <i class="fas fa-sign-in-alt mr-1"></i> 로그인하고 추천받기
+            </a>
+          </div>
+
+          <!-- 로그인 + 이력서 없음: 이력서 작성 안내 카드 -->
+          <div th:if="${isLoggedIn != null and isLoggedIn and !hasResume}"
+               class="mb-4" style="background: linear-gradient(135deg, #fff7ed 0%, #fef3c7 100%); border: 1px dashed #f59e0b; border-radius: 12px; padding: 28px; text-align: center;">
+            <div class="mb-2">
+              <span style="display:inline-flex; width:48px; height:48px; background:#fff; border-radius:50%; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(245,158,11,0.15);">
+                <i class="fas fa-file-alt" style="font-size:20px; color:#f59e0b;"></i>
+              </span>
+            </div>
+            <h6 class="font-weight-bold mb-1">이력서를 등록하면 맞춤 공고를 추천해드려요</h6>
+            <p class="text-muted small mb-3">희망지역, 희망직무, 기술스택, 희망연봉을 분석하여 나에게 딱 맞는 채용공고를 추천합니다.</p>
+            <a th:href="@{/jobseeker/resume/form}" class="btn btn-warning btn-sm text-white" style="border-radius:8px; padding:8px 24px; font-weight:600;">
+              <i class="fas fa-pen mr-1"></i> 이력서 작성하기
+            </a>
+          </div>
+
+          <!-- 로그인 + 이력서 있음: 추천공고 카드 -->
+          <div th:if="${isLoggedIn != null and isLoggedIn and hasResume and recommendedPosts != null and !recommendedPosts.isEmpty()}" class="row">
+            <div class="col-md-4 mb-4" th:each="rec : ${recommendedPosts}">
+              <a href="#" th:onclick="'openDetail(\'' + ${rec.jobId} + '\'); return false;'"
+                 class="card h-100 shadow-sm hover-card text-decoration-none text-dark">
+                <div class="card-body">
+                  <h5 class="card-title font-weight-bold text-truncate mb-3" th:text="${rec.title}">공고 제목</h5>
+                  <p class="text-muted mb-4" th:text="${rec.companyName}">회사명</p>
+                  <div class="d-flex flex-wrap gap-2 mb-3">
+                    <span class="badge badge-light" th:text="${rec.parentRegionName != null ? rec.parentRegionName + ' ' + rec.regionName : rec.regionName}">지역</span>
+                    <span class="badge badge-light" th:text="${rec.categoryName}">직무</span>
+                    <span class="badge badge-light" th:text="${rec.careerType == '무관' ? '경력 무관' : rec.careerType}">경력</span>
+                    <span class="badge badge-light" th:text="${rec.educationLevelName != null ? rec.educationLevelName : '학력무관'}">학력</span>
+                    <span class="badge badge-light" th:if="${rec.workType != null}" th:text="${rec.workType}">고용형태</span>
+                  </div>
+                  <p class="font-weight-bold mb-4">
+                    <span th:if="${rec.salary != null and rec.salary > 0}" th:text="'연봉 ' + ${#numbers.formatInteger(rec.salary, 0, 'COMMA')} + '만원'">연봉</span>
+                    <span th:unless="${rec.salary != null and rec.salary > 0}">회사내규 (협의)</span>
+                  </p>
+                  <div class="d-flex justify-content-between align-items-center text-muted small border-top pt-3">
+                    <div>
+                      <span th:if="${rec.dDay != null}" class="jp-dday"
+                            th:classappend="${rec.dDay == '마감' ? 'jp-dday-closed' : (rec.dDayUrgent == 'Y' ? 'jp-dday-urgent' : 'jp-dday-normal')}"
+                            th:text="${rec.dDay}">D-day</span>
+                      <span th:if="${rec.deadlineType != 'always' and rec.deadlineAt != null}" class="text-muted" style="font-size:11px; margin-left:4px;" th:text="'~ ' + ${rec.deadlineAt}"></span>
+                    </div>
+                    <span><i class="far fa-eye"></i> <span th:text="${rec.viewCount}">0</span></span>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 인기 채용공고 ===== -->
+        <div th:if="${popularPosts != null and !popularPosts.isEmpty()}" class="mb-5">
+          <h2 class="h4 font-weight-bold mb-4">
+            <i class="fas fa-fire text-danger"></i> 인기 채용공고
+          </h2>
+          <div class="row">
+            <div class="col-md-4 mb-4" th:each="pop : ${popularPosts}">
+              <a href="#" th:onclick="'openDetail(\'' + ${pop.jobId} + '\'); return false;'"
+                 class="card h-100 shadow-sm hover-card text-decoration-none text-dark">
+                <div class="card-body">
+                  <h5 class="card-title font-weight-bold text-truncate mb-3" th:text="${pop.title}">공고 제목</h5>
+                  <p class="text-muted mb-4" th:text="${pop.companyName}">회사명</p>
+                  <div class="d-flex flex-wrap gap-2 mb-3">
+                    <span class="badge badge-light" th:text="${pop.parentRegionName != null ? pop.parentRegionName + ' ' + pop.regionName : pop.regionName}">지역</span>
+                    <span class="badge badge-light" th:text="${pop.categoryName}">직무</span>
+                    <span class="badge badge-light" th:text="${pop.careerType == '무관' ? '경력 무관' : pop.careerType}">경력</span>
+                    <span class="badge badge-light" th:text="${pop.educationLevelName != null ? pop.educationLevelName : '학력무관'}">학력</span>
+                    <span class="badge badge-light" th:if="${pop.workType != null}" th:text="${pop.workType}">고용형태</span>
+                  </div>
+                  <p class="font-weight-bold mb-4">
+                    <span th:if="${pop.salary != null and pop.salary > 0}" th:text="'연봉 ' + ${#numbers.formatInteger(pop.salary, 0, 'COMMA')} + '만원'">연봉</span>
+                    <span th:unless="${pop.salary != null and pop.salary > 0}">회사내규 (협의)</span>
+                  </p>
+                  <div class="d-flex justify-content-between align-items-center text-muted small border-top pt-3">
+                    <div>
+                      <span th:if="${pop.dDay != null}" class="jp-dday"
+                            th:classappend="${pop.dDay == '마감' ? 'jp-dday-closed' : (pop.dDayUrgent == 'Y' ? 'jp-dday-urgent' : 'jp-dday-normal')}"
+                            th:text="${pop.dDay}">D-day</span>
+                      <span th:if="${pop.deadlineType != 'always' and pop.deadlineAt != null}" class="text-muted" style="font-size:11px; margin-left:4px;" th:text="'~ ' + ${pop.deadlineAt}"></span>
+                    </div>
+                    <span><i class="far fa-eye"></i> <span th:text="${pop.viewCount}">0</span></span>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 전체 채용공고 목록 ===== -->
+        <div>
+          <h2 class="h4 font-weight-bold mb-4">
+            <i class="fas fa-list"></i> 전체 채용공고
+            <span class="text-muted small">(<span th:text="${totalCount}">0</span>건)</span>
+          </h2>
+
+          <!-- 공고가 없을 때 -->
+          <div th:if="${jobPosts == null or jobPosts.isEmpty()}" class="text-center py-5">
+            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+            <p class="text-muted">검색 조건에 맞는 채용공고가 없습니다.</p>
+          </div>
+
+          <!-- 공고 리스트 -->
+          <div class="list-group" th:if="${jobPosts != null and !jobPosts.isEmpty()}">
+            <a href="#" th:each="post : ${jobPosts}"
+               th:onclick="'openDetail(\'' + ${post.jobId} + '\'); return false;'"
+               class="list-group-item list-group-item-action text-dark"
+               th:style="${post.dDay == '마감' ? 'background-color:#f5f5f5;' : ''}">
+              <div class="d-flex justify-content-between align-items-start">
+                <div class="flex-fill">
+                  <h5 class="mb-2 font-weight-bold" th:text="${post.title}">공고 제목</h5>
+                  <p class="mb-2 text-muted" th:text="${post.companyName}">회사명</p>
+                  <div class="mb-2">
+                    <span class="badge badge-light mr-1">
+                      <i class="fas fa-map-marker-alt"></i>
+                      <span th:text="${post.parentRegionName != null ? post.parentRegionName + ' ' + post.regionName : post.regionName}">지역</span>
+                    </span>
+                    <span class="badge badge-light mr-1">
+                      <i class="fas fa-briefcase"></i>
+                      <span th:text="${post.categoryName}">직무</span>
+                    </span>
+                    <span class="badge badge-light mr-1">
+                      <i class="fas fa-user-tie"></i>
+                      <span th:text="${post.careerType == '무관' ? '경력 무관' : post.careerType}">경력</span>
+                    </span>
+                    <span class="badge badge-light mr-1">
+                      <i class="fas fa-graduation-cap"></i>
+                      <span th:text="${post.educationLevelName != null ? post.educationLevelName : '학력무관'}">학력</span>
+                    </span>
+                    <span class="badge badge-light mr-1">
+                      <i class="fas fa-clock"></i>
+                      <span th:text="${post.workType}">고용형태</span>
+                    </span>
+                    <!-- 기술스택 뱃지 (최대 5개) -->
+                    <th:block th:if="${post.skillList != null}">
+                      <span class="badge badge-info mr-1"
+                            th:each="skill, stat : ${post.skillList}"
+                            th:if="${stat.index < 5}"
+                            th:text="${skill}">스킬</span>
+                      <span class="badge badge-secondary" th:if="${post.skillList.size() > 5}">
+                        +<span th:text="${post.skillList.size() - 5}">N</span>
+                      </span>
+                    </th:block>
+                  </div>
+                  <span class="font-weight-bold small">
+                    <span th:if="${post.salary != null and post.salary > 0}" th:text="'연봉 ' + ${#numbers.formatInteger(post.salary, 0, 'COMMA')} + '만원'">연봉</span>
+                    <span th:unless="${post.salary != null and post.salary > 0}">회사내규 (협의)</span>
+                  </span>
+                </div>
+                <div class="text-right ml-3">
+                  <div class="mb-1">
+                    <span th:if="${post.dDay != null}" class="jp-dday"
+                          th:classappend="${post.dDay == '마감' ? 'jp-dday-closed' : (post.dDayUrgent == 'Y' ? 'jp-dday-urgent' : 'jp-dday-normal')}"
+                          th:text="${post.dDay}">D-day</span>
+                  </div>
+                  <div th:if="${post.deadlineType == 'always'}" class="mb-1"><small class="text-muted">상시채용</small></div>
+                  <div th:if="${post.deadlineType != 'always' and post.deadlineAt != null}" class="mb-1"><small class="text-muted" th:text="'~ ' + ${post.deadlineAt}">~ 2026.03.15</small></div>
+                  <div><small class="text-muted"><i class="far fa-eye"></i> <span th:text="${post.viewCount}">0</span></small></div>
+                </div>
+              </div>
+            </a>
+          </div>
+
+          <!-- ===== 페이징 ===== -->
+          <nav th:if="${totalPages > 1}" class="mt-4" aria-label="페이지 네비게이션">
+            <ul class="pagination justify-content-center">
+              <!-- 이전 블록 -->
+              <li class="page-item" th:classappend="${startPage == 1} ? 'disabled'">
+                <a class="page-link" href="#" th:data-page="${startPage - 1}" onclick="goPage(this); return false;">&laquo;</a>
+              </li>
+              <!-- 페이지 번호 -->
+              <li class="page-item" th:each="i : ${#numbers.sequence(startPage, endPage)}"
+                  th:classappend="${i == currentPage} ? 'active'">
+                <a class="page-link" href="#" th:data-page="${i}" th:text="${i}" onclick="goPage(this); return false;">1</a>
+              </li>
+              <!-- 다음 블록 -->
+              <li class="page-item" th:classappend="${endPage >= totalPages} ? 'disabled'">
+                <a class="page-link" href="#" th:data-page="${endPage + 1}" onclick="goPage(this); return false;">&raquo;</a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+
+      </div><!-- /메인 -->
+
+      <!-- ===================== 최근본 공고(우) ===================== -->
+      <div class="col-12 jp-recent-col" id="recentPinArea">
+
+        <div class="card jp-recent-card" id="recentCard">
+          <div class="card-header">
+            <div class="jp-recent-head">
+              <p class="jp-recent-title"><i class="fas fa-history"></i> 최근본 공고</p>
+            </div>
+          </div>
+
+          <div class="list-group list-group-flush" id="recentViewedList">
+            <!-- AJAX로 동적 로딩 -->
+            <div class="p-4 text-center text-muted" id="recentEmpty">
+              <i class="fas fa-eye-slash mb-2" style="font-size: 1.5rem;"></i>
+              <p class="small mb-0">최근 본 공고가 없습니다.</p>
+              <p class="small text-muted mb-0">공고를 클릭하면 여기에 기록됩니다.</p>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /우측 -->
+
+    </div><!-- /row -->
+  </div><!-- /container -->
+</div><!-- /#jobPostList -->
+</body>
+</html>

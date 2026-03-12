@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/layout_admin :: layout(~{::title},~{::link},~{::style},~{::script},~{::section})}">
+
+<head>
+  <title>관리자 대시보드</title>
+  <link rel="stylesheet" th:href="@{/css/admin/admin_dashboard.css}">
+  <style type="text/css">
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Noto Sans KR', sans-serif; background-color: #f9fafb; color: #1f2937; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px 24px; }
+    .stat-card .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .stat-card .label { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #6b7280; }
+    .stat-card .label .icon { font-size: 16px; }
+    .stat-card .value { font-size: 32px; font-weight: 700; color: #1f2937; margin-bottom: 4px; }
+    .stat-card .sub-text { font-size: 13px; color: #9ca3af; }
+
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .chart-card { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; }
+    .chart-card .title { font-size: 16px; font-weight: 600; color: #1f2937; margin-bottom: 20px; }
+    .chart-container { position: relative; height: 250px; }
+
+    .alerts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+    .alert-card { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; }
+    .alert-card .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .alert-card .header .title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: #1f2937; }
+    .alert-card .header .count { display: flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 8px; color: white; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .alert-card .header .count.red  { background: #ef4444; }
+    .alert-card .header .count.gray { background: #6b7280; }
+    .alert-item { display: flex; align-items: flex-start; justify-content: space-between; padding: 12px; border: 1px solid #f3f4f6; border-radius: 6px; margin-bottom: 8px; }
+    .alert-item:last-child { margin-bottom: 0; }
+    .alert-item .info .name { font-size: 14px; font-weight: 500; color: #1f2937; margin-bottom: 2px; }
+    .alert-item .info .detail { font-size: 13px; color: #6b7280; }
+    .alert-item .info .reason { font-size: 12px; color: #ef4444; margin-top: 4px; }
+    .alert-item .info .date { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+    .alert-item .action { font-size: 13px; color: #374151; white-space: nowrap; }
+    .empty-msg { font-size: 13px; color: #9ca3af; text-align: center; padding: 20px 0; }
+
+    .table-section { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 24px; }
+    .table-section .title { font-size: 16px; font-weight: 600; color: #1f2937; margin-bottom: 16px; }
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th { padding: 12px 8px; text-align: left; font-weight: 500; color: #6b7280; font-size: 13px; border-bottom: 1px solid #e5e7eb; }
+    .data-table td { padding: 14px 8px; font-size: 14px; color: #374151; border-bottom: 1px solid #f3f4f6; }
+    .data-table tbody tr:hover { background: #f9fafb; }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+
+    .status-badge { display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+    .status-badge.active { background: #d1fae5; color: #065f46; }
+    .status-badge.closed { background: #f3f4f6; color: #6b7280; }
+    .amount { font-weight: 600; color: #1f2937; }
+
+    .dash { padding: 24px; width: 100%; box-sizing: border-box; }
+
+    @media (max-width: 1200px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .charts-grid { grid-template-columns: 1fr; }
+      .alerts-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
+    }
+    @media (max-width: 768px) {
+      .stats-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+
+      const labels        = /*[[${dailyStats.![statDate]}]]*/       [];
+      const jobseekerData = /*[[${dailyStats.![jobseekerCount]}]]*/ [];
+      const companyData   = /*[[${dailyStats.![companyCount]}]]*/   [];
+
+      const memberCtx = document.getElementById('memberChart').getContext('2d');
+      new Chart(memberCtx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: '구직자',
+              data: jobseekerData,
+              borderColor: '#1f2937',
+              backgroundColor: 'transparent',
+              borderWidth: 2,
+              tension: 0.3,
+              pointBackgroundColor: '#1f2937',
+              pointRadius: 4
+            },
+            {
+              label: '기업',
+              data: companyData,
+              borderColor: '#9ca3af',
+              backgroundColor: 'transparent',
+              borderWidth: 2,
+              tension: 0.3,
+              pointBackgroundColor: '#9ca3af',
+              pointRadius: 4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true, position: 'top', align: 'end',
+              labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 6, font: { size: 12 } }
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#9ca3af' } },
+            y: { beginAtZero: true, grid: { color: '#f3f4f6' }, ticks: { font: { size: 11 }, color: '#9ca3af' } }
+          }
+        }
+      });
+      
+      const appLabels = /*[[${dailyApplicationStats.![statDate]}]]*/ [];
+      const appData   = /*[[${dailyApplicationStats.![applicationCount]}]]*/ [];
+
+      const appCtx = document.getElementById('applicationChart').getContext('2d');
+      new Chart(appCtx, {
+        type: 'line',
+        data: {
+          labels: appLabels,
+          datasets: [{
+            label: '지원',
+            data: appData,
+            borderColor: '#3b82f6',
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            tension: 0.3,
+            pointBackgroundColor: '#3b82f6',
+            pointRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true, position: 'top', align: 'end',
+              labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 6, font: { size: 12 } }
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#9ca3af' } },
+            y: { beginAtZero: true, grid: { color: '#f3f4f6' }, ticks: { font: { size: 11 }, color: '#9ca3af' } }
+          }
+        }
+      });
+      
+    });
+  </script>
+</head>
+
+<body>
+<section class="dash">
+
+  <!-- 상단 통계 카드 -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="header">
+        <div class="label"><span class="icon">👥</span><span>총 회원 수</span></div>
+      </div>
+      <div class="value" th:text="${#numbers.formatInteger(totalMemberCount, 0, 'COMMA')}">0</div>
+      <div class="sub-text">
+        구직자: <span th:text="${#numbers.formatInteger(jobseekerCount, 0, 'COMMA')}">0</span>
+        /
+        기업: <span th:text="${#numbers.formatInteger(companyCount, 0, 'COMMA')}">0</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="header">
+        <div class="label"><span class="icon">📋</span><span>활성 채용공고</span></div>
+      </div>
+      <div class="value" th:text="${#numbers.formatInteger(activeJobPostingCount, 0, 'COMMA')}">0</div>
+      <div class="sub-text">오늘 등록: <span th:text="${todayJobPostingCount}">0</span>건</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="header">
+        <div class="label"><span class="icon">👤</span><span>오늘 신규 가입</span></div>
+      </div>
+      <div class="value" th:text="${todayNewMemberCount}">0</div>
+      <div class="sub-text">오늘 기준</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="header">
+        <div class="label"><span class="icon">📝</span><span>오늘 채용공고 등록</span></div>
+      </div>
+      <div class="value" th:text="${todayJobPostingCount}">0</div>
+      <div class="sub-text">오늘 등록</div>
+    </div>
+  </div>
+
+  <!-- 차트 영역 -->
+  <div class="charts-grid">
+    
+   <div class="chart-card">
+      <div class="title">일별 회원 가입 추이 (최근 7일)</div>
+      <div class="chart-container"><canvas id="memberChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="title">일별 지원 추이 (최근 7일)</div>
+      <div class="chart-container"><canvas id="applicationChart"></canvas></div>
+    </div>
+  </div>
+  
+  
+
+  <!-- 알림 카드 -->
+<div class="alerts-grid" style="grid-template-columns: repeat(2, 1fr);">
+
+  <!-- 신고 처리 대기 -->
+  <div class="alert-card">
+	    <div class="header">
+	      <div class="title"><span>⚠️</span><span>신고 처리 대기</span></div>
+	      <span class="count red"
+	            th:text="${pendingJobReportCount + pendingPostReportCount + pendingCommentReportCount}">0</span>
+	    </div>
+	    <div class="alert-item">
+	  <div class="info"><div class="name">채용공고 신고</div></div>
+	  <div class="action" th:text="${pendingJobReportCount} + '건'">0건</div>
+	</div>
+	<div class="alert-item">
+	  <div class="info"><div class="name">게시글 신고</div></div>
+	  <div class="action" th:text="${pendingPostReportCount} + '건'">0건</div>
+	</div>
+	<div class="alert-item">
+	  <div class="info"><div class="name">댓글 신고</div></div>
+	  <div class="action" th:text="${pendingCommentReportCount} + '건'">0건</div>
+	</div>
+  </div>
+
+  <!-- 기업 승인 대기 -->
+  <div class="alert-card">
+    <div class="header">
+      <div class="title"><span>🏢</span><span>대기 중인 기업 승인</span></div>
+      <span class="count gray"
+            th:text="${pendingCompanies != null ? pendingCompanies.size() : 0}">0</span>
+    </div>
+    <th:block th:if="${pendingCompanies != null and !pendingCompanies.isEmpty()}">
+      <div class="alert-item" th:each="company : ${pendingCompanies}">
+       <div class="info">
+		  <div class="name" th:text="${company.companyName}">기업명</div>
+		  <div class="detail">기업 인증</div>
+		  <div class="date" th:text="${company.infoCreatedAt}">날짜</div>
+		</div>
+        
+		</div>
+    </th:block>
+    <div class="empty-msg" th:if="${pendingCompanies == null or pendingCompanies.isEmpty()}">
+      대기 중인 승인이 없습니다.
+    </div>
+  </div>
+
+</div>
+
+  <!-- 최근 채용공고 -->
+  <div class="table-section">
+    <div class="title">최근 채용공고</div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>기업명</th><th>공고 제목</th><th>지역</th><th>등록일시</th><th>마감일</th><th>상태</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:if="${recentJobPostings == null or recentJobPostings.isEmpty()}">
+          <td colspan="5" style="text-align:center; color:#9ca3af;">데이터가 없습니다.</td>
+        </tr>
+        <tr th:each="job : ${recentJobPostings}">
+          <td th:text="${job.companyName}">-</td>
+          <td th:text="${job.title}">-</td>
+          <td th:text="${job.regionCode}">-</td>
+          <td th:text="${job.createdAt}">-</td>
+          <td th:text="${job.deadlineAt != null ? job.deadlineAt : '상시'}">-</td>
+          <td>
+            <span class="status-badge"
+      th:classappend="${job.status == '진행중'} ? 'active' : 'closed'"
+      th:text="${job.status == '진행중'} ? '진행중' : ${job.status}">진행중</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 최근 결제 내역 -->
+  <div class="table-section">
+    <div class="title">최근 결제 내역</div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>기업명</th><th>금액</th><th>결제일시</th><th>상태</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:if="${recentPayments == null or recentPayments.isEmpty()}">
+          <td colspan="4" style="text-align:center; color:#9ca3af;">데이터가 없습니다.</td>
+        </tr>
+        <tr th:each="payment : ${recentPayments}">
+          <td th:text="${payment.companyName}">-</td>
+          <td><span class="amount" th:text="${#numbers.formatInteger(payment.chargeAmount, 0, 'COMMA') + '원'}">0원</span></td>
+          <td th:text="${payment.paidAt != null ? payment.paidAt : '-'}">-</td>
+          <td th:text="${payment.status == 'PAID' ? '결제완료' : (payment.status == 'PENDING' ? '처리중' : payment.status)}">-</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</section>
+
+<script th:inline="javascript">
+  
+</script>
+
+</body>
+</html>

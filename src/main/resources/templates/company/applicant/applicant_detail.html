@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      lang="ko"
+      th:replace="~{layout/layout_company :: layout(~{::title},~{::link},~{::style},~{::script},~{::section})}">
+
+<head>
+  <title>지원자 상세</title>
+  <link rel="stylesheet" th:href="@{/css/company/applicant_detail.css}">
+  <style type="text/css"></style>
+
+  <script th:inline="javascript">
+    var CTX = /*[[@{/}]]*/ '/';
+
+    $(function() {
+
+      var eduJson = /*[[${appDetail['education']}]]*/ null;
+      if (eduJson) {
+        try {
+          var list = JSON.parse(eduJson);
+          var h = '';
+          list.forEach(function(e) {
+            var statusBadge = '';
+            if (e.status == 0 || e.status === '졸업') statusBadge = '<span class="detail-badge badge-graduated">졸업</span>';
+            else if (e.status == 1 || e.status === '재학') statusBadge = '<span class="detail-badge badge-enrolled">재학</span>';
+            else if (e.status == 2 || e.status === '중퇴') statusBadge = '<span class="detail-badge badge-dropped">중퇴</span>';
+            else if (e.status) statusBadge = '<span class="detail-badge badge-graduated">' + esc(String(e.status)) + '</span>';
+
+            var period = '';
+            if (e.enrolldate) {
+              period = esc(e.enrolldate);
+              if (e.graduationdate) period += ' ~ ' + esc(e.graduationdate);
+              else if (e.status == 1 || e.status === '재학') period += ' ~ 현재';
+            }
+
+            h += '<div class="detail-item"><div class="d-flex justify-content-between align-items-start"><div>';
+            h += '<span class="detail-item-title">' + esc(e.schoolname || '') + '</span>' + statusBadge;
+            h += '<div class="detail-item-sub">';
+            if (e.educationLevelName) h += esc(e.educationLevelName);
+            if (e.major) h += ' · ' + esc(e.major);
+            h += '</div></div>';
+            if (period) h += '<span class="detail-period">' + period + '</span>';
+            h += '</div></div>';
+          });
+          $('#educationArea').html(h);
+        } catch(ex) {
+          $('#educationArea').html('<p class="text-muted small">학력 정보를 불러올 수 없습니다.</p>');
+        }
+      }
+
+      var careerJson = /*[[${appDetail['career']}]]*/ null;
+      if (careerJson) {
+        try {
+          var list = JSON.parse(careerJson);
+          var h = '';
+          list.forEach(function(c) {
+            var jobName = c.categoryName || c.jobnameCustom || '';
+            var sub = esc(jobName);
+            if (c.position) sub += ' · ' + esc(c.position);
+
+            var period = '';
+            if (c.joindate) {
+              period = esc(c.joindate);
+              period += c.leavedate ? ' ~ ' + esc(c.leavedate) : ' ~ 재직중';
+            }
+
+            h += '<div class="detail-item"><div class="d-flex justify-content-between align-items-start">';
+            h += '<div style="flex:1; min-width:0;">';
+            h += '<span class="detail-item-title">' + esc(c.companyname || '') + '</span>';
+            if (sub) h += '<div class="detail-item-sub">' + sub + '</div>';
+            if (c.jobDesc) h += '<div class="detail-item-desc">' + esc(c.jobDesc) + '</div>';
+            h += '</div>';
+            if (period) h += '<span class="detail-period" style="margin-left:12px;">' + period + '</span>';
+            h += '</div></div>';
+          });
+          $('#careerArea').html(h);
+        } catch(ex) {
+          $('#careerArea').html('<p class="text-muted small">경력 정보를 불러올 수 없습니다.</p>');
+        }
+      }
+
+      var langJson = /*[[${appDetail['language']}]]*/ null;
+      if (langJson) {
+        try {
+          var list = JSON.parse(langJson);
+          var h = '';
+          list.forEach(function(l) {
+            h += '<div class="detail-item"><div class="d-flex justify-content-between align-items-center"><div>';
+            h += '<span class="detail-item-title">' + esc(l.languageName || '') + '</span>';
+            h += '<div class="detail-item-sub">' + esc(l.testname || '') + ' · ' + esc(l.score || '') + '</div>';
+            h += '</div>';
+            if (l.acquiredDate) h += '<span class="detail-period">' + esc(l.acquiredDate) + '</span>';
+            h += '</div></div>';
+          });
+          $('#languageArea').html(h);
+        } catch(ex) {
+          $('#languageArea').html('<p class="text-muted small">어학 정보를 불러올 수 없습니다.</p>');
+        }
+      }
+
+      var awardJson = /*[[${appDetail['award']}]]*/ null;
+      if (awardJson) {
+        try {
+          var list = JSON.parse(awardJson);
+          var h = '';
+          list.forEach(function(a) {
+            h += '<div class="detail-item"><div class="d-flex justify-content-between align-items-start">';
+            h += '<div style="flex:1; min-width:0;">';
+            h += '<span class="detail-item-title">' + esc(a.awardName || '') + '</span>';
+            if (a.organizationName) h += '<div class="detail-item-sub">' + esc(a.organizationName) + '</div>';
+            if (a.description) h += '<div class="detail-item-desc">' + esc(a.description) + '</div>';
+            h += '</div>';
+            if (a.awardDate) h += '<span class="detail-period" style="margin-left:12px;">' + esc(a.awardDate) + '</span>';
+            h += '</div></div>';
+          });
+          $('#awardArea').html(h);
+        } catch(ex) {
+          $('#awardArea').html('<p class="text-muted small">수상 정보를 불러올 수 없습니다.</p>');
+        }
+      }
+
+      var portJson = /*[[${appDetail['portfolio']}]]*/ null;
+      if (portJson) {
+        try {
+          var list = JSON.parse(portJson);
+          var h = '';
+          list.forEach(function(p) {
+            if (p.portfolioType == 0) {
+              h += '<a href="' + esc(p.link || '#') + '" target="_blank" class="portfolio-link">';
+              h += '<i class="fas fa-external-link-alt"></i> ' + esc(p.link || p.portfolioTitle || 'URL');
+              h += '</a>';
+            } else {
+              var filePath = p.filepath || '';
+              var fileName = p.originalFilename || p.portfolioTitle || '첨부파일';
+              if (filePath) {
+                var href = CTX + filePath.replace(/^\//, '');
+                h += '<a href="' + esc(href) + '" download="' + esc(fileName) + '" class="portfolio-file" style="text-decoration:none; cursor:pointer;">';
+                h += '<i class="fas fa-download"></i> ' + esc(fileName);
+                h += '</a>';
+              } else {
+                h += '<span class="portfolio-file">';
+                h += '<i class="fas fa-file-alt"></i> ' + esc(fileName);
+                h += '</span>';
+              }
+            }
+          });
+          $('#portfolioArea').html(h);
+        } catch(ex) {
+          $('#portfolioArea').html('<p class="text-muted small">포트폴리오 정보를 불러올 수 없습니다.</p>');
+        }
+      }
+
+      function esc(str) {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g,'&amp;')
+          .replace(/</g,'&lt;')
+          .replace(/>/g,'&gt;')
+          .replace(/"/g,'&quot;');
+      }
+    });
+  </script>
+</head>
+
+<body>
+<section class="dash">
+  <div class="detail-container">
+
+    <!-- 상단 헤더 -->
+    <div class="apply-header">
+      <a th:href="@{/company/applicant/api/list}" class="back-link">
+        <i class="fas fa-arrow-left"></i> 뒤로가기
+      </a>
+
+      <div class="header-body">
+        <div class="header-left">
+          <h2>지원자 상세</h2>
+          <div class="header-meta">
+            <span th:text="${appDetail['postTitle']}">백엔드 개발자</span>
+            <span th:text="${appDetail['companyName']}">기업명</span>
+            <span th:text="${#dates.format(appDetail['appliedAt'], 'yyyy.MM.dd HH:mm')}">2026.03.09 14:30</span>
+          </div>
+        </div>
+
+        <div class="header-status">
+          <div class="status-top">
+            <div class="status-icon"
+                 th:classappend="${' st-icon-' + appDetail['status']}">
+              <i class="fas fa-user-check"></i>
+            </div>
+            <div>
+              <div class="status-label">진행 상태</div>
+              <div class="status-text"
+                   th:classappend="${' st-text-' + appDetail['status']}"
+                   th:text="${appDetail['statusText']}">열람</div>
+            </div>
+          </div>
+          <div class="status-dates">
+            <div>
+              지원일:
+              <span th:text="${#dates.format(appDetail['appliedAt'], 'yyyy.MM.dd HH:mm')}">2026.03.09 14:30</span>
+            </div>
+            <div th:if="${appDetail['viewedAt'] != null}">
+              열람일:
+              <span th:text="${#dates.format(appDetail['viewedAt'], 'yyyy.MM.dd HH:mm')}">2026.03.09 15:00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 기본 정보 -->
+    <div class="detail-header">
+      <div class="d-flex" style="gap: 24px;">
+        <div class="detail-photo">
+          <img th:if="${appDetail['photoPath'] != null and !#strings.isEmpty(appDetail['photoPath'])}"
+               th:src="@{/{path}(path=${appDetail['photoPath'].substring(1)})}" alt="프로필 사진">
+          <div th:if="${appDetail['photoPath'] == null or #strings.isEmpty(appDetail['photoPath'])}" class="placeholder">
+            <i class="fas fa-user" style="font-size: 40px;"></i>
+          </div>
+        </div>
+
+        <div style="flex: 1;">
+          <h1 class="detail-name" th:text="${appDetail['name']}">홍길동</h1>
+          <p class="detail-title" th:text="${appDetail['resumeTitle']}">이력서 제목</p>
+
+          <div class="detail-info">
+            <span th:if="${appDetail['email'] != null}">
+              <i class="fas fa-envelope"></i>
+              <span th:text="${appDetail['email']}"></span>
+            </span>
+            <span th:if="${appDetail['phone'] != null}">
+              <i class="fas fa-phone"></i>
+              <span th:text="${appDetail['phone']}"></span>
+            </span>
+          </div>
+
+          <div class="detail-info">
+            <span th:if="${appDetail['birthDate'] != null}">
+              <i class="fas fa-birthday-cake"></i>
+              <span th:text="${#dates.format(appDetail['birthDate'], 'yyyy.MM.dd')}"></span>
+            </span>
+            <span th:if="${appDetail['gender'] != null}">
+              <i class="fas fa-venus-mars"></i>
+              <span th:if="${appDetail['gender'] == 1}">남성</span>
+              <span th:if="${appDetail['gender'] == 2}">여성</span>
+            </span>
+            <span th:if="${appDetail['desiredSalary'] != null}">
+              <i class="fas fa-coins"></i>
+              <span th:text="${#numbers.formatInteger(appDetail['desiredSalary'], 3, 'COMMA') + '원'}">0원</span>
+            </span>
+          </div>
+
+          <div class="detail-info"
+               th:if="${appDetail['address'] != null and !#strings.isEmpty(appDetail['address'])}">
+            <span>
+              <i class="fas fa-map-marker-alt"></i>
+              <span th:text="${appDetail['address']}"></span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 자기소개 -->
+    <div class="detail-section"
+         th:if="${appDetail['selfIntro'] != null and !#strings.isEmpty(appDetail['selfIntro'])}">
+      <div class="detail-section-title"><i class="fas fa-file-alt"></i> 자기소개</div>
+      <div class="self-intro-box" th:text="${appDetail['selfIntro']}"></div>
+    </div>
+
+    <!-- 학력 -->
+    <div class="detail-section"
+         th:if="${appDetail['education'] != null and !#strings.isEmpty(appDetail['education'])}">
+      <div class="detail-section-title"><i class="fas fa-graduation-cap"></i> 학력</div>
+      <div id="educationArea"></div>
+    </div>
+
+    <!-- 경력 -->
+    <div class="detail-section"
+         th:if="${appDetail['career'] != null and !#strings.isEmpty(appDetail['career'])}">
+      <div class="detail-section-title"><i class="fas fa-briefcase"></i> 경력</div>
+      <div id="careerArea"></div>
+    </div>
+
+    <!-- 기술스택 -->
+    <div class="detail-section"
+         th:if="${appDetail['techstacks'] != null and !appDetail['techstacks'].isEmpty()}">
+      <div class="detail-section-title"><i class="fas fa-code"></i> 기술스택</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+        <span th:each="tech : ${appDetail['techstacks']}" class="skill-badge">
+          <span th:text="${tech['skillName']}">Java</span>
+          <span class="proficiency"
+                th:classappend="${tech['proficiency'] == 1 ? ' proficiency-1' : (tech['proficiency'] == 2 ? ' proficiency-2' : ' proficiency-3')}"
+                th:text="${tech['proficiency'] == 1 ? '초급' : (tech['proficiency'] == 2 ? '중급' : '고급')}">중급</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- 자격증 -->
+    <div class="detail-section"
+         th:if="${appDetail['certificates'] != null and !appDetail['certificates'].isEmpty()}">
+      <div class="detail-section-title"><i class="fas fa-certificate"></i> 자격증</div>
+      <div th:each="cert : ${appDetail['certificates']}" class="detail-item">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <span class="detail-item-title" th:text="${cert['certificateName']}">자격증명</span>
+            <div class="detail-item-sub"
+                 th:if="${cert['issuer'] != null}"
+                 th:text="${cert['issuer']}">발급기관</div>
+          </div>
+          <span class="detail-period"
+                th:if="${cert['acquiredDate'] != null}"
+                th:text="${cert['acquiredDate']}">취득일</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 어학 -->
+    <div class="detail-section"
+         th:if="${appDetail['language'] != null and !#strings.isEmpty(appDetail['language'])}">
+      <div class="detail-section-title"><i class="fas fa-language"></i> 어학</div>
+      <div id="languageArea"></div>
+    </div>
+
+    <!-- 수상 -->
+    <div class="detail-section"
+         th:if="${appDetail['award'] != null and !#strings.isEmpty(appDetail['award'])}">
+      <div class="detail-section-title"><i class="fas fa-trophy"></i> 수상</div>
+      <div id="awardArea"></div>
+    </div>
+
+    <!-- 포트폴리오 -->
+    <div class="detail-section"
+         th:if="${appDetail['portfolio'] != null and !#strings.isEmpty(appDetail['portfolio'])}">
+      <div class="detail-section-title"><i class="fas fa-folder-open"></i> 포트폴리오</div>
+      <div id="portfolioArea" style="display: flex; flex-wrap: wrap; gap: 4px;"></div>
+    </div>
+
+    <!-- 첨부파일 -->
+    <div class="detail-section"
+         th:if="${appDetail['files'] != null and !#lists.isEmpty(appDetail['files'])}">
+      <div class="detail-section-title"><i class="fas fa-paperclip"></i> 첨부 파일</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+        <th:block th:each="file : ${appDetail['files']}">
+          <a class="portfolio-file"
+             th:href="@{/upload/{name}(name=${file.fileUrl})}"
+             th:download="${file.originalFilename}">
+            <i class="fas fa-download"></i>
+            <span th:text="${file.originalFilename}">파일명.pdf</span>
+          </a>
+        </th:block>
+      </div>
+    </div>
+
+    <!-- 하단 버튼 -->
+    <div class="btn-actions">
+      <a th:href="@{/company/applicant/list}" class="btn btn-outline-secondary">
+        <i class="fas fa-list"></i> 목록으로
+      </a>
+
+      <a th:href="@{/job/detail/{id}(id=${appDetail['postId']})}" class="btn btn-outline-primary">
+        <i class="fas fa-external-link-alt"></i> 공고 보기
+      </a>
+    </div>
+
+  </div>
+</section>
+</body>
+</html>

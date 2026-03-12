@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring.app.admin.model.AdminDashboardDAO">
+
+    <!-- ───────────────────────────────────────
+         상단 통계 카드
+    ─────────────────────────────────────── -->
+
+    <!-- 전체 회원 수 -->
+    <select id="getTotalMemberCount" resultType="int">
+        SELECT COUNT(*) FROM TBL_MEMBER
+    </select>
+
+    <!-- 구직자 수 (TYPE = 0) -->
+    <select id="getJobseekerCount" resultType="int">
+        SELECT COUNT(*) FROM TBL_MEMBER WHERE TYPE = 0
+    </select>
+
+    <!-- 기업 회원 수 (TYPE = 1) -->
+    <select id="getCompanyCount" resultType="int">
+        SELECT COUNT(*) FROM TBL_MEMBER WHERE TYPE = 1
+    </select>
+
+    <!-- 활성 채용공고 수 -->
+    <select id="getActiveJobPostingCount" resultType="int">
+        SELECT COUNT(*)
+        FROM TBL_JOB_POSTING
+        WHERE STATUS = 'ACTIVE'
+          AND IS_HIDDEN = 0
+    </select>
+
+    <!-- 오늘 등록된 채용공고 수 -->
+    <select id="getTodayJobPostingCount" resultType="int">
+        SELECT COUNT(*)
+        FROM TBL_JOB_POSTING
+        WHERE TRUNC(CREATED_AT) = TRUNC(SYSDATE)
+    </select>
+
+    <!-- 오늘 신규 가입 회원 수 -->
+    <select id="getTodayNewMemberCount" resultType="int">
+        SELECT COUNT(*)
+        FROM TBL_MEMBER
+        WHERE TRUNC(CREATED_AT) = TRUNC(SYSDATE)
+    </select>
+
+    <!-- ───────────────────────────────────────
+         차트: 최근 7일 일별 회원 가입 추이
+    ─────────────────────────────────────── -->
+    <resultMap id="DailyMemberStatMap" type="com.spring.app.admin.domain.AdminDashboardDTO$DailyMemberStatDTO">
+        <result property="statDate"       column="STAT_DATE"/>
+        <result property="jobseekerCount" column="JOBSEEKER_COUNT"/>
+        <result property="companyCount"   column="COMPANY_COUNT"/>
+    </resultMap>
+
+    <select id="getDailyMemberStats" resultMap="DailyMemberStatMap">
+	    SELECT
+	        TO_CHAR(TRUNC(CREATED_AT), 'MM/DD') AS STAT_DATE,
+	        SUM(CASE WHEN TYPE = 0 THEN 1 ELSE 0 END) AS JOBSEEKER_COUNT,
+	        SUM(CASE WHEN TYPE = 1 THEN 1 ELSE 0 END) AS COMPANY_COUNT
+	    FROM TBL_MEMBER
+	    WHERE CREATED_AT >= TRUNC(SYSDATE) - 6
+	    GROUP BY TRUNC(CREATED_AT)
+	    ORDER BY TRUNC(CREATED_AT) ASC
+	</select>
+
+	
+	<!-- 신고 처리 대기 건수 -->
+	<select id="getPendingReportCount" parameterType="int" resultType="int">
+	    SELECT COUNT(*)
+	    FROM TBL_REPORT
+	    WHERE PROCESS_STATUS = '처리중'
+	    AND TARGET_TYPE = #{targetType}
+	</select>
+	
+    <!-- ───────────────────────────────────────
+         알림 카드: 기업 승인 대기
+    ─────────────────────────────────────── -->
+    <resultMap id="PendingCompanyMap" type="com.spring.app.admin.domain.AdminDashboardDTO$PendingCompanyDTO">
+        <result property="memberId"      column="FK_MEMBERID"/>
+        <result property="companyName"   column="COMPANY_NAME"/>
+        <result property="infoCreatedAt" column="INFO_CREATED_AT"/>
+    </resultMap>
+
+	<!-- ───────────────────────────────────────
+     신고된 채용공고 (TARGET_TYPE = 1), 처리중만 최근 3건
+─────────────────────────────────────── -->
+
+    <select id="getPendingCompanies" resultMap="PendingCompanyMap">
+        SELECT
+            FK_MEMBERID,
+            COMPANY_NAME,
+            TO_CHAR(INFO_CREATED_AT, 'YYYY-MM-DD') AS INFO_CREATED_AT
+        FROM TBL_COMPANY
+        WHERE APPROVED_YN = 0
+        ORDER BY INFO_CREATED_AT ASC
+    </select>
+
+    <!-- ───────────────────────────────────────
+         테이블: 최근 채용공고 5건
+    ─────────────────────────────────────── -->
+    <resultMap id="RecentJobPostingMap" type="com.spring.app.admin.domain.AdminDashboardDTO$RecentJobPostingDTO">
+        <result property="companyName" column="COMPANY_NAME"/>
+        <result property="title"       column="TITLE"/>
+        <result property="regionCode"  column="FK_REGION_CODE"/>
+        <result property="createdAt"   column="CREATED_AT"/>
+        <result property="status"      column="STATUS"/>
+        <result property="deadlineAt" column="DEADLINE_AT"/>
+    </resultMap>
+
+    <select id="getRecentJobPostings" resultMap="RecentJobPostingMap">
+        SELECT *
+        FROM (
+            SELECT
+                C.COMPANY_NAME,
+                J.TITLE,
+                J.FK_REGION_CODE,
+                TO_CHAR(J.CREATED_AT, 'YYYY-MM-DD HH24:MI') AS CREATED_AT,
+                J.STATUS,
+                TO_CHAR(J.DEADLINE_AT, 'YYYY-MM-DD') AS DEADLINE_AT
+            FROM TBL_JOB_POSTING J
+            JOIN TBL_COMPANY C ON J.FK_MEMBERID = C.FK_MEMBERID
+            WHERE J.IS_HIDDEN = 0
+            ORDER BY J.CREATED_AT DESC
+        )
+        WHERE ROWNUM &lt;= 5
+    </select>
+
+    <!-- ───────────────────────────────────────
+         테이블: 최근 결제 내역 5건
+    ─────────────────────────────────────── -->
+    <resultMap id="RecentPaymentMap" type="com.spring.app.admin.domain.AdminDashboardDTO$RecentPaymentDTO">
+        <result property="companyName"  column="COMPANY_NAME"/>
+        <result property="chargeAmount" column="CHARGE_AMOUNT"/>
+        <result property="paidAt"       column="PAID_AT"/>
+        <result property="status"       column="STATUS"/>       
+    </resultMap>
+
+    <select id="getRecentPayments" resultMap="RecentPaymentMap">
+        SELECT *
+        FROM (
+            SELECT
+                C.COMPANY_NAME,
+                P.CHARGE_AMOUNT,
+                TO_CHAR(P.PAID_AT, 'YYYY-MM-DD HH24:MI') AS PAID_AT,
+                P.STATUS
+            FROM TBL_PAYMENT P
+            JOIN TBL_MEMBER M ON P.FK_MEMBERID = M.MEMBERID
+            JOIN TBL_COMPANY C ON M.MEMBERID = C.FK_MEMBERID
+            ORDER BY P.PAID_AT DESC
+        )
+        WHERE ROWNUM &lt;= 5
+    </select>
+    
+    
+	    
+	    <resultMap id="DailyApplicationStatMap" type="com.spring.app.admin.domain.AdminDashboardDTO$DailyApplicationStatDTO">
+	    <result property="statDate"          column="STAT_DATE"/>
+	    <result property="applicationCount"  column="APPLICATION_COUNT"/>
+	</resultMap>
+	
+	<select id="getDailyApplicationStats" resultMap="DailyApplicationStatMap">
+	    WITH date_range AS (
+	        SELECT TRUNC(SYSDATE) - (6 - LEVEL + 1) AS stat_date
+	        FROM DUAL
+	        CONNECT BY LEVEL &lt;= 7
+	    )
+	    SELECT
+	        TO_CHAR(d.stat_date, 'MM/DD') AS STAT_DATE,
+	        NVL(COUNT(a.application_id), 0) AS APPLICATION_COUNT
+	    FROM date_range d
+	    LEFT JOIN TBL_JOB_APPLICATION a
+	        ON TRUNC(a.applied_at) = d.stat_date
+	        AND a.application_status = 0
+	    GROUP BY d.stat_date
+	    ORDER BY d.stat_date ASC
+	</select>
+
+</mapper>

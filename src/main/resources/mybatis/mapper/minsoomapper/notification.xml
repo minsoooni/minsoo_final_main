@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring.app.notification.model.NotificationDAO">
+
+    <insert id="insertNotification" parameterType="com.spring.app.notification.domain.NotificationDTO">
+	    INSERT INTO TBL_NOTIFICATION (
+	        NOTI_ID, FK_MEMBERID, TYPE, TITLE, MESSAGE, LINK_URL, IS_READ, CREATED_AT
+	    ) VALUES (
+	        SEQ_NOTIFICATION_NOTI_ID.NEXTVAL,
+	        #{fkMemberId}, #{type}, #{title}, #{message}, #{linkUrl}, 0, SYSDATE
+	    )
+	</insert>
+	
+		<select id="selectNotificationsByMemberId" parameterType="String" resultType="com.spring.app.notification.domain.NotificationDTO">
+        SELECT *
+        FROM (
+            SELECT
+                NOTI_ID AS notiId,
+                FK_MEMBERID AS fkMemberId,
+                TITLE AS title,
+                MESSAGE AS message,
+                LINK_URL AS linkUrl,
+                IS_READ AS isRead
+            FROM TBL_NOTIFICATION
+            WHERE FK_MEMBERID = #{fkMemberId}
+            ORDER BY NOTI_ID DESC
+        )
+        WHERE ROWNUM &lt;= 10
+    </select>
+    
+    <select id="countUnreadNotifications" parameterType="String" resultType="int">
+        SELECT COUNT(*)
+        FROM TBL_NOTIFICATION
+        WHERE FK_MEMBERID = #{fkMemberId} AND IS_READ = 0
+    </select>
+    
+    <update id="markNotificationRead" parameterType="long">
+        UPDATE TBL_NOTIFICATION
+        SET
+            IS_READ = 1,
+            READ_AT = SYSDATE
+        WHERE NOTI_ID = #{notiId}
+    </update>
+    
+    
+    
+
+</mapper>

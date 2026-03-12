@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spring.app.admin.model.AdminPostDAO">
+
+    <!-- 게시글 목록 조회 -->
+    <select id="selectPagedPosts" resultType="com.spring.app.admin.domain.AdminPostDTO">
+        SELECT * FROM (
+            SELECT
+                p.POST_ID       AS postId,
+                p.FK_MEMBERID   AS memberId,
+                p.FK_BOARD_ID   AS boardId,
+                p.TITLE         AS title,
+                p.POST_STATUS   AS postStatus,
+                p.VIEW_COUNT    AS viewCount,
+                p.CREATED_AT    AS createdAt,
+                p.UPDATED_AT    AS updatedAt,
+                p.IS_HIDDEN     AS isHidden,
+                ROW_NUMBER() OVER (ORDER BY p.CREATED_AT DESC) AS rn
+            FROM TBL_POST p
+            <where>
+                <if test="search != null and search != ''">
+                    AND (p.TITLE LIKE '%' || #{search} || '%'
+                    OR p.FK_MEMBERID LIKE '%' || #{search} || '%')
+                </if>
+                <if test="isHidden != null">
+                    AND p.IS_HIDDEN = #{isHidden}
+                </if>
+            </where>
+        )
+        WHERE rn BETWEEN #{offset}+1 AND #{offset}+#{limit}
+    </select>
+
+    <!-- 게시글 전체 건수 -->
+    <select id="selectPostCount" resultType="int">
+        SELECT COUNT(*) FROM TBL_POST p
+        <where>
+            <if test="search != null and search != ''">
+                AND (p.TITLE LIKE '%' || #{search} || '%'
+                OR p.FK_MEMBERID LIKE '%' || #{search} || '%')
+            </if>
+            <if test="isHidden != null">
+                AND p.IS_HIDDEN = #{isHidden}
+            </if>
+        </where>
+    </select>
+
+    <!-- 게시글 상태별 건수 -->
+    <select id="selectPostCountByHidden" resultType="int">
+        SELECT COUNT(*) FROM TBL_POST WHERE IS_HIDDEN = #{isHidden}
+    </select>
+
+    <!-- 게시글 숨김 토글 -->
+    <update id="updatePostHidden">
+        UPDATE TBL_POST
+        SET IS_HIDDEN = #{isHidden},
+            UPDATED_AT = SYSDATE
+        WHERE POST_ID = #{postId}
+    </update>
+
+    <!-- 댓글 목록 조회 -->
+    <select id="selectPagedComments" resultType="com.spring.app.admin.domain.AdminCommentDTO">
+        SELECT * FROM (
+            SELECT
+                c.COMMENT_ID            AS commentId,
+                c.FK_POST_ID            AS postId,
+                c.FK_MEMBERID           AS memberId,
+                c.CONTENT               AS content,
+                c.FK_PARENT_COMMENT_ID  AS parentCommentId,
+                c.STATUS                AS status,
+                c.CREATED_AT            AS createdAt,
+                c.UPDATED_AT            AS updatedAt,
+                c.IS_HIDDEN             AS isHidden,
+                ROW_NUMBER() OVER (ORDER BY c.CREATED_AT DESC) AS rn
+            FROM TBL_COMMENT c
+            <where>
+                <if test="search != null and search != ''">
+                    AND (c.CONTENT LIKE '%' || #{search} || '%'
+                    OR c.FK_MEMBERID LIKE '%' || #{search} || '%')
+                </if>
+                <if test="isHidden != null">
+                    AND c.IS_HIDDEN = #{isHidden}
+                </if>
+            </where>
+        )
+        WHERE rn BETWEEN #{offset}+1 AND #{offset}+#{limit}
+    </select>
+
+    <!-- 댓글 전체 건수 -->
+    <select id="selectCommentCount" resultType="int">
+        SELECT COUNT(*) FROM TBL_COMMENT c
+        <where>
+            <if test="search != null and search != ''">
+                AND (c.CONTENT LIKE '%' || #{search} || '%'
+                OR c.FK_MEMBERID LIKE '%' || #{search} || '%')
+            </if>
+            <if test="isHidden != null">
+                AND c.IS_HIDDEN = #{isHidden}
+            </if>
+        </where>
+    </select>
+
+    <!-- 댓글 상태별 건수 -->
+    <select id="selectCommentCountByHidden" resultType="int">
+        SELECT COUNT(*) FROM TBL_COMMENT WHERE IS_HIDDEN = #{isHidden}
+    </select>
+
+    <!-- 댓글 숨김 토글 -->
+    <update id="updateCommentHidden">
+        UPDATE TBL_COMMENT
+        SET IS_HIDDEN = #{isHidden},
+            UPDATED_AT = SYSDATE
+        WHERE COMMENT_ID = #{commentId}
+    </update>
+
+</mapper>

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/layout_admin :: layout(~{::title}, ~{}, ~{::style}, ~{::script}, ~{::section})}">
+
+<head>
+  <title>게시글/댓글 관리</title>
+  <style type="text/css">
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Noto Sans KR', sans-serif; background-color: #f9fafb; color: #1f2937; }
+    .dash { padding: 24px; width: 100%; box-sizing: border-box; }
+    .content-container { background: white; border-radius: 8px; border: 1px solid #e5e7eb; padding: 24px; }
+    .page-title { font-size: 18px; font-weight: 600; color: #1f2937; margin-bottom: 24px; }
+
+    .tab-wrapper { display: flex; gap: 0; margin-bottom: 0; border-bottom: 2px solid #e5e7eb; }
+    .tab-btn { padding: 10px 24px; font-size: 14px; font-weight: 500; border: none; background: none; cursor: pointer; color: #6b7280; border-bottom: 2px solid transparent; margin-bottom: -2px; font-family: inherit; }
+    .tab-btn.active { color: #1f2937; border-bottom: 2px solid #1f2937; font-weight: 700; }
+
+    .filters { display: flex; gap: 12px; margin: 20px 0; }
+    .search-input { flex: 1; padding: 10px 16px 10px 36px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; font-family: inherit; background: #f9fafb url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 12px center; }
+    .search-input:focus { outline: none; border-color: #d1d5db; background-color: white; }
+    .filter-select { padding: 10px 16px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; font-family: inherit; background: white; cursor: pointer; min-width: 120px; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid #e5e7eb; }
+    .stat-card .label { font-size: 13px; color: #6b7280; margin-bottom: 8px; }
+    .stat-card .value { font-size: 28px; font-weight: 700; color: #1f2937; }
+    .stat-card .value.green { color: #10b981; }
+    .stat-card .value.yellow { color: #f59e0b; }
+
+    .post-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .post-table thead tr { border-bottom: 1px solid #e5e7eb; }
+    .post-table th { padding: 12px 8px; text-align: left; font-weight: 500; color: #6b7280; font-size: 13px; }
+    .post-table th.center { text-align: center; }
+    .post-table td { padding: 14px 8px; font-size: 14px; color: #374151; border-bottom: 1px solid #f3f4f6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .post-table td.center { text-align: center; }
+    .post-table tbody tr:hover { background: #f9fafb; }
+
+    .status-badge { display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+    .status-badge.active { background: #d1fae5; color: #065f46; }
+    .status-badge.hidden { background: #fef3c7; color: #92400e; }
+
+    .toggle-wrapper { display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .toggle-switch { position: relative; width: 44px; height: 24px; background: #e5e7eb; border-radius: 12px; cursor: pointer; transition: background 0.2s; }
+    .toggle-switch.on { background: #1f2937; }
+    .toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: transform 0.2s; }
+    .toggle-switch.on::after { transform: translateX(20px); }
+    .visibility-icon { font-size: 16px; color: #9ca3af; }
+    .visibility-icon.visible { color: #10b981; }
+
+    .table-footer { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 16px 0; margin-top: 8px; }
+    .total-count { font-size: 14px; color: #6b7280; }
+    .pagination { display: flex; gap: 4px; }
+    .pagination a { display: inline-block; padding: 8px 14px; border: 1px solid #e5e7eb; background: white; border-radius: 6px; font-size: 13px; color: #374151; text-decoration: none; }
+    .pagination a:hover { background: #f9fafb; }
+    .pagination a.active { background: #1f2937; color: white; border-color: #1f2937; }
+    .pagination a.disabled { color: #d1d5db; background: #f9fafb; pointer-events: none; }
+
+    .toast { position: fixed; bottom: 24px; right: 24px; padding: 14px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; color: white; z-index: 9999; opacity: 0; transform: translateY(10px); transition: all 0.3s ease; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.success { background: #10b981; }
+    .toast.warning { background: #f59e0b; }
+  </style>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', function () {
+
+    window.switchTab = function(tab) {
+      document.getElementById('postTab').style.display    = tab === 'post'    ? '' : 'none';
+      document.getElementById('commentTab').style.display = tab === 'comment' ? '' : 'none';
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.add('active');
+    };
+
+    window.applyFilters = function() {
+      const search   = document.getElementById('searchInput').value.trim();
+      const isHidden = document.getElementById('hiddenFilter').value;
+      const params   = new URLSearchParams();
+      params.set('page', '1');
+      if (search)        params.set('search', search);
+      if (isHidden !== '') params.set('isHidden', isHidden);
+      window.location.href = '/finalProject/admin/posts?' + params.toString();
+    };
+
+    document.getElementById('searchInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') applyFilters();
+    });
+
+    window.togglePost = function(postId, currentHidden) {
+      const newHidden = currentHidden === 0 ? 1 : 0;
+      fetch('/finalProject/admin/posts/' + postId + '/visibility', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isHidden: newHidden })
+      })
+      .then(res => { if (res.ok) location.reload(); else showToast('변경 실패', 'warning'); })
+      .catch(() => showToast('서버 오류', 'warning'));
+    };
+
+	window.toggleComment = function(commentId, currentHidden) {
+	    const newHidden = currentHidden === 0 ? 1 : 0;
+	    fetch('/finalProject/admin/comments/' + commentId + '/visibility', {
+	        method: 'PATCH',
+	        headers: { 'Content-Type': 'application/json' },
+	        body: JSON.stringify({ isHidden: newHidden })
+	    })
+	    .then(res => {
+	        if (res.ok) {
+	            const url = new URL(window.location.href);
+	            url.searchParams.set('tab', 'comment');
+	            window.location.href = url.toString();
+	        } else showToast('변경 실패', 'warning');
+	    })
+	    .catch(() => showToast('서버 오류', 'warning'));
+	};
+
+
+	    // ← 여기 맨 아래에 추가
+	    const urlTab = new URLSearchParams(window.location.search).get('tab');
+	    if (urlTab === 'comment') switchTab('comment');
+
+	
+  });
+
+  function showToast(message, type) {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.className = 'toast show ' + type;
+    setTimeout(() => { toast.className = 'toast'; }, 3000);
+  }
+  </script>
+</head>
+
+<body>
+<section class="dash" th:fragment="section">
+  <div class="content-container">
+    <h1 class="page-title">게시글 / 댓글 관리</h1>
+
+    <!-- 1. 탭 -->
+    <div class="tab-wrapper">
+      <button class="tab-btn active" data-tab="post"    onclick="switchTab('post')">📝 게시글</button>
+      <button class="tab-btn"        data-tab="comment" onclick="switchTab('comment')">💬 댓글</button>
+    </div>
+
+    <!-- 2. 검색창 (탭 밖 공통) -->
+    <div class="filters">
+      <input type="text" class="search-input" id="searchInput"
+             placeholder="작성자 ID 또는 내용 검색..."
+             th:value="${param.search != null ? param.search[0] : ''}">
+      <select class="filter-select" id="hiddenFilter" onchange="applyFilters()">
+        <option value=""  th:selected="${param.isHidden == null or param.isHidden == ''}">전체</option>
+        <option value="0" th:selected="${param.isHidden != null and param.isHidden[0] == '0'}">활성</option>
+        <option value="1" th:selected="${param.isHidden != null and param.isHidden[0] == '1'}">숨김</option>
+      </select>
+    </div>
+
+    <!-- 3. 게시글 탭 -->
+    <div id="postTab">
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="label">총 게시글</div>
+          <div class="value" th:text="${totalCount}">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">활성</div>
+          <div class="value green" th:text="${activeCount}">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">숨김</div>
+          <div class="value yellow" th:text="${hiddenCount}">0</div>
+        </div>
+      </div>
+
+      <table class="post-table">
+        <thead>
+          <tr>
+            <th style="width:50px;">ID</th>
+            <th style="width:120px;">작성자</th>
+            <th>제목</th>
+            <th style="width:80px;" class="center">조회수</th>
+            <th style="width:100px;" class="center">등록일</th>
+            <th style="width:80px;" class="center">상태</th>
+            <th style="width:100px;" class="center">표시/숨김</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="post : ${posts}">
+            <td th:text="${post.postId}"></td>
+            <td th:text="${post.memberId}"></td>
+            <td th:text="${post.title} ?: '-'"></td>
+            <td class="center" th:text="${post.viewCount}"></td>
+            <td class="center" th:text="${post.createdAt != null} ? ${#strings.substring(post.createdAt.toString(), 0, 10)} : '-'"></td>
+            <td class="center">
+              <span th:if="${post.isHidden == 0}" class="status-badge active">활성</span>
+              <span th:if="${post.isHidden == 1}" class="status-badge hidden">숨김</span>
+            </td>
+            <td class="center">
+              <div class="toggle-wrapper">
+                <div class="toggle-switch"
+                     th:classappend="${post.isHidden == 0} ? 'on'"
+                     th:attr="onclick='togglePost(' + ${post.postId} + ', ' + ${post.isHidden} + ')'">
+                </div>
+                <span class="visibility-icon"
+                      th:classappend="${post.isHidden == 0} ? 'visible'"
+                      th:text="${post.isHidden == 0} ? '👁' : '🚫'"></span>
+              </div>
+            </td>
+          </tr>
+          <tr th:if="${#lists.isEmpty(posts)}">
+            <td colspan="7" style="text-align:center; padding:40px; color:#9ca3af;">게시글이 없습니다.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="table-footer">
+        <span class="total-count">총 <span th:text="${totalCount}"></span>개의 게시글</span>
+        <div class="pagination">
+          <a th:href="@{/admin/posts(page=1,search=${param.search},isHidden=${param.isHidden})}"
+   th:classappend="${currentPage == 1} ? 'disabled'">«</a>
+          <a th:href="@{/admin/posts(page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search},isHidden=${param.isHidden})}"
+             th:classappend="${currentPage == 1} ? 'disabled'">이전</a>
+          <span th:each="i : ${#numbers.sequence(1, totalPages)}">
+            <a th:href="@{/admin/posts(page=${i},search=${param.search},isHidden=${param.isHidden})}"
+               th:text="${i}" th:classappend="${i == currentPage} ? 'active'"></a>
+          </span>
+          <a th:href="@{/admin/posts(page=${currentPage < totalPages ? currentPage+1 : totalPages},search=${param.search},isHidden=${param.isHidden})}"
+             th:classappend="${currentPage == totalPages} ? 'disabled'">다음</a>
+          <a th:href="@{/admin/posts(page=${totalPages},search=${param.search},isHidden=${param.isHidden})}"
+             th:classappend="${currentPage == totalPages} ? 'disabled'">»</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. 댓글 탭 -->
+    <div id="commentTab" style="display:none;">
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="label">총 댓글</div>
+          <div class="value" th:text="${commentTotal}">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">활성</div>
+          <div class="value green" th:text="${commentActive}">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">숨김</div>
+          <div class="value yellow" th:text="${commentHidden}">0</div>
+        </div>
+      </div>
+
+      <table class="post-table">
+        <thead>
+          <tr>
+            <th style="width:50px;">ID</th>
+            <th style="width:120px;">작성자</th>
+            <th>내용</th>
+            <th style="width:80px;" class="center">게시글 ID</th>
+            <th style="width:100px;" class="center">등록일</th>
+            <th style="width:80px;" class="center">상태</th>
+            <th style="width:100px;" class="center">표시/숨김</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="comment : ${comments}">
+            <td th:text="${comment.commentId}"></td>
+            <td th:text="${comment.memberId}"></td>
+            <td th:text="${comment.content} ?: '-'"></td>
+            <td class="center" th:text="${comment.postId}"></td>
+            <td class="center" th:text="${comment.createdAt != null} ? ${#strings.substring(comment.createdAt.toString(), 0, 10)} : '-'"></td>
+            <td class="center">
+              <span th:if="${comment.isHidden == 0}" class="status-badge active">활성</span>
+              <span th:if="${comment.isHidden == 1}" class="status-badge hidden">숨김</span>
+            </td>
+            <td class="center">
+              <div class="toggle-wrapper">
+                <div class="toggle-switch"
+                     th:classappend="${comment.isHidden == 0} ? 'on'"
+                     th:attr="onclick='toggleComment(' + ${comment.commentId} + ', ' + ${comment.isHidden} + ')'">
+                </div>
+                <span class="visibility-icon"
+                      th:classappend="${comment.isHidden == 0} ? 'visible'"
+                      th:text="${comment.isHidden == 0} ? '👁' : '🚫'"></span>
+              </div>
+            </td>
+          </tr>
+          <tr th:if="${#lists.isEmpty(comments)}">
+            <td colspan="7" style="text-align:center; padding:40px; color:#9ca3af;">댓글이 없습니다.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="table-footer">
+	  <span class="total-count">총 <span th:text="${commentTotal}"></span>개의 댓글</span>
+	  <div class="pagination">
+	    <a th:href="@{/admin/posts(tab='comment',page=1,search=${param.search},isHidden=${param.isHidden})}"
+	       th:classappend="${currentPage == 1} ? 'disabled'">«</a>
+	    <a th:href="@{/admin/posts(tab='comment',page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search},isHidden=${param.isHidden})}"
+	       th:classappend="${currentPage == 1} ? 'disabled'">이전</a>
+	    <span th:each="i : ${#numbers.sequence(1, commentPages)}">
+	      <a th:href="@{/admin/posts(tab='comment',page=${i},search=${param.search},isHidden=${param.isHidden})}"
+	         th:text="${i}" th:classappend="${i == currentPage} ? 'active'"></a>
+	    </span>
+	    <a th:href="@{/admin/posts(tab='comment',page=${currentPage < commentPages ? currentPage+1 : commentPages},search=${param.search},isHidden=${param.isHidden})}"
+	       th:classappend="${currentPage == commentPages} ? 'disabled'">다음</a>
+	    <a th:href="@{/admin/posts(tab='comment',page=${commentPages},search=${param.search},isHidden=${param.isHidden})}"
+	       th:classappend="${currentPage == commentPages} ? 'disabled'">»</a>
+	  </div>
+	 </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="toast" id="toast"></div>
+</body>
+</html>

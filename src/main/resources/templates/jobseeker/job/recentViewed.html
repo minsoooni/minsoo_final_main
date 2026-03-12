@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      lang="ko"
+      th:replace="~{fragment/jobseeker_bar :: jobseeker_layout(~{::div#recentViewedContent})}">
+
+<head>
+  <title>최근 본 공고 | 구인구직</title>
+  <th:block data-slot="link">
+    <link rel="stylesheet" th:href="@{/css/jobseeker/jobseeker.css}">
+  </th:block>
+</head>
+
+<body>
+<div id="recentViewedContent">
+
+  <style>
+    .recent-post-card {
+      transition: all 0.2s ease;
+      border-left: 3px solid transparent;
+    }
+    .recent-post-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1) !important;
+      border-left-color: #17a2b8;
+      text-decoration: none;
+    }
+    .post-closed {
+      opacity: 0.55;
+    }
+    .badge-tech {
+      background-color: #e8f4f8;
+      color: #17a2b8;
+      font-weight: 500;
+    }
+    .filter-section {
+      border-left: 4px solid #17a2b8;
+    }
+    .view-time-badge {
+      background-color: #f0fafb;
+      color: #17a2b8;
+      border: 1px solid #bee5eb;
+      font-size: 0.78rem;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+    .empty-state i {
+      color: #b2dfdb;
+    }
+    .date-group-header {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #6c757d;
+      padding: 6px 0 4px;
+      border-bottom: 1px solid #e9ecef;
+      margin-bottom: 12px;
+    }
+    .clear-all-btn {
+      font-size: 0.82rem;
+    }
+  </style>
+
+  <div class="container-fluid px-4 py-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="js-page-header" style="margin-bottom:0;">
+      <h1 class="js-page-title">최근 본 공고</h1>
+      <p class="js-page-subtitle">
+        총 <span class="font-weight-bold text-dark" th:text="${totalCount}">0</span>개의 공고를 확인하셨습니다
+      </p>
+    </div>
+    <button type="button"
+            class="btn btn-sm btn-outline-danger clear-all-btn"
+            onclick="clearAllHistory()">
+      <i class="fas fa-trash-alt mr-1"></i>전체 삭제
+    </button>
+  </div>
+
+  <!-- 검색 & 필터 영역 -->
+  <div class="js-search-bar">
+      <form th:action="@{/jobseeker/job/recent}" method="get">
+        <!-- 1행: 검색어 + 검색버튼 + 초기화 -->
+        <div class="d-flex align-items-center mb-3" style="gap: 10px;">
+          <div class="flex-fill position-relative">
+            <i class="fas fa-search position-absolute text-muted"
+               style="left:12px; top:50%; transform:translateY(-50%); font-size:0.85rem;"></i>
+            <input type="text"
+                   name="keyword"
+                   th:value="${keyword}"
+                   class="form-control"
+                   style="padding-left: 36px;"
+                   placeholder="직무, 회사명, 키워드로 검색" maxlength="100">
+          </div>
+          <button type="submit" class="btn btn-primary" style="white-space:nowrap;">
+            <i class="fas fa-search"></i> 검색
+          </button>
+          <a th:href="@{/jobseeker/job/recent}" class="btn btn-outline-secondary" style="white-space:nowrap;">
+            <i class="fas fa-undo"></i>
+          </a>
+        </div>
+
+        <!-- 2행: 날짜 필터 -->
+        <div class="row align-items-end">
+          <div class="col-md-3 mb-2 mb-md-0">
+            <label class="small font-weight-bold text-secondary mb-1">
+              <i class="far fa-calendar mr-1"></i>시작일
+            </label>
+            <input type="date"
+                   name="dateFrom"
+                   th:value="${dateFrom}"
+                   class="form-control form-control-sm">
+          </div>
+          <div class="col-md-3 mb-2 mb-md-0">
+            <label class="small font-weight-bold text-secondary mb-1">
+              <i class="far fa-calendar-check mr-1"></i>종료일
+            </label>
+            <input type="date"
+                   name="dateTo"
+                   th:value="${dateTo}"
+                   class="form-control form-control-sm">
+          </div>
+          <div class="col-md-2 mb-2 mb-md-0">
+            <label class="small font-weight-bold text-secondary mb-1">기간</label>
+            <select name="period" class="form-control form-control-sm" onchange="applyPeriodFilter(this)">
+              <option value="">전체</option>
+              <option value="1" th:selected="${period == '1'}">오늘</option>
+              <option value="7" th:selected="${period == '7'}">1주일</option>
+              <option value="30" th:selected="${period == '30'}">1개월</option>
+              <option value="90" th:selected="${period == '90'}">3개월</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 활성 필터 태그 -->
+        <div class="mt-3 d-flex flex-wrap" style="gap:6px;"
+             th:if="${keyword != null && keyword != '' || dateFrom != null && dateFrom != '' || dateTo != null && dateTo != '' || period != null && period != ''}">
+          <span class="badge badge-light border" th:if="${keyword != null && keyword != ''}">
+            <i class="fas fa-search mr-1 text-info"></i>
+            <span th:text="${keyword}">키워드</span>
+            <a th:href="@{/jobseeker/job/recent(dateFrom=${dateFrom},dateTo=${dateTo},period=${period})}"
+               class="ml-1 text-secondary">&times;</a>
+          </span>
+          <span class="badge badge-light border"
+                th:if="${period != null && period != ''}">
+            <i class="far fa-calendar mr-1 text-info"></i>
+            <span th:text="${period == '1' ? '오늘' : (period == '7' ? '1주일' : (period == '30' ? '1개월' : '3개월'))}">기간</span>
+            <a th:href="@{/jobseeker/job/recent(keyword=${keyword},dateFrom=${dateFrom},dateTo=${dateTo})}"
+               class="ml-1 text-secondary">&times;</a>
+          </span>
+          <span class="badge badge-light border"
+                th:if="${(dateFrom != null && dateFrom != '') || (dateTo != null && dateTo != '')}">
+            <i class="far fa-calendar mr-1 text-info"></i>
+            <span th:text="'날짜: ' + (${dateFrom} ?: '~') + ' ~ ' + (${dateTo} ?: '~')">날짜범위</span>
+            <a th:href="@{/jobseeker/job/recent(keyword=${keyword},period=${period})}"
+               class="ml-1 text-secondary">&times;</a>
+          </span>
+        </div>
+
+      </form>
+  </div>
+
+  <!-- 결과 없음 -->
+  <div th:if="${#lists.isEmpty(recentPosts)}" class="text-center py-5 empty-state">
+    <i class="far fa-eye fa-4x mb-3 d-block"></i>
+    <h5 class="text-muted mb-2">최근 본 공고가 없습니다</h5>
+    <p class="text-muted small mb-4" th:if="${keyword != null && keyword != ''}">
+      검색 결과가 없습니다. 다른 키워드로 검색해보세요.
+    </p>
+    <a th:href="@{/job/list}" class="btn btn-info">
+      <i class="fas fa-search mr-1"></i>채용공고 둘러보기
+    </a>
+  </div>
+
+  <!-- 날짜별 공고 목록 -->
+  <div th:unless="${#lists.isEmpty(recentPosts)}">
+
+    <!-- 날짜 그룹 반복 -->
+    <div th:each="group : ${dateGroups}" class="mb-4">
+
+      <!-- 날짜 그룹 헤더 -->
+      <div class="date-group-header">
+        <i class="far fa-calendar-alt mr-1"></i>
+        <span th:text="${group.date}">2026.02.24</span>
+        <span class="text-muted font-weight-normal ml-1"
+              th:text="'(' + ${#lists.size(group.posts)} + '건)'"></span>
+      </div>
+
+      <!-- 공고 카드 목록 -->
+      <div th:each="post : ${group.posts}">
+
+        <!-- ===== 삭제된 공고 ===== -->
+        <div th:if="${post.deleted == 1}"
+             class="list-group-item mb-2 rounded shadow-sm"
+             style="background-color:#f9f9f9; opacity:0.5;">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h5 class="font-weight-bold mb-1 text-muted">
+                <i class="fas fa-ban mr-1"></i>
+                <span th:text="${post.title}">공고 제목</span>
+                <span class="badge badge-dark ml-1" style="font-size:0.72rem;">삭제된 공고</span>
+              </h5>
+              <p class="text-muted mb-0 small" th:text="${post.companyName}">기업명</p>
+            </div>
+            <div class="d-flex" style="gap:6px;">
+              <button type="button" class="btn btn-sm btn-outline-secondary"
+                      th:data-id="${post.id}"
+                      onclick="removeHistory(event, this.getAttribute('data-id'))">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 숨김 공고 (운영 정책에 의해 비공개) ===== -->
+        <div th:if="${post.deleted != 1 and post.hidden == 1}"
+             class="list-group-item mb-2 rounded shadow-sm"
+             style="background-color:#f9f9f9; opacity:0.5;">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h5 class="font-weight-bold mb-1 text-muted">
+                <i class="fas fa-eye-slash mr-1"></i>
+                <span th:text="${post.title}">공고 제목</span>
+                <span class="badge badge-secondary ml-1" style="font-size:0.72rem;">운영 정책에 의해 비공개된 공고</span>
+              </h5>
+              <p class="text-muted mb-0 small" th:text="${post.companyName}">기업명</p>
+            </div>
+            <div class="d-flex" style="gap:6px;">
+              <button type="button" class="btn btn-sm btn-outline-secondary"
+                      th:data-id="${post.id}"
+                      onclick="removeHistory(event, this.getAttribute('data-id'))">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 일반 공고 (진행중/마감) ===== -->
+        <a th:if="${post.deleted != 1 and post.hidden != 1}"
+           th:href="@{/job/detail/{id}(id=${post.id})}"
+           target="_blank"
+           class="list-group-item list-group-item-action mb-2 rounded shadow-sm recent-post-card text-decoration-none"
+           th:classappend="${post.closed == 1} ? ' post-closed' : ''">
+
+          <div class="row align-items-center">
+            <!-- 공고 정보 (좌측) -->
+            <div class="col-md-8 col-lg-9">
+              <div class="d-flex align-items-center mb-1">
+                <h5 class="font-weight-bold mb-0 mr-2" th:text="${post.title}">공고 제목</h5>
+                <span th:if="${post.closed == 1}" class="badge badge-danger" style="font-size:0.72rem;">마감</span>
+                <span th:if="${post.isNew == 1}" class="badge badge-info ml-1" style="font-size:0.72rem;">NEW</span>
+              </div>
+
+              <p class="text-secondary mb-2 small" th:text="${post.companyName}">기업명</p>
+
+              <div class="d-flex flex-wrap mb-2" style="gap:6px;">
+                <span class="badge badge-light">
+                  <i class="fas fa-map-marker-alt text-muted"></i>
+                  <span th:text="${post.region}">서울</span>
+                </span>
+                <span class="badge badge-light">
+                  <i class="fas fa-briefcase text-muted"></i>
+                  <span th:text="${post.role}">백엔드</span>
+                </span>
+                <span class="badge badge-light">
+                  <i class="fas fa-user-tie text-muted"></i>
+                  <span th:text="${post.career == '무관' ? '경력 무관' : post.career}">경력</span>
+                </span>
+                <span class="badge badge-light">
+                  <i class="fas fa-graduation-cap text-muted"></i>
+                  <span th:text="${post.eduLevelName != null ? post.eduLevelName : '학력무관'}">학력</span>
+                </span>
+                <span class="badge badge-light">
+                  <i class="fas fa-clock text-muted"></i>
+                  <span th:text="${post.empType}">정규직</span>
+                </span>
+                <!-- 기술스택 태그 (최대 3개) -->
+                <th:block th:if="${post.skillNames != null}" th:with="skills=${post.skillNames.split(',')}">
+                  <span th:each="tech, stat : ${skills}"
+                        th:if="${stat.index < 3}"
+                        class="badge badge-tech">
+                    <span th:text="${tech}">Java</span>
+                  </span>
+                  <span th:if="${#arrays.length(skills) > 3}"
+                        class="badge badge-tech">
+                    +<span th:text="${#arrays.length(skills) - 3}">2</span>
+                  </span>
+                </th:block>
+              </div>
+
+              <span class="font-weight-bold small" th:text="${post.salaryText}">급여 정보</span>
+            </div>
+
+            <!-- 날짜 & 버튼 (우측) -->
+            <div class="col-md-4 col-lg-3 text-right mt-3 mt-md-0">
+              <div class="mb-2">
+                <!-- 조회 시각 -->
+                <span class="view-time-badge d-inline-block mb-2">
+                  <i class="far fa-clock mr-1"></i>
+                  <span th:text="${post.viewedAt}">2시간 전</span>
+                </span>
+                <small class="text-muted d-block">
+                  <i class="far fa-calendar text-secondary"></i>
+                  마감 <span th:text="${post.deadline}">~ 2026.03.15</span>
+                </small>
+                <small class="text-muted d-block">
+                  <i class="far fa-eye text-secondary"></i>
+                  조회 <span th:text="${post.viewCnt}">120</span>
+                </small>
+              </div>
+
+              <div class="d-flex justify-content-end" style="gap:6px;">
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary"
+                        th:data-id="${post.id}"
+                        onclick="removeHistory(event, this.getAttribute('data-id'))">
+                  <i class="fas fa-times"></i>
+                </button>
+                <button type="button"
+                        class="btn btn-sm"
+                        th:classappend="${post.scrapped == 1} ? 'btn-warning' : 'btn-outline-warning'"
+                        th:data-id="${post.id}"
+                        th:title="${post.scrapped == 1} ? '스크랩 취소' : '스크랩'"
+                        onclick="toggleScrap(event, this)">
+                  <i class="fas fa-star"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </a>
+      </div>
+      <!-- /공고 카드 목록 -->
+
+    </div>
+    <!-- /날짜 그룹 -->
+
+    <!-- 페이지네이션 -->
+    <nav th:if="${totalPages > 1}" aria-label="페이지 이동" class="mt-4">
+      <ul class="pagination justify-content-center">
+        <li class="page-item" th:classappend="${currentPage == 1} ? ' disabled'">
+          <a class="page-link"
+             th:href="@{/jobseeker/job/recent(page=${currentPage - 1}, keyword=${keyword}, dateFrom=${dateFrom}, dateTo=${dateTo}, period=${period})}">
+            <i class="fas fa-chevron-left"></i>
+          </a>
+        </li>
+        <li th:each="p : ${#numbers.sequence(1, totalPages)}"
+            class="page-item"
+            th:classappend="${p == currentPage} ? ' active'">
+          <a class="page-link"
+             th:text="${p}"
+             th:href="@{/jobseeker/job/recent(page=${p}, keyword=${keyword}, dateFrom=${dateFrom}, dateTo=${dateTo}, period=${period})}">1</a>
+        </li>
+        <li class="page-item" th:classappend="${currentPage == totalPages} ? ' disabled'">
+          <a class="page-link"
+             th:href="@{/jobseeker/job/recent(page=${currentPage + 1}, keyword=${keyword}, dateFrom=${dateFrom}, dateTo=${dateTo}, period=${period})}">
+            <i class="fas fa-chevron-right"></i>
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+  </div>
+  <!-- /결과 목록 -->
+
+  <script th:inline="javascript">
+    /*<![CDATA[*/
+    var contextPath = /*[[@{/}]]*/ '/';
+
+    function applyPeriodFilter(select) {
+      var form = select.closest('form');
+      form.querySelector('[name="dateFrom"]').value = '';
+      form.querySelector('[name="dateTo"]').value = '';
+      form.submit();
+    }
+
+    /* 개별 기록 삭제 */
+    function removeHistory(event, postId) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!confirm('이 공고를 최근 본 공고 목록에서 삭제하시겠습니까?')) return;
+      fetch(contextPath + 'api/recent/' + postId + '/delete', { method: 'POST' })
+        .then(function(res) { return res.json(); })
+        .then(function(data) { if (data.success) location.reload(); });
+    }
+
+    /* 전체 기록 삭제 */
+    function clearAllHistory() {
+      if (!confirm('최근 본 공고 기록을 모두 삭제하시겠습니까?')) return;
+      fetch(contextPath + 'api/recent/clear', { method: 'POST' })
+        .then(function(res) { return res.json(); })
+        .then(function(data) { if (data.success) location.reload(); });
+    }
+
+    /* 스크랩 토글 */
+    function toggleScrap(event, btn) {
+      event.preventDefault();
+      event.stopPropagation();
+      var postId = btn.getAttribute('data-id');
+      var isScrapped = btn.classList.contains('btn-warning');
+      fetch(contextPath + 'api/job/scrap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId: postId, scrap: !isScrapped })
+      })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.success) {
+            btn.classList.toggle('btn-warning');
+            btn.classList.toggle('btn-outline-warning');
+          }
+        });
+    }
+    /*]]>*/
+  </script>
+
+  </div><!-- /container-fluid -->
+
+</div>
+</body>
+</html>

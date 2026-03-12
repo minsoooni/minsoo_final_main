@@ -1,0 +1,322 @@
+@charset "UTF-8";
+
+/* ===== 전체 레이아웃 ===== */
+.jobseeker-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== 상단 헤더 ===== */
+.jobseeker-topbar {
+  height: 60px;
+  min-height: 60px;
+  box-sizing: border-box;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e5e5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: nowrap;
+  padding: 0 30px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.topbar-left,
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: nowrap;
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: #111;
+}
+
+.topbar-brand:hover {
+  color: #2563EB;
+  text-decoration: none;
+}
+
+.topbar-link {
+  font-size: 13px;
+  color: #6b7280;
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: 0.2s;
+}
+
+.topbar-link:hover {
+  background: #f3f4f6;
+  color: #111;
+  text-decoration: none;
+}
+
+.logo {
+  font-weight: 800;
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.sub {
+  color: #6b7280;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #EFF6FF;
+  color: #2563EB;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.user-name {
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.user-email {
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* ===== 본문 (사이드바 + 콘텐츠) ===== */
+.jobseeker-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ===== 사이드바 ===== */
+.jobseeker-sidebar {
+  width: 200px;
+  min-width: 200px;
+  background: #fff;
+  border-right: 1px solid #e5e5e5;
+  padding: 16px 0;
+  overflow-y: auto;
+}
+
+.jobseeker-sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.jobseeker-sidebar li a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 18px;
+  color: #374151;
+  text-decoration: none;
+  border-radius: 10px;
+  margin: 3px 10px;
+  background: #fff;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.jobseeker-sidebar li a:hover {
+  background: #EFF6FF;
+  color: #2563EB;
+  text-decoration: none;
+}
+
+.jobseeker-sidebar li.active a {
+  background: #2563EB;
+  color: #fff;
+  font-weight: 600;
+  position: relative;
+}
+
+.jobseeker-sidebar li.active a::before {
+  content: "";
+  position: absolute;
+  left: -10px;
+  top: 8px;
+  bottom: 8px;
+  width: 4px;
+  border-radius: 999px;
+  background: #1D4ED8;
+}
+
+.jobseeker-sidebar li a i {
+  width: 16px;
+  opacity: 0.7;
+  transition: 0.2s;
+  font-size: 14px;
+}
+
+.jobseeker-sidebar li a:hover i {
+  opacity: 1;
+  color: #2563EB;
+}
+
+.jobseeker-sidebar li.active a i {
+  opacity: 1;
+  color: #fff;
+}
+
+/* ===== 콘텐츠 영역 ===== */
+.jobseeker-content {
+  flex: 1;
+  overflow-y: auto;
+  background: #f5f6f8;
+  padding: 30px;
+  max-width: 1400px;
+}
+
+/* ===== 공통 페이지 헤더 ===== */
+.js-page-header {
+  margin-bottom: 24px;
+}
+.js-page-header .js-page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: #111;
+}
+.js-page-header .js-page-subtitle {
+  font-size: 0.85rem;
+  color: #6c757d;
+  margin-bottom: 0;
+}
+
+/* ===== 공통 검색바 ===== */
+.js-search-bar {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+}
+.js-search-bar .form-control {
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+.js-search-bar .form-control:focus {
+  border-color: #4A90E2;
+  box-shadow: 0 0 0 3px rgba(74,144,226,0.1);
+}
+.js-search-bar select {
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  padding: 6px 12px;
+  color: #495057;
+  background: #fff;
+}
+
+/* ===== 공통 카드 스타일 ===== */
+.js-card {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+.js-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+.js-card-body { padding: 22px 24px; }
+.js-card-footer {
+  padding: 14px 24px;
+  border-top: 1px solid #f1f3f5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fafbfc;
+}
+.js-card-footer .btn-sm {
+  font-size: 0.82rem;
+  padding: 5px 14px;
+  border-radius: 6px;
+}
+
+/* 공통 로고 박스 */
+.js-logo-box {
+  width: 56px; height: 56px;
+  border-radius: 10px;
+  border: 1px solid #e9ecef;
+  background: #f8f9fa;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.65rem; color: #adb5bd; text-align: center;
+  flex-shrink: 0; overflow: hidden;
+}
+.js-logo-box img { width: 100%; height: 100%; object-fit: contain; }
+
+/* 공통 태그 뱃지 */
+.js-tag {
+  display: inline-block;
+  font-size: 0.78rem;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: #f1f3f5;
+  color: #495057;
+  margin-right: 4px;
+  margin-bottom: 4px;
+}
+.js-tag.salary { background: #EBF4FF; color: #4A90E2; font-weight: 600; }
+
+/* ===== 공통 빈 상태 ===== */
+.js-empty-state {
+  text-align: center;
+  padding: 60px 0;
+  color: #adb5bd;
+}
+
+/* ===== 반응형 ===== */
+@media (max-width: 768px) {
+  .jobseeker-topbar {
+    padding: 0 14px;
+  }
+
+  .sub {
+    display: none;
+  }
+
+  .jobseeker-sidebar {
+    width: 56px;
+    min-width: 56px;
+  }
+
+  .jobseeker-sidebar li a span {
+    display: none;
+  }
+
+  .jobseeker-sidebar li a {
+    justify-content: center;
+    padding: 12px;
+    margin: 3px 6px;
+  }
+
+  .jobseeker-content {
+    padding: 16px;
+  }
+}

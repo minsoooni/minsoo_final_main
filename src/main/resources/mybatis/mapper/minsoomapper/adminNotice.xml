@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spring.app.admin.model.AdminNoticeDAO">
+
+  <!-- 목록 조회 (페이징 + 검색) -->
+  <select id="selectPagedNotices" resultType="com.spring.app.admin.domain.AdminNoticeDTO">
+    SELECT * FROM (
+      SELECT a.*, ROWNUM AS rn FROM (
+        SELECT NOTICE_ID      AS noticeId,
+               TITLE          AS title,
+               CONTENT        AS content,
+               VIEW_COUNT     AS viewCount,
+               PINNED_YN      AS pinnedYn,
+               POPUP_YN       AS popupYn,
+               POPUP_START_AT AS popupStartAt,
+               POPUP_END_AT   AS popupEndAt,
+               STATUS         AS status,
+               CREATED_AT     AS createdAt,
+               UPDATED_AT     AS updatedAt,
+               END_DATE       AS endDate
+        FROM TBL_NOTICE
+        <where>
+          <if test="search != null and search != ''">
+            AND (TITLE LIKE '%'||#{search}||'%' OR CONTENT LIKE '%'||#{search}||'%')
+          </if>
+        </where>
+        ORDER BY PINNED_YN DESC, CREATED_AT DESC
+      ) a WHERE ROWNUM &lt;= #{offset} + #{limit}
+    ) WHERE rn &gt; #{offset}
+  </select>
+
+  <!-- 전체 건수 (페이지바 계산용) -->
+  <select id="selectNoticeCount" resultType="int">
+    SELECT COUNT(*) FROM TBL_NOTICE
+    <where>
+      <if test="search != null and search != ''">
+        AND (TITLE LIKE '%'||#{search}||'%' OR CONTENT LIKE '%'||#{search}||'%')
+      </if>
+    </where>
+  </select>
+
+  <!-- 중요 공지 건수 (통계 카드용) -->
+  <select id="selectNoticeCountByPinned" resultType="int">
+    SELECT COUNT(*) FROM TBL_NOTICE WHERE PINNED_YN = #{pinnedYn}
+  </select>
+
+  <!-- 게시중 건수 (통계 카드용) -->
+  <select id="selectNoticeCountByStatus" resultType="int">
+    SELECT COUNT(*) FROM TBL_NOTICE WHERE STATUS = #{status}
+  </select>
+
+  <!-- 팝업 건수 (통계 카드용) -->
+  <select id="selectPopupCount" resultType="int">
+    SELECT COUNT(*) FROM TBL_NOTICE WHERE POPUP_YN = 'Y'
+  </select>
+
+  <!-- 단건 조회 (수정 모달 / 팝업 미리보기용) -->
+  <select id="selectNoticeById" resultType="com.spring.app.admin.domain.AdminNoticeDTO">
+    SELECT NOTICE_ID      AS noticeId,
+           TITLE          AS title,
+           CONTENT        AS content,
+           VIEW_COUNT     AS viewCount,
+           PINNED_YN      AS pinnedYn,
+           POPUP_YN       AS popupYn,         
+           POPUP_START_AT AS popupStartAt,
+           POPUP_END_AT   AS popupEndAt,
+           STATUS         AS status,
+           CREATED_AT     AS createdAt,
+           END_DATE       AS endDate
+    FROM TBL_NOTICE
+    WHERE NOTICE_ID = #{noticeId}
+  </select>
+
+  <!-- 등록 -->
+  <insert id="insertNotice">
+  <selectKey keyProperty="noticeId" resultType="long" order="BEFORE">
+    SELECT SEQ_NOTICE.NEXTVAL FROM DUAL
+  </selectKey>
+  INSERT INTO TBL_NOTICE (
+      NOTICE_ID, TITLE, CONTENT, PINNED_YN,
+      POPUP_YN, POPUP_START_AT, POPUP_END_AT, STATUS, END_DATE
+  ) VALUES (
+      #{noticeId}, #{title}, #{content}, #{pinnedYn},
+      #{popupYn}, #{popupStartAt, jdbcType=DATE}, #{popupEndAt, jdbcType=DATE},
+      #{status}, #{endDate, jdbcType=DATE}
+  )
+</insert>
+
+  <!-- 수정 -->
+  <update id="updateNotice">
+    UPDATE TBL_NOTICE
+    SET TITLE          = #{title},
+        CONTENT        = #{content},
+        PINNED_YN      = #{pinnedYn},
+        POPUP_YN       = #{popupYn},
+        POPUP_START_AT = #{popupStartAt, jdbcType=DATE},
+        POPUP_END_AT   = #{popupEndAt, jdbcType=DATE},
+        STATUS         = #{status},
+        END_DATE       = #{endDate, jdbcType=DATE},
+        UPDATED_AT     = SYSDATE
+        
+    WHERE NOTICE_ID = #{noticeId}
+</update>
+
+  <!-- 삭제 -->
+  <delete id="deleteNotice">
+    DELETE FROM TBL_NOTICE WHERE NOTICE_ID = #{noticeId}
+  </delete>
+
+  <!-- 중요/일반 토글 (Y↔N) -->
+  <update id="togglePinnedYn">
+    UPDATE TBL_NOTICE
+    SET PINNED_YN = CASE WHEN PINNED_YN = 'Y' THEN 'N' ELSE 'Y' END
+    WHERE NOTICE_ID = #{noticeId}
+  </update>
+
+  <!-- 팝업 활성화: 기존 팝업 해제 + 새 팝업 ON 동시 처리 -->
+  <update id="activatePopup">
+	  UPDATE TBL_NOTICE
+	  SET POPUP_YN = CASE WHEN NOTICE_ID = #{noticeId, jdbcType=NUMERIC} THEN 'Y' ELSE 'N' END
+	  WHERE POPUP_YN = 'Y' OR NOTICE_ID = #{noticeId, jdbcType=NUMERIC}
+  </update>
+
+  <!-- 팝업 해제 (단건) -->
+  <update id="deactivatePopup">
+    UPDATE TBL_NOTICE SET POPUP_YN = 'N' WHERE NOTICE_ID = #{noticeId}
+  </update>
+  
+	  <!-- 마감일 지난 공지 자동 마감 + 팝업 OFF -->
+	<update id="expireNotices">
+	  UPDATE TBL_NOTICE
+	  SET STATUS     = CASE WHEN END_DATE IS NOT NULL AND END_DATE &lt; TRUNC(SYSDATE) THEN 0 ELSE STATUS END,
+	      POPUP_YN   = CASE 
+	                     WHEN END_DATE IS NOT NULL AND END_DATE &lt; TRUNC(SYSDATE) THEN 'N'
+	                     WHEN POPUP_END_AT IS NOT NULL AND POPUP_END_AT &lt; TRUNC(SYSDATE) THEN 'N'
+	                     ELSE POPUP_YN
+	                   END,
+	      UPDATED_AT = SYSDATE
+	  WHERE (STATUS = 1 AND END_DATE IS NOT NULL AND END_DATE &lt; TRUNC(SYSDATE))
+	     OR (POPUP_YN = 'Y' AND POPUP_END_AT IS NOT NULL AND POPUP_END_AT &lt; TRUNC(SYSDATE))
+	</update>
+
+	<!-- 공개 목록 (status=1만, 페이징+검색) -->
+	<select id="selectPublicNotices" resultType="com.spring.app.admin.domain.AdminNoticeDTO">
+	  SELECT * FROM (
+	    SELECT a.*, ROWNUM AS rn FROM (
+	      SELECT NOTICE_ID      AS noticeId,
+	             TITLE          AS title,
+	             CONTENT        AS content,
+	             VIEW_COUNT     AS viewCount,
+	             PINNED_YN      AS pinnedYn,
+	             CREATED_AT     AS createdAt,
+	             END_DATE       AS endDate
+	      FROM TBL_NOTICE
+	      WHERE STATUS = 1
+	      <if test="search != null and search != ''">
+	        AND (TITLE LIKE '%'||#{search}||'%' OR CONTENT LIKE '%'||#{search}||'%')
+	      </if>
+	      ORDER BY PINNED_YN DESC, CREATED_AT DESC
+	    ) a WHERE ROWNUM &lt;= #{offset} + #{limit}
+	  ) WHERE rn &gt; #{offset}
+	</select>
+	
+	<!-- 공개 전체 건수 -->
+	<select id="selectPublicNoticeCount" resultType="int">
+	  SELECT COUNT(*) FROM TBL_NOTICE
+	  WHERE STATUS = 1
+	  <if test="search != null and search != ''">
+	    AND (TITLE LIKE '%'||#{search}||'%' OR CONTENT LIKE '%'||#{search}||'%')
+	  </if>
+	</select>
+	
+	<!-- 조회수 증가 -->
+	<update id="increaseViewCount">
+	  UPDATE TBL_NOTICE SET VIEW_COUNT = VIEW_COUNT + 1 WHERE NOTICE_ID = #{noticeId}
+	</update>
+
+	<!-- 활성 팝업 공지 조회 -->
+	<select id="selectActivePopup" resultType="com.spring.app.admin.domain.AdminNoticeDTO">
+	  SELECT NOTICE_ID      AS noticeId,
+	         TITLE          AS title,
+	         CONTENT        AS content,
+	         POPUP_START_AT AS popupStartAt,
+	         POPUP_END_AT   AS popupEndAt
+	  FROM TBL_NOTICE
+	  WHERE POPUP_YN = 'Y'
+	    AND STATUS = 1
+	    AND (POPUP_START_AT IS NULL OR POPUP_START_AT &lt;= SYSDATE)  
+	    AND (POPUP_END_AT   IS NULL OR POPUP_END_AT   &gt;= SYSDATE) 
+	    AND ROWNUM = 1
+	</select>	
+	
+</mapper>
