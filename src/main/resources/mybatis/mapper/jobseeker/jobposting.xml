@@ -217,7 +217,7 @@
     <!-- ========================================================= -->
     <!--  추천 채용공고 조회 (대표이력서 기반, 최대 3건)                 -->
     <!--  매칭 점수: 지역일치 +3(시도)/+5(구군), 직무일치 +3, 연봉범위 +2 -->
-    <!--  이력서가 없으면 조회수 높은순 3건                              -->
+    <!--  기술스택 일치 +2(건당). 이력서가 없으면 조회수 높은순 3건       -->
     <!-- ========================================================= -->
     <select id="selectRecommendedJobPostings" parameterType="map"
             resultType="com.spring.app.jobseeker.domain.JobPostingListDTO">
@@ -254,7 +254,50 @@
                     WHEN TRUNC(JP.deadline_at) &lt; TRUNC(SYSDATE) THEN 'N'
                     WHEN (TRUNC(JP.deadline_at) - TRUNC(SYSDATE)) &lt;= 7 THEN 'Y'
                     ELSE 'N'
-                END AS dDayUrgent
+                END AS dDayUrgent,
+                <!-- ★ 매칭 점수 항목별 -->
+                <if test="regionCode != null">
+                    CASE WHEN JP.fk_region_code = #{regionCode} THEN 5
+                         WHEN R.fk_parent_region_code = (
+                             SELECT fk_parent_region_code FROM tbl_region WHERE region_code = #{regionCode}
+                         ) THEN 3
+                         ELSE 0 END AS regionScore,
+                </if>
+                <if test="regionCode == null">
+                    0 AS regionScore,
+                </if>
+                <if test="categoryId != null">
+                    CASE WHEN JP.fk_category_id = #{categoryId} THEN 3 ELSE 0 END AS categoryScore,
+                </if>
+                <if test="categoryId == null">
+                    0 AS categoryScore,
+                </if>
+                <if test="desiredSalary != null">
+                    CASE WHEN JP.salary IS NOT NULL
+                         AND JP.salary >= #{desiredSalary} * 0.8
+                         AND JP.salary &lt;= #{desiredSalary} * 1.5
+                    THEN 2 ELSE 0 END AS salaryScore,
+                </if>
+                <if test="desiredSalary == null">
+                    0 AS salaryScore,
+                </if>
+                <if test="resumeId != null">
+                    (SELECT COUNT(*) * 2
+                     FROM tbl_resume_techstack RT
+                     JOIN tbl_job_posting_skill JPS ON RT.fk_skill_id = JPS.fk_skill_id
+                     WHERE RT.fk_resume_id = #{resumeId}
+                       AND JPS.fk_job_id = JP.job_id) AS techScore,
+                    (SELECT LISTAGG(S.skill_name, ',') WITHIN GROUP (ORDER BY S.skill_name)
+                     FROM tbl_resume_techstack RT
+                     JOIN tbl_job_posting_skill JPS ON RT.fk_skill_id = JPS.fk_skill_id
+                     JOIN tbl_skill S ON RT.fk_skill_id = S.skill_id
+                     WHERE RT.fk_resume_id = #{resumeId}
+                       AND JPS.fk_job_id = JP.job_id) AS matchedSkills
+                </if>
+                <if test="resumeId == null">
+                    0 AS techScore,
+                    NULL AS matchedSkills
+                </if>
             FROM tbl_job_posting JP
             JOIN tbl_company C ON JP.fk_memberid = C.fk_memberid
             JOIN tbl_region R ON JP.fk_region_code = R.region_code
@@ -265,39 +308,38 @@
               AND JP.is_hidden = 0
               AND (JP.deadline_type = 'always' OR JP.deadline_at >= TRUNC(SYSDATE))
             ORDER BY
-                <!-- 매칭 점수 계산 (높을수록 추천 우선) -->
-                <choose>
-                    <when test="regionCode != null or categoryId != null or desiredSalary != null or resumeId != null">
-                        (
-                            <if test="regionCode != null">
-                                CASE WHEN JP.fk_region_code = #{regionCode} THEN 5
-                                WHEN R.fk_parent_region_code = (
-                                    SELECT fk_parent_region_code FROM tbl_region WHERE region_code = #{regionCode}
-                                ) THEN 3
-                                ELSE 0 END
-                            </if>
-                            <if test="regionCode != null and (categoryId != null or desiredSalary != null or resumeId != null)"> + </if>
-                            <if test="categoryId != null">
-                                CASE WHEN JP.fk_category_id = #{categoryId} THEN 3 ELSE 0 END
-                            </if>
-                            <if test="categoryId != null and (desiredSalary != null or resumeId != null)"> + </if>
-                            <if test="desiredSalary != null">
-                                CASE WHEN JP.salary IS NOT NULL
-                                     AND JP.salary >= #{desiredSalary} * 0.8
-                                     AND JP.salary &lt;= #{desiredSalary} * 1.5
-                                THEN 2 ELSE 0 END
-                            </if>
-                            <if test="desiredSalary != null and resumeId != null"> + </if>
-                            <if test="resumeId != null">
-                                (SELECT COUNT(*) * 2
-                                 FROM tbl_resume_techstack RT
-                                 JOIN tbl_job_posting_skill JPS ON RT.fk_skill_id = JPS.fk_skill_id
-                                 WHERE RT.fk_resume_id = #{resumeId}
-                                   AND JPS.fk_job_id = JP.job_id)
-                            </if>
-                        ) DESC,
-                    </when>
-                </choose>
+                (
+                    <if test="regionCode != null">
+                        CASE WHEN JP.fk_region_code = #{regionCode} THEN 5
+                             WHEN R.fk_parent_region_code = (
+                                 SELECT fk_parent_region_code FROM tbl_region WHERE region_code = #{regionCode}
+                             ) THEN 3
+                             ELSE 0 END
+                    </if>
+                    <if test="regionCode == null">0</if>
+                    +
+                    <if test="categoryId != null">
+                        CASE WHEN JP.fk_category_id = #{categoryId} THEN 3 ELSE 0 END
+                    </if>
+                    <if test="categoryId == null">0</if>
+                    +
+                    <if test="desiredSalary != null">
+                        CASE WHEN JP.salary IS NOT NULL
+                             AND JP.salary >= #{desiredSalary} * 0.8
+                             AND JP.salary &lt;= #{desiredSalary} * 1.5
+                        THEN 2 ELSE 0 END
+                    </if>
+                    <if test="desiredSalary == null">0</if>
+                    +
+                    <if test="resumeId != null">
+                        (SELECT COUNT(*) * 2
+                         FROM tbl_resume_techstack RT
+                         JOIN tbl_job_posting_skill JPS ON RT.fk_skill_id = JPS.fk_skill_id
+                         WHERE RT.fk_resume_id = #{resumeId}
+                           AND JPS.fk_job_id = JP.job_id)
+                    </if>
+                    <if test="resumeId == null">0</if>
+                ) DESC,
                 JP.view_count DESC,
                 JP.created_at DESC
         )
@@ -1084,5 +1126,152 @@
         DELETE FROM tbl_viewed_posting
         WHERE fk_memberid = #{memberId}
     </delete>
+
+
+    <!-- ========================================================= -->
+    <!--  채용상세 매칭도 조회 (로그인 + 대표이력서 기반)                -->
+    <!--  특정 공고 1개와 내 이력서의 매칭도를 항목별로 계산              -->
+    <!-- ========================================================= -->
+    <select id="selectMatchScoreForJob" parameterType="map" resultType="map">
+        SELECT
+            <!-- 지역 매칭 -->
+            CASE WHEN JP.fk_region_code = #{regionCode} THEN 5
+                 WHEN R.fk_parent_region_code = (
+                     SELECT fk_parent_region_code FROM tbl_region WHERE region_code = #{regionCode}
+                 ) THEN 3
+                 ELSE 0
+            END AS "regionScore",
+            <!-- 직무 매칭 -->
+            CASE WHEN JP.fk_category_id = #{categoryId} THEN 3 ELSE 0 END AS "categoryScore",
+            <!-- 연봉 매칭 -->
+            CASE WHEN JP.salary IS NOT NULL
+                 AND JP.salary >= #{desiredSalary} * 0.8
+                 AND JP.salary &lt;= #{desiredSalary} * 1.5
+            THEN 2 ELSE 0 END AS "salaryScore",
+            <!-- 기술스택 매칭 점수 -->
+            (SELECT COUNT(*) * 2
+             FROM tbl_resume_techstack RT
+             JOIN tbl_job_posting_skill JPS ON RT.fk_skill_id = JPS.fk_skill_id
+             WHERE RT.fk_resume_id = #{resumeId}
+               AND JPS.fk_job_id = JP.job_id) AS "techScore",
+            <!-- 기술스택 일치 개수 -->
+            (SELECT COUNT(*)
+             FROM tbl_resume_techstack RT
+             JOIN tbl_job_posting_skill JPS ON RT.fk_skill_id = JPS.fk_skill_id
+             WHERE RT.fk_resume_id = #{resumeId}
+               AND JPS.fk_job_id = JP.job_id) AS "techMatchCount",
+            <!-- 공고의 총 기술스택 수 -->
+            (SELECT COUNT(*)
+             FROM tbl_job_posting_skill JPS2
+             WHERE JPS2.fk_job_id = JP.job_id) AS "techTotalCount",
+            <!-- 일치하는 기술명 -->
+            (SELECT LISTAGG(S.skill_name, ',') WITHIN GROUP (ORDER BY S.skill_name)
+             FROM tbl_resume_techstack RT
+             JOIN tbl_job_posting_skill JPS ON RT.fk_skill_id = JPS.fk_skill_id
+             JOIN tbl_skill S ON RT.fk_skill_id = S.skill_id
+             WHERE RT.fk_resume_id = #{resumeId}
+               AND JPS.fk_job_id = JP.job_id) AS "matchedSkills",
+            <!-- 부족한 기술명 -->
+            (SELECT LISTAGG(S.skill_name, ',') WITHIN GROUP (ORDER BY S.skill_name)
+             FROM tbl_job_posting_skill JPS
+             JOIN tbl_skill S ON JPS.fk_skill_id = S.skill_id
+             WHERE JPS.fk_job_id = JP.job_id
+               AND JPS.fk_skill_id NOT IN (
+                   SELECT RT2.fk_skill_id FROM tbl_resume_techstack RT2
+                   WHERE RT2.fk_resume_id = #{resumeId}
+               )) AS "missingSkills",
+            <!-- 지역명 (매칭 상태 표시용) -->
+            R.region_name AS "postRegionName",
+            JC.category_name AS "postCategoryName"
+        FROM tbl_job_posting JP
+        JOIN tbl_region R ON JP.fk_region_code = R.region_code
+        JOIN tbl_job_category JC ON JP.fk_category_id = JC.category_id
+        WHERE JP.job_id = #{jobId}
+    </select>
+
+
+    <!-- ========================================================= -->
+    <!--  유사 공고 추천 (같은 직무 + 기술스택 겹침 + 같은 지역)         -->
+    <!--  현재 공고 제외, 게시중인 공고만, 최대 4건                     -->
+    <!-- ========================================================= -->
+    <select id="selectSimilarJobPostings" parameterType="map"
+            resultType="com.spring.app.jobseeker.domain.JobPostingListDTO">
+        SELECT * FROM (
+            SELECT
+                JP.job_id           AS jobId,
+                JP.title            AS title,
+                JP.salary           AS salary,
+                JP.work_type        AS workType,
+                JP.career_type      AS careerType,
+                TO_CHAR(JP.deadline_at, 'YYYY.MM.DD') AS deadlineAt,
+                JP.deadline_type    AS deadlineType,
+                C.company_name      AS companyName,
+                JC.category_name    AS categoryName,
+                R.region_name       AS regionName,
+                PR.region_name      AS parentRegionName,
+                (SELECT LISTAGG(S.skill_name, ',') WITHIN GROUP (ORDER BY S.skill_name)
+                 FROM tbl_job_posting_skill JPS
+                 JOIN tbl_skill S ON JPS.fk_skill_id = S.skill_id
+                 WHERE JPS.fk_job_id = JP.job_id) AS skillNames,
+                CASE
+                    WHEN JP.deadline_type = 'always' THEN '상시채용'
+                    WHEN JP.deadline_at &lt; TRUNC(SYSDATE) THEN '마감'
+                    WHEN TRUNC(JP.deadline_at) = TRUNC(SYSDATE) THEN 'D-Day'
+                    ELSE 'D-' || (TRUNC(JP.deadline_at) - TRUNC(SYSDATE))
+                END AS dDay,
+                <!-- 유사도 점수 계산 -->
+                (
+                    CASE WHEN JP.fk_category_id = #{categoryId} THEN 3 ELSE 0 END
+                    + CASE WHEN JP.fk_region_code = #{regionCode} THEN 3
+                           WHEN R.fk_parent_region_code = (
+                               SELECT fk_parent_region_code FROM tbl_region WHERE region_code = #{regionCode}
+                           ) THEN 1
+                           ELSE 0 END
+                    + (SELECT COUNT(*) * 2
+                       FROM tbl_job_posting_skill JPS1
+                       WHERE JPS1.fk_job_id = JP.job_id
+                         AND JPS1.fk_skill_id IN (
+                             SELECT JPS2.fk_skill_id FROM tbl_job_posting_skill JPS2
+                             WHERE JPS2.fk_job_id = #{jobId}
+                         ))
+                ) AS matchScore,
+                <!-- 현재 공고와 일치하는 기술명 -->
+                (SELECT LISTAGG(S.skill_name, ',') WITHIN GROUP (ORDER BY S.skill_name)
+                 FROM tbl_job_posting_skill JPS1
+                 JOIN tbl_skill S ON JPS1.fk_skill_id = S.skill_id
+                 WHERE JPS1.fk_job_id = JP.job_id
+                   AND JPS1.fk_skill_id IN (
+                       SELECT JPS2.fk_skill_id FROM tbl_job_posting_skill JPS2
+                       WHERE JPS2.fk_job_id = #{jobId}
+                   )) AS matchedSkills
+            FROM tbl_job_posting JP
+            JOIN tbl_company C ON JP.fk_memberid = C.fk_memberid
+            JOIN tbl_region R ON JP.fk_region_code = R.region_code
+            LEFT JOIN tbl_region PR ON R.fk_parent_region_code = PR.region_code
+            JOIN tbl_job_category JC ON JP.fk_category_id = JC.category_id
+            WHERE JP.status = '게시중'
+              AND JP.is_hidden = 0
+              AND JP.job_id != #{jobId}
+              AND (JP.deadline_type = 'always' OR JP.deadline_at >= TRUNC(SYSDATE))
+            ORDER BY
+                (
+                    CASE WHEN JP.fk_category_id = #{categoryId} THEN 3 ELSE 0 END
+                    + CASE WHEN JP.fk_region_code = #{regionCode} THEN 3
+                           WHEN R.fk_parent_region_code = (
+                               SELECT fk_parent_region_code FROM tbl_region WHERE region_code = #{regionCode}
+                           ) THEN 1
+                           ELSE 0 END
+                    + (SELECT COUNT(*) * 2
+                       FROM tbl_job_posting_skill JPS1
+                       WHERE JPS1.fk_job_id = JP.job_id
+                         AND JPS1.fk_skill_id IN (
+                             SELECT JPS2.fk_skill_id FROM tbl_job_posting_skill JPS2
+                             WHERE JPS2.fk_job_id = #{jobId}
+                         ))
+                ) DESC,
+                JP.view_count DESC
+        )
+        WHERE ROWNUM &lt;= 4
+    </select>
 
 </mapper>

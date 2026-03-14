@@ -224,6 +224,88 @@
         상세 내용이 등록되지 않았습니다.
       </div>
 
+      <!-- ★ 나와의 매칭도 박스 (로그인 + 대표이력서 있으면 항상 표시) -->
+      <div th:if="${matchData != null}"
+           style="background:linear-gradient(135deg,#EFF6FF 0%,#F8FAFF 100%); border:1px solid #BFDBFE; border-radius:10px; margin-bottom:16px; overflow:hidden;">
+
+        <!-- 접힌 상태: 매칭도 % + 상세보기 버튼 (항상 보임) -->
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 20px; cursor:pointer;"
+             onclick="toggleMatchDetail()">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <i class="fas fa-bullseye" style="color:#1E40AF;"></i>
+            <span style="font-size:14px; font-weight:700; color:#1E40AF;">나와의 매칭도</span>
+            <span style="font-size:20px; font-weight:800; color:#2563EB; margin-left:8px;" th:text="${matchData['matchScore'] + '%'}">85%</span>
+          </div>
+          <button type="button" id="matchToggleBtn"
+                  style="background:none; border:1px solid #93C5FD; border-radius:6px; padding:4px 12px; font-size:12px; color:#2563EB; cursor:pointer; font-weight:600;">
+            <i class="fas fa-chevron-down"></i> 상세보기
+          </button>
+        </div>
+
+        <!-- 펼쳐지는 상세 영역 (기본 숨김) -->
+        <div id="matchDetailPanel" style="display:none; padding:0 20px 18px; border-top:1px solid #BFDBFE;">
+
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:14px;">
+            <!-- 지역 -->
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="width:28px; height:28px; border-radius:50%; background:#ECFDF5; color:#059669; display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0;"><i class="fas fa-map-pin"></i></div>
+              <span style="font-size:13px; color:#374151; flex:1; font-weight:500;">근무 지역</span>
+              <div style="width:100px; height:6px; background:#E5E7EB; border-radius:3px; overflow:hidden;">
+                <div th:style="'width:' + (${matchData['regionScore'] >= 5} ? '100' : (${matchData['regionScore'] >= 3} ? '60' : '0')) + '%; height:100%; border-radius:3px; background:#059669;'"></div>
+              </div>
+              <span style="font-size:12px; font-weight:600; min-width:50px; text-align:right;"
+                    th:style="(${matchData['regionScore'] >= 5} ? 'color:#059669;' : (${matchData['regionScore'] >= 3} ? 'color:#D97706;' : 'color:#9CA3AF;'))"
+                    th:text="${matchData['regionScore'] >= 5} ? '✓ 일치' : (${matchData['regionScore'] >= 3} ? '인근' : '불일치')">일치</span>
+            </div>
+            <!-- 직무 -->
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="width:28px; height:28px; border-radius:50%; background:#EDE9FE; color:#7C3AED; display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0;"><i class="fas fa-briefcase"></i></div>
+              <span style="font-size:13px; color:#374151; flex:1; font-weight:500;">직무 분야</span>
+              <div style="width:100px; height:6px; background:#E5E7EB; border-radius:3px; overflow:hidden;">
+                <div th:style="'width:' + (${matchData['categoryScore'] > 0} ? '100' : '0') + '%; height:100%; border-radius:3px; background:#7C3AED;'"></div>
+              </div>
+              <span style="font-size:12px; font-weight:600; min-width:50px; text-align:right;"
+                    th:style="(${matchData['categoryScore'] > 0} ? 'color:#059669;' : 'color:#9CA3AF;')"
+                    th:text="${matchData['categoryScore'] > 0} ? '✓ 일치' : '불일치'">일치</span>
+            </div>
+            <!-- 기술스택 -->
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="width:28px; height:28px; border-radius:50%; background:#EFF6FF; color:#2563EB; display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0;"><i class="fas fa-code"></i></div>
+              <span style="font-size:13px; color:#374151; flex:1; font-weight:500;">기술스택</span>
+              <div style="width:100px; height:6px; background:#E5E7EB; border-radius:3px; overflow:hidden;">
+                <div th:style="'width:' + (${matchData['techTotalCount'] > 0} ? (${matchData['techMatchCount']} * 100 / ${matchData['techTotalCount']}) : '0') + '%; height:100%; border-radius:3px; background:#2563EB;'"></div>
+              </div>
+              <span style="font-size:12px; font-weight:600; min-width:50px; text-align:right; color:#D97706;"
+                    th:text="${matchData['techMatchCount'] + '/' + matchData['techTotalCount'] + ' 일치'}">3/5 일치</span>
+            </div>
+            <!-- 연봉 -->
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="width:28px; height:28px; border-radius:50%; background:#FEF3C7; color:#D97706; display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0;"><i class="fas fa-won-sign"></i></div>
+              <span style="font-size:13px; color:#374151; flex:1; font-weight:500;">희망 연봉</span>
+              <div style="width:100px; height:6px; background:#E5E7EB; border-radius:3px; overflow:hidden;">
+                <div th:style="'width:' + (${matchData['salaryScore'] > 0} ? '100' : '0') + '%; height:100%; border-radius:3px; background:#D97706;'"></div>
+              </div>
+              <span style="font-size:12px; font-weight:600; min-width:50px; text-align:right;"
+                    th:style="(${matchData['salaryScore'] > 0} ? 'color:#059669;' : 'color:#9CA3AF;')"
+                    th:text="${matchData['salaryScore'] > 0} ? '✓ 부합' : '미확인'">부합</span>
+            </div>
+          </div>
+
+          <!-- 일치/부족 기술 상세 -->
+          <div th:if="${matchData['matchedSkills'] != null or matchData['missingSkills'] != null}"
+               style="margin-top:14px; padding-top:12px; border-top:1px solid #BFDBFE; font-size:12px; color:#6B7280;">
+            <i class="fas fa-info-circle" style="color:#93C5FD;"></i>
+            <span th:if="${matchData['matchedSkills'] != null}">
+              일치: <b style="color:#2563EB;" th:text="${matchData['matchedSkills']}">Java, Spring</b>
+            </span>
+            <span th:if="${matchData['matchedSkills'] != null and matchData['missingSkills'] != null}"> | </span>
+            <span th:if="${matchData['missingSkills'] != null}">
+              부족: <span style="color:#9CA3AF;" th:text="${matchData['missingSkills']}">React</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
       <div class="post-bottom">
         <button class="btn-url" onclick="copyUrl()">URL 복사</button>
         <div style="display:flex;gap:8px;">
@@ -420,6 +502,39 @@
       </button>
     </div><!-- /통계 카드 -->
 
+    <!-- ★ 유사 공고 추천 -->
+    <div th:if="${similarPosts != null and !similarPosts.isEmpty()}" class="jp-card" style="padding:24px;">
+      <div style="font-size:15px; font-weight:800; color:#111; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+        <i class="fas fa-th-list" style="color:#2563EB;"></i> 이 공고와 비슷한 공고
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div th:each="sim : ${similarPosts}"
+             style="border:1px solid #e5e7eb; border-radius:10px; padding:16px; cursor:pointer; transition:all 0.2s;"
+             onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.06)'; this.style.transform='translateY(-1px)';"
+             onmouseout="this.style.boxShadow='none'; this.style.transform='none';"
+             th:onclick="'window.open(\'' + @{/job/detail/{id}(id=${sim.jobId})} + '\', \'_blank\');'">
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
+            <span style="font-size:13px; font-weight:700; color:#2563EB;" th:text="'유사도 ' + ${sim.matchScore} + '%'">유사도 88%</span>
+          </div>
+          <div style="font-size:14px; font-weight:700; color:#111; margin-bottom:4px;" th:text="${sim.title}">공고명</div>
+          <div style="font-size:12px; color:#6B7280; margin-bottom:6px;">
+            <span th:text="${sim.companyName}">기업명</span>
+            <span th:if="${sim.regionName != null}"> · <span th:text="${sim.regionName}">지역</span></span>
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:4px;">
+            <th:block th:if="${sim.skillList != null}" th:each="skill : ${sim.skillList}">
+              <span th:if="${sim.matchedSkills != null and sim.matchedSkills.contains(skill)}"
+                    style="font-size:11px; padding:2px 8px; border-radius:10px; background:#DBEAFE; color:#2563EB; font-weight:600;"
+                    th:text="${skill}">Java</span>
+              <span th:unless="${sim.matchedSkills != null and sim.matchedSkills.contains(skill)}"
+                    style="font-size:11px; padding:2px 8px; border-radius:10px; background:#F3F4F6; color:#6B7280;"
+                    th:text="${skill}">React</span>
+            </th:block>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /d-main -->
 
 
@@ -467,7 +582,7 @@
 <script th:src="@{/js/jquery-3.7.1.min.js}"></script>
 <script th:src="@{/bootstrap-4.6.2-dist/js/bootstrap.bundle.min.js}"></script>
 <script th:inline="javascript">
-  var CTX = /*[[@{/}]]*/ '/finalProject/';
+  var CTX = /*[[@{/}]]*/ '';
 
   // 업종코드 → 한글명 매핑
   var industryMap = {
@@ -503,6 +618,20 @@
     document.getElementById('statsExpand').classList.toggle('open', statsOpen);
     document.getElementById('toggleBtn').classList.toggle('is-open', statsOpen);
     document.getElementById('toggleTxt').textContent = statsOpen ? '▲ 내용 닫기' : '▼ 전체 통계 더보기';
+  }
+
+  // 매칭도 상세 토글
+  var matchOpen = false;
+  function toggleMatchDetail() {
+    matchOpen = !matchOpen;
+    var panel = document.getElementById('matchDetailPanel');
+    var btn = document.getElementById('matchToggleBtn');
+    if (panel) {
+      panel.style.display = matchOpen ? 'block' : 'none';
+    }
+    if (btn) {
+      btn.innerHTML = matchOpen ? '<i class="fas fa-chevron-up"></i> 간략히' : '<i class="fas fa-chevron-down"></i> 상세보기';
+    }
   }
 
   var scrapped = /*[[${isScrapped}]]*/ false;

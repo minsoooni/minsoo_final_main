@@ -525,7 +525,7 @@
 
   function cancelApplication(id) {
       if (confirm('정말 지원을 취소하시겠습니까?')) {
-        var contextPath = /*[[@{/}]]*/ '/';
+        var contextPath = /*[[@{/}]]*/ '';
         var form = document.createElement('form');
         form.method = 'POST';
         form.action = contextPath + 'jobseeker/application/' + id + '/cancel';

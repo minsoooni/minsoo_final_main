@@ -361,4 +361,74 @@ public class JobPostingService_imple implements JobPostingService {
         }
         return list;
     }
+
+
+    // ================================================================
+    //  매칭도 관련
+    // ================================================================
+
+    // 채용상세 매칭도 조회 (특정 공고 vs 내 대표이력서)
+    @Override
+    public Map<String, Object> getMatchScoreForJob(Long jobId, String memberId) {
+        if (memberId == null) return null;
+
+        ResumeDTO resume = mypageDAO.selectPrimaryResume(memberId);
+        if (resume == null) return null;
+
+        Map<String, Object> paraMap = new HashMap<>();
+        paraMap.put("jobId", jobId);
+        paraMap.put("regionCode", resume.getRegionCode());
+        paraMap.put("categoryId", resume.getCategoryId());
+        paraMap.put("desiredSalary", resume.getDesiredSalary() != null ? resume.getDesiredSalary() : 0);
+        paraMap.put("resumeId", resume.getResumeId());
+
+        Map<String, Object> result = jobPostingDAO.selectMatchScoreForJob(paraMap);
+        if (result == null) return null;
+
+        // 총점 계산 (만점 대비 퍼센트)
+        int regionScore = ((Number) result.getOrDefault("regionScore", 0)).intValue();
+        int categoryScore = ((Number) result.getOrDefault("categoryScore", 0)).intValue();
+        int salaryScore = ((Number) result.getOrDefault("salaryScore", 0)).intValue();
+        int techScore = ((Number) result.getOrDefault("techScore", 0)).intValue();
+        int techTotalCount = ((Number) result.getOrDefault("techTotalCount", 0)).intValue();
+
+        // 만점 = 5(지역) + 3(직무) + 2(연봉) + techTotal*2(기술)
+        int maxScore = 5 + 3 + 2 + (techTotalCount > 0 ? techTotalCount * 2 : 2);
+        int totalRaw = regionScore + categoryScore + salaryScore + techScore;
+        int matchPercent = maxScore > 0 ? Math.min((int) Math.round((double) totalRaw / maxScore * 100), 100) : 0;
+
+        result.put("matchScore", matchPercent);
+
+        // 이력서의 희망지역/직무명도 같이 전달 (프론트 표시용)
+        result.put("resumeRegionName", resume.getRegionName());
+        result.put("resumeCategoryName", resume.getCategoryName());
+
+        return result;
+    }
+
+    // 유사 공고 추천 (같은 직무/기술스택/지역 기준, 최대 4건)
+    @Override
+    public List<JobPostingListDTO> getSimilarJobPostings(Long jobId) {
+        // 현재 공고의 직무/지역 정보 조회
+        JobPostingListDTO currentPost = jobPostingDAO.selectJobPostingDetail(jobId);
+        if (currentPost == null) return new java.util.ArrayList<>();
+
+        Map<String, Object> paraMap = new HashMap<>();
+        paraMap.put("jobId", jobId);
+        paraMap.put("categoryId", currentPost.getCategoryId());
+        paraMap.put("regionCode", currentPost.getRegionCode());
+
+        List<JobPostingListDTO> list = jobPostingDAO.selectSimilarJobPostings(paraMap);
+        for (JobPostingListDTO dto : list) {
+            convertSkillNames(dto);
+            // 유사도 퍼센트 환산 (만점 기준 동일)
+            if (dto.getMatchScore() != null) {
+                int techTotalCount = dto.getSkillList() != null ? dto.getSkillList().size() : 1;
+                int maxScore = 3 + 3 + (techTotalCount > 0 ? techTotalCount * 2 : 2);
+                int pct = maxScore > 0 ? Math.min((int) Math.round((double) dto.getMatchScore() / maxScore * 100), 100) : 0;
+                dto.setMatchScore(pct);
+            }
+        }
+        return list;
+    }
 }

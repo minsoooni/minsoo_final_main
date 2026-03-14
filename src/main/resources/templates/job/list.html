@@ -178,8 +178,8 @@
   <th:block data-slot="script">
     <script th:inline="javascript">
       // 채용공고 상세 새창 열기
-      // context path 설정 (컨텍스트 루트 대응)
-      var CTX = /*[[@{/}]]*/ '/';
+      // context path 설정
+      var CTX = /*[[@{/}]]*/ '';
       if (CTX.endsWith('/')) { CTX = CTX.slice(0, -1); }
 
       function openDetail(id) {
@@ -469,7 +469,7 @@
         // 최근본공고 클릭 → detail 새탭 이동
         $(document).on('click', '.jp-recent-item', function(){
           var id = $(this).data('id');
-          window.open('/finalProject/job/detail/' + id, '_blank');
+          window.open(CTX +'/job/detail/' + id, '_blank');
         });
 
         // 최근본공고 항상 고정

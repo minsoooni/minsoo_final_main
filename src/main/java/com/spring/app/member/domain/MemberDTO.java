@@ -22,5 +22,6 @@ public class MemberDTO {
     private Integer mustChangePasswordYn;     // NUMBER(1)  NOT NULL DEFAULT 0  비밀번호 변경 여부 (0:정상, 1:변경필요)
     private LocalDate birthDate;    // DATE  NULL  생년월일
     private Integer gender;    // NUMBER(1)  NULL  성별 (1:남, 2:여)
+    private String communityCompanyName; // VARCHAR2(100)  NULL  커뮤니티 인증 기업명
 
 }

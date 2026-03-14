@@ -249,6 +249,16 @@
           <a th:href="@{/job/{id}(id=${post.id})}"
              class="card h-100 shadow-sm hover-card text-decoration-none border-0">
             <div class="card-body py-3">
+
+              <!-- 매칭 점수 바 -->
+              <div th:if="${post.matchScore != null and post.matchScore != '0'}" class="d-flex align-items-center mb-2" style="gap:8px;">
+                <span style="font-size:18px; font-weight:800; color:#2563EB;" th:text="${post.matchScore + '%'}">85%</span>
+                <div style="flex:1; height:5px; background:#F3F4F6; border-radius:3px; overflow:hidden;">
+                  <div style="height:100%; border-radius:3px; background:linear-gradient(90deg, #2563EB, #60A5FA);"
+                       th:style="'width:' + ${post.matchScore} + '%; height:100%; border-radius:3px; background:linear-gradient(90deg, #2563EB, #60A5FA);'"></div>
+                </div>
+              </div>
+
               <span class="badge badge-danger mb-2" th:text="${post.deadline}">D-5</span>
               <h6 class="font-weight-bold mb-1 small" th:text="${post.title}">공고명</h6>
               <p class="text-secondary small mb-2" th:text="${post.companyName}">기업명</p>
@@ -259,6 +269,28 @@
                 </small>
                 <small class="font-weight-bold text-primary" th:text="${post.salary}">급여</small>
               </div>
+
+              <!-- 추천 이유 태그 -->
+              <div class="mt-2" style="display:flex; flex-wrap:wrap; gap:3px;">
+                <span th:if="${post.regionScore != null and post.regionScore == '5'}"
+                      style="font-size:11px; padding:2px 7px; border-radius:10px; background:#ECFDF5; color:#065F46;">
+                  <i class="fas fa-map-pin"></i> 지역 일치</span>
+                <span th:if="${post.regionScore != null and post.regionScore == '3'}"
+                      style="font-size:11px; padding:2px 7px; border-radius:10px; background:#ECFDF5; color:#065F46;">
+                  <i class="fas fa-map-pin"></i> 인근 지역</span>
+                <span th:if="${post.categoryScore != null and post.categoryScore != '0'}"
+                      style="font-size:11px; padding:2px 7px; border-radius:10px; background:#EDE9FE; color:#5B21B6;">
+                  <i class="fas fa-briefcase"></i> 직무 일치</span>
+                <span th:if="${post.salaryScore != null and post.salaryScore != '0'}"
+                      style="font-size:11px; padding:2px 7px; border-radius:10px; background:#FEF3C7; color:#92400E;">
+                  <i class="fas fa-won-sign"></i> 연봉 부합</span>
+                <th:block th:if="${post.matchedSkills != null and post.matchedSkills != ''}">
+                  <span th:each="skill : ${post.matchedSkills.split(',')}"
+                        style="font-size:11px; padding:2px 7px; border-radius:10px; background:#EFF6FF; color:#1E40AF;">
+                    <i class="fas fa-code"></i> <span th:text="${skill}">Java</span></span>
+                </th:block>
+              </div>
+
             </div>
           </a>
         </div>
