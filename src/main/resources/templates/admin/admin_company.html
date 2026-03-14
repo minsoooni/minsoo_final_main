@@ -126,7 +126,7 @@
             };
             window.confirmApprove = function() {
                 const id = targetId; const name = targetName;
-                fetch('/finalProject/admin/companies/' + id + '/approve', { method: 'POST' })
+                fetch('/user-service/admin/companies/' + id + '/approve', { method: 'POST' })
                     .then(res => {
                         closeModal('approveModal');
                         if (res.ok) { showToast(name + ' 승인 완료.', 'success'); setTimeout(() => location.reload(), 1500); }
@@ -145,7 +145,7 @@
                 const reason = document.getElementById('rejectReason').value.trim();
                 if (!reason) { alert('거절 사유를 입력해주세요.'); return; }
                 const id = targetId; const name = targetName;
-                fetch('/finalProject/admin/companies/' + id + '/reject', {
+                fetch('/user-service/admin/companies/' + id + '/reject', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ reason })
@@ -164,7 +164,7 @@
             };
             window.confirmSuspend = function() {
                 const id = targetId; const name = targetName;
-                fetch('/finalProject/admin/companies/' + id + '/suspend', { method: 'POST' })
+                fetch('/user-service/admin/companies/' + id + '/suspend', { method: 'POST' })
                     .then(res => {
                         closeModal('suspendModal');
                         if (res.ok) { showToast(name + ' 정지 완료.', 'warning'); setTimeout(() => location.reload(), 1500); }
@@ -180,7 +180,7 @@
             };
             window.confirmUnsuspend = function() {
                 const id = targetId; const name = targetName;
-                fetch('/finalProject/admin/companies/' + id + '/unsuspend', { method: 'POST' })
+                fetch('/user-service/admin/companies/' + id + '/unsuspend', { method: 'POST' })
                     .then(res => {
                         closeModal('unsuspendModal');
                         if (res.ok) { showToast(name + ' 정지 해제.', 'success'); setTimeout(() => location.reload(), 1500); }
@@ -218,7 +218,7 @@
                 if (status)   params.append('status', status);
                 if (approval) params.append('approval', approval);
 
-                location.href = '/finalProject/admin/companies?' + params.toString();
+                location.href = '/user-service/admin/companies?' + params.toString();
             };
             document.getElementById('searchInput').addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') applyFilters();
@@ -228,7 +228,7 @@
             window.openCompanyDetail = function(id) {
                 targetId = id;
 
-                fetch('/finalProject/admin/companies/' + id + '/detail')
+                fetch('/user-service/admin/companies/' + id + '/detail')
                     .then(res => res.json())
                     .then(data => {
                         const statusMap   = { 0: '정지', 1: '활성', 2: '탈퇴' };
@@ -320,7 +320,7 @@
                 if (type === 'ceoName'     && !ceoName)    { alert('대표자명을 입력해주세요.'); return; }
                 if (type === 'industry'    && !industry)   { alert('업종을 입력해주세요.'); return; }
 
-                fetch('/finalProject/admin/companies/' + targetId + '/update-info', {
+                fetch('/user-service/admin/companies/' + targetId + '/update-info', {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ companyName: companyName, bizNo: bizNo, ceoName: ceoName, industryCode: industry })
@@ -377,7 +377,7 @@
 
                 if (!confirm(name + ' 기업을 재승인하시겠습니까?')) return;
 
-                fetch('/finalProject/admin/companies/' + targetId + '/reapprove', {
+                fetch('/user-service/admin/companies/' + targetId + '/reapprove', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ companyName: name, bizNo: bizNo, ceoName: ceoName, industryCode: industry })
@@ -502,27 +502,27 @@
         </table>
 
         <!-- 페이지바 -->
-        <div class="table-footer">
-            <span class="total-count">
-                총 <span th:text="${totalCount}">0</span>개 기업
-            </span>
-            <div class="pagination">
-                <a th:href="@{/admin/companies(page=1,search=${param.search},status=${param.status},approval=${param.approval})}"
-                   th:classappend="${currentPage == 1} ? 'disabled'">«</a>
-                <a th:href="@{/admin/companies(page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search},status=${param.status},approval=${param.approval})}"
-                   th:classappend="${currentPage == 1} ? 'disabled'">이전</a>
-                <span th:each="i : ${#numbers.sequence(1, totalPages)}">
-                    <a th:href="@{/admin/companies(page=${i},search=${param.search},status=${param.status},approval=${param.approval})}"
-                       th:text="${i}"
-                       th:classappend="${i == currentPage} ? 'active'">
-                    </a>
-                </span>
-                <a th:href="@{/admin/companies(page=${currentPage < totalPages ? currentPage+1 : totalPages},search=${param.search},status=${param.status},approval=${param.approval})}"
-                   th:classappend="${currentPage == totalPages} ? 'disabled'">다음</a>
-                <a th:href="@{/admin/companies(page=${totalPages},search=${param.search},status=${param.status},approval=${param.approval})}"
-                   th:classappend="${currentPage == totalPages} ? 'disabled'">»</a>
-            </div>
-        </div>
+		<div class="table-footer">
+		    <span class="total-count">
+		        총 <span th:text="${totalCount}">0</span>개 기업
+		    </span>
+		    <div class="pagination">
+		        <a th:href="@{/user-service/admin/companies(page=1,search=${param.search},status=${param.status},approval=${param.approval})}"
+		           th:classappend="${currentPage == 1} ? 'disabled'">«</a>
+		        <a th:href="@{/user-service/admin/companies(page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search},status=${param.status},approval=${param.approval})}"
+		           th:classappend="${currentPage == 1} ? 'disabled'">이전</a>
+		        <span th:each="i : ${#numbers.sequence(1, totalPages)}">
+		            <a th:href="@{/user-service/admin/companies(page=${i},search=${param.search},status=${param.status},approval=${param.approval})}"
+		               th:text="${i}"
+		               th:classappend="${i == currentPage} ? 'active'">
+		            </a>
+		        </span>
+		        <a th:href="@{/user-service/admin/companies(page=${currentPage < totalPages ? currentPage+1 : totalPages},search=${param.search},status=${param.status},approval=${param.approval})}"
+		           th:classappend="${currentPage == totalPages} ? 'disabled'">다음</a>
+		        <a th:href="@{/user-service/admin/companies(page=${totalPages},search=${param.search},status=${param.status},approval=${param.approval})}"
+		           th:classappend="${currentPage == totalPages} ? 'disabled'">»</a>
+		    </div>
+		</div>
 
     </div><!-- /content-box -->
 

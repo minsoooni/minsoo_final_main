@@ -7,59 +7,42 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary: #111;
-      --bg: #F7F8FA;
-      --card: #fff;
-      --border: #EAECF0;
-      --text: #111;
-      --text-muted: #888E9B;
-      --green: #16A34A;
-      --red: #DC2626;
-      --yellow: #D97706;
-      --blue: #2563EB;
+      --primary: #111; --bg: #F7F8FA; --card: #fff; --border: #EAECF0;
+      --text: #111; --text-muted: #888E9B;
+      --green: #16A34A; --red: #DC2626; --yellow: #D97706; --blue: #2563EB;
     }
-
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-
     .dash { padding: 28px; width: 100%; box-sizing: border-box; }
-
     .main-card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 18px; }
     .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
     .card-title { font-size: 16px; font-weight: 700; }
-
     .tab-filter { display: flex; gap: 8px; margin-bottom: 20px; }
     .tab-btn { padding: 7px 16px; border: 1px solid var(--border); border-radius: 20px; font-size: 13px; font-weight: 500; font-family: inherit; background: #fff; color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
     .tab-btn.active { background: #111; color: #fff; border-color: #111; }
-
     .banner-list { display: flex; flex-direction: column; gap: 14px; }
     .banner-item { border: 1px solid var(--border); border-radius: 10px; padding: 18px; display: flex; gap: 18px; align-items: flex-start; background: #fff; transition: box-shadow 0.2s; }
     .banner-item:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.07); }
     .banner-item.처리중  { border-left: 4px solid var(--yellow); }
-	.banner-item.승인완료 { border-left: 4px solid var(--green); }
-	.banner-item.반려    { border-left: 4px solid var(--red); }
-	.banner-item.정지    { border-left: 4px solid #6B7280; }
-
+    .banner-item.승인완료 { border-left: 4px solid var(--green); }
+    .banner-item.반려    { border-left: 4px solid var(--red); }
+    .banner-item.정지    { border-left: 4px solid #6B7280; }
     .banner-thumb { width: 180px; height: 100px; border-radius: 8px; background: #E5E7EB; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; color: #9CA3AF; font-size: 13px; }
     .banner-thumb img { width: 100%; height: 100%; object-fit: cover; }
     .banner-body { flex: 1; min-width: 0; }
     .banner-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; }
     .banner-title { font-size: 15px; font-weight: 700; }
-
     .status-badge { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; flex-shrink: 0; }
     .status-badge.처리중  { background: #FEF3C7; color: var(--yellow); }
-	.status-badge.승인완료 { background: #DCFCE7; color: var(--green); }
-	.status-badge.반려    { background: #FEE2E2; color: var(--red); }
-	.status-badge.정지    { background: #F3F4F6; color: #6B7280; }
-
+    .status-badge.승인완료 { background: #DCFCE7; color: var(--green); }
+    .status-badge.반려    { background: #FEE2E2; color: var(--red); }
+    .status-badge.정지    { background: #F3F4F6; color: #6B7280; }
     .banner-company { font-size: 13px; font-weight: 600; color: var(--blue); margin-bottom: 6px; }
     .banner-info-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
-    .banner-link { font-size: 12.5px; color: #2563EB; font-family: monospace; }
     .banner-period { font-size: 12.5px; color: var(--text-muted); }
     .banner-footer { display: flex; align-items: center; justify-content: space-between; }
     .applied-date { font-size: 12px; color: var(--text-muted); }
     .banner-actions { display: flex; gap: 8px; }
-
     .btn-approve { padding: 7px 16px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; font-family: inherit; background: var(--green); color: #fff; cursor: pointer; }
     .btn-approve:hover { background: #15803D; }
     .btn-reject  { padding: 7px 16px; border: 1px solid #FECACA; border-radius: 6px; font-size: 13px; font-weight: 600; font-family: inherit; background: #fff; color: var(--red); cursor: pointer; }
@@ -68,9 +51,7 @@
     .btn-stop:hover    { background: #FEF2F2; border-color: var(--red); }
     .btn-unstop  { padding: 7px 16px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; font-family: inherit; background: var(--green); color: #fff; cursor: pointer; }
     .btn-unstop:hover  { background: #15803D; }
-
     .rejected-reason { font-size: 12px; color: var(--red); background: #FEF2F2; padding: 6px 10px; border-radius: 6px; margin-top: 6px; }
-
     .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
     .summary-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; }
     .summary-card .s-label { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
@@ -78,7 +59,6 @@
     .summary-card .s-value.yellow { color: var(--yellow); }
     .summary-card .s-value.green  { color: var(--green); }
     .summary-card .s-value.red    { color: var(--red); }
-
     .table-footer { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 16px 0; margin-top: 12px; }
     .total-count { font-size: 14px; color: #6b7280; }
     .pagination { display: flex; gap: 4px; }
@@ -86,7 +66,6 @@
     .pagination a:hover { background: #f9fafb; }
     .pagination a.active { background: #1f2937; color: white; border-color: #1f2937; }
     .pagination a.disabled { color: #d1d5db; background: #f9fafb; cursor: not-allowed; pointer-events: none; }
-
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; display: none; align-items: center; justify-content: center; }
     .modal-overlay.open { display: flex; }
     .confirm-modal { background: #fff; border-radius: 14px; width: 400px; padding: 28px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); animation: modalIn 0.18s ease; }
@@ -104,9 +83,7 @@
     .btn-confirm-cancel  { flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 7px; font-size: 13px; font-weight: 600; font-family: inherit; background: #fff; cursor: pointer; }
     .btn-confirm-approve { flex: 1; padding: 10px; background: var(--green); color: #fff; border: none; border-radius: 7px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; }
     .btn-confirm-reject  { flex: 1; padding: 10px; background: var(--red); color: #fff; border: none; border-radius: 7px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; }
-
     .empty-state { text-align: center; padding: 48px; color: var(--text-muted); font-size: 14px; line-height: 2; }
-
     .toast { position: fixed; bottom: 24px; right: 24px; padding: 14px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; color: white; z-index: 9999; opacity: 0; transform: translateY(10px); transition: all 0.3s ease; pointer-events: none; }
     .toast.show    { opacity: 1; transform: translateY(0); }
     .toast.success { background: #10b981; }
@@ -117,14 +94,17 @@
   <script>
     document.addEventListener('DOMContentLoaded', function () {
 
-      let targetId   = null;
-      let targetName = null;
+      /* ── fetch 기본 경로 (게이트웨이 경유) ── */
+      var API = '/user-service/admin/banners';
+
+      var targetId   = null;
+      var targetName = null;
 
       /* ── 탭 필터 ── */
       window.filterBanners = function(filter, btn) {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
         btn.classList.add('active');
-        document.querySelectorAll('.banner-item').forEach(item => {
+        document.querySelectorAll('.banner-item').forEach(function(item) {
           item.style.display = (filter === 'all' || item.dataset.status === filter) ? '' : 'none';
         });
       };
@@ -136,11 +116,11 @@
         document.getElementById('approveModal').classList.add('open');
       };
       window.confirmApprove = function() {
-        const id = targetId; const name = targetName;
-        fetch('/finalProject/admin/banners/' + id + '/approve', { method: 'POST' })
-          .then(res => {
+        var id = targetId;
+        fetch(API + '/' + id + '/approve', { method: 'POST' })
+          .then(function(res) {
             closeModal('approveModal');
-            if (res.ok) { showToast('배너가 승인됐습니다.', 'success'); setTimeout(() => location.href = location.pathname + location.search, 1500); }
+            if (res.ok) { showToast('배너가 승인됐습니다.', 'success'); setTimeout(function() { location.href = location.pathname + location.search; }, 1500); }
             else showToast('처리 중 오류가 발생했습니다.', 'error');
           });
       };
@@ -155,20 +135,20 @@
         document.getElementById('rejectModal').classList.add('open');
       };
       window.confirmReject = function() {
-        const reason = document.getElementById('rejectReason').value.trim();
+        var reason = document.getElementById('rejectReason').value.trim();
         if (!reason) {
           document.getElementById('rejectReason').classList.add('error');
           document.getElementById('reasonError').classList.add('show');
           return;
         }
-        const id = targetId;
-        fetch('/finalProject/admin/banners/' + id + '/reject', {
+        var id = targetId;
+        fetch(API + '/' + id + '/reject', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ reason: reason })
-        }).then(res => {
+        }).then(function(res) {
           closeModal('rejectModal');
-          if (res.ok) { showToast('배너가 반려됐습니다.', 'warning'); setTimeout(() => location.href = location.pathname + location.search, 1500); }
+          if (res.ok) { showToast('배너가 반려됐습니다.', 'warning'); setTimeout(function() { location.href = location.pathname + location.search; }, 1500); }
           else showToast('처리 중 오류가 발생했습니다.', 'error');
         });
       };
@@ -180,11 +160,11 @@
         document.getElementById('stopModal').classList.add('open');
       };
       window.confirmStop = function() {
-        const id = targetId;
-        fetch('/finalProject/admin/banners/' + id + '/stopped', { method: 'POST' })
-          .then(res => {
+        var id = targetId;
+        fetch(API + '/' + id + '/stopped', { method: 'POST' })
+          .then(function(res) {
             closeModal('stopModal');
-            if (res.ok) { showToast('배너가 정지됐습니다.', 'warning'); setTimeout(() => location.href = location.pathname + location.search, 1500); }
+            if (res.ok) { showToast('배너가 정지됐습니다.', 'warning'); setTimeout(function() { location.href = location.pathname + location.search; }, 1500); }
             else showToast('처리 중 오류가 발생했습니다.', 'error');
           });
       };
@@ -196,22 +176,22 @@
         document.getElementById('unstopModal').classList.add('open');
       };
       window.confirmUnstop = function() {
-        const id = targetId;
-        fetch('/finalProject/admin/banners/' + id + '/unstopped', { method: 'POST' })
-          .then(res => {
+        var id = targetId;
+        fetch(API + '/' + id + '/unstopped', { method: 'POST' })
+          .then(function(res) {
             closeModal('unstopModal');
-            if (res.ok) { showToast('배너 정지가 해제됐습니다.', 'success'); setTimeout(() => location.href = location.pathname + location.search, 1500); }
+            if (res.ok) { showToast('배너 정지가 해제됐습니다.', 'success'); setTimeout(function() { location.href = location.pathname + location.search; }, 1500); }
             else showToast('처리 중 오류가 발생했습니다.', 'error');
           });
       };
 
-      /* ── 공통 ── */
+      /* ── 공통 모달 닫기 ── */
       window.closeModal = function(id) {
         document.getElementById(id).classList.remove('open');
         targetId = null; targetName = null;
       };
-      ['approveModal','rejectModal','stopModal','unstopModal'].forEach(id => {
-        document.getElementById(id).addEventListener('click', e => {
+      ['approveModal','rejectModal','stopModal','unstopModal'].forEach(function(id) {
+        document.getElementById(id).addEventListener('click', function(e) {
           if (e.target === document.getElementById(id)) closeModal(id);
         });
       });
@@ -223,13 +203,22 @@
         }
       });
 
-      window.showToast = function(msg, type = 'success') {
-        const toast = document.getElementById('toast');
+      /* ── 토스트 (DOM에 없어도 동적 생성) ── */
+      window.showToast = function(msg, type) {
+        var toast = document.getElementById('toast');
+        if (!toast) {
+          toast = document.createElement('div');
+          toast.id = 'toast';
+          toast.style.cssText = 'position:fixed;bottom:24px;right:24px;padding:14px 20px;border-radius:8px;font-size:14px;font-weight:500;color:white;z-index:9999;opacity:0;transform:translateY(10px);transition:all 0.3s ease;pointer-events:none;';
+          document.body.appendChild(toast);
+        }
         toast.textContent = msg;
-        toast.className = 'toast ' + type;
-        setTimeout(() => toast.classList.add('show'), 10);
-        setTimeout(() => toast.classList.remove('show'), 3000);
+        toast.style.background = type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#f59e0b';
+        if (toast._hideTimer) clearTimeout(toast._hideTimer);
+        setTimeout(function() { toast.style.opacity = '1'; toast.style.transform = 'translateY(0)'; }, 10);
+        toast._hideTimer = setTimeout(function() { toast.style.opacity = '0'; toast.style.transform = 'translateY(10px)'; }, 3000);
       };
+
     });
   </script>
 </head>
@@ -252,11 +241,11 @@
     </div>
 
     <div class="tab-filter">
-      <button class="tab-btn active" onclick="filterBanners('all',      this)">전체</button>
-      <button class="tab-btn"        onclick="filterBanners('처리중',  this)">승인 대기</button>
-      <button class="tab-btn"        onclick="filterBanners('승인완료',   this)">승인 완료</button>
-      <button class="tab-btn"        onclick="filterBanners('반려', this)">반려</button>
-      <button class="tab-btn"        onclick="filterBanners('정지',  this)">정지</button>
+      <button class="tab-btn active" onclick="filterBanners('all',     this)">전체</button>
+      <button class="tab-btn"        onclick="filterBanners('처리중', this)">승인 대기</button>
+      <button class="tab-btn"        onclick="filterBanners('승인완료',  this)">승인 완료</button>
+      <button class="tab-btn"        onclick="filterBanners('반려',   this)">반려</button>
+      <button class="tab-btn"        onclick="filterBanners('정지',   this)">정지</button>
     </div>
 
     <div class="banner-list">
@@ -271,9 +260,9 @@
            th:attr="data-status=${banner.status}">
 
         <div class="banner-thumb">
-         <img th:if="${banner.imageFileUrl != null}"
-		     th:src="@{${banner.imageFileUrl}}" alt="배너 이미지">
-		<span th:if="${banner.imageFileUrl == null}">이미지 없음</span>
+          <img th:if="${banner.imageFileUrl != null}"
+               th:src="@{${banner.imageFileUrl}}" alt="배너 이미지">
+          <span th:if="${banner.imageFileUrl == null}">이미지 없음</span>
         </div>
 
         <div class="banner-body">
@@ -305,8 +294,8 @@
 
           <div class="banner-footer">
             <span class="applied-date">
-		    신청일: <span th:text="${banner.createdAt != null} ? ${#temporals.format(banner.createdAt, 'yyyy-MM-dd')} : '-'"></span>
-		</span>
+              신청일: <span th:text="${banner.createdAt != null} ? ${#temporals.format(banner.createdAt, 'yyyy-MM-dd')} : '-'"></span>
+            </span>
             <div class="banner-actions">
               <th:block th:if="${banner.status == '처리중'}">
                 <button type="button" class="btn-approve"
@@ -335,32 +324,24 @@
 
     <!-- 페이지바 -->
     <div class="table-footer">
-
       <span class="total-count">
         총 <span th:text="${totalCount}"></span>개의 배너
       </span>
-
       <div class="pagination">
-
-        <a th:href="@{/admin/banners(page=1)}"
+        <!-- ↓ 수정: /admin/banners -> /user-service/admin/banners -->
+        <a th:href="@{/user-service/admin/banners(page=1)}"
            th:classappend="${currentPage == 1} ? 'disabled'">«</a>
-
-        <a th:href="@{/admin/banners(page=${currentPage > 1 ? currentPage-1 : 1})}"
+        <a th:href="@{/user-service/admin/banners(page=${currentPage > 1 ? currentPage-1 : 1})}"
            th:classappend="${currentPage == 1} ? 'disabled'">이전</a>
-
         <span th:each="i : ${#numbers.sequence(1, totalPages)}">
-          <a th:href="@{/admin/banners(page=${i})}"
+          <a th:href="@{/user-service/admin/banners(page=${i})}"
              th:text="${i}"
-             th:classappend="${i == currentPage} ? 'active'">
-          </a>
+             th:classappend="${i == currentPage} ? 'active'"></a>
         </span>
-
-        <a th:href="@{/admin/banners(page=${currentPage < totalPages ? currentPage+1 : totalPages})}"
+        <a th:href="@{/user-service/admin/banners(page=${currentPage < totalPages ? currentPage+1 : totalPages})}"
            th:classappend="${currentPage == totalPages} ? 'disabled'">다음</a>
-
-        <a th:href="@{/admin/banners(page=${totalPages})}"
+        <a th:href="@{/user-service/admin/banners(page=${totalPages})}"
            th:classappend="${currentPage == totalPages} ? 'disabled'">»</a>
-
       </div>
     </div>
 

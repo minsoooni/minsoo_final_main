@@ -478,7 +478,7 @@
       btn.textContent = '조회 중...'; btn.disabled = true;
       document.getElementById('loadingOverlay').classList.add('show');
 
-      fetch(`/finalProject/admin/stats/chart-data?from=${from}&to=${to}&period=${currentPeriod}`)
+      fetch(`/user-service/admin/stats/chart-data?from=${from}&to=${to}&period=${currentPeriod}`)
         .then(res => { if (!res.ok) throw new Error('서버 오류'); return res.json(); })
         .then(data => {
           lastData = data; lastFrom = from; lastTo = to;

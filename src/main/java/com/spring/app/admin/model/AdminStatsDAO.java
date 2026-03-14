@@ -60,10 +60,11 @@ public interface AdminStatsDAO {
     // 최근 30일 일별 게시글 작성 추이
     List<Map<String, Object>> getDailyPostLast30();
 
-    // 게시판별 게시글 수 (FK_BOARD_ID 기준)
+    // 게시판별 게시글 수 (차트용 보기)
     List<Map<String, Object>> getPostCountByBoard();
 
-
+    // 게시판별 게시글 수 (FK_BOARD_ID 기준)
+    int getInactiveBoardCount();
    
 
 
