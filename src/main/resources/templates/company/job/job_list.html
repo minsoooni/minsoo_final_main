@@ -8,7 +8,7 @@
   <style type="text/css"></style>
   
   <script th:inline="javascript">
-  const contextPath = "/user-service" + /*[[@{/}]]*/ "";
+  const contextPath = /*[[@{/}]]*/ "";
   
   document.addEventListener("click", async (e) => {
    // 1) ⋮ 버튼 클릭 -> 메뉴 토글
@@ -89,7 +89,7 @@
       <div class="job-desc">채용 공고를 생성하고 관리하세요</div>
     </div>
 
-    <a class="btn btn-dark job-add-btn" th:href="@{/user-service/company/job/job_write}">
+    <a class="btn btn-dark job-add-btn" th:href="@{/company/job/job_write}">
       <i class="fa-solid fa-plus"></i> 공고 등록
     </a>
   </div>
@@ -202,7 +202,7 @@
 			    <div class="job-menu" hidden>
 			      <!-- 수정: GET 이동 -->
 			      <a class="job-menu-item"
-			         th:href="@{/user-service/company/job/update(jobId=${job.jobId})}">수정</a>
+			         th:href="@{/company/job/update(jobId=${job.jobId})}">수정</a>
 			  
 			      <!-- 삭제: AJAX DELETE -->
                   <button type="button" class="job-menu-item js-delete"
@@ -229,7 +229,7 @@
     <div class="job-pagination" th:if="${totalPage > 1}">
 	  <!-- 이전 -->
 	  <a th:if="${currentShowPageNo > 1}"
-	     th:href="@{/user-service/company/job/list(currentShowPageNo=${currentShowPageNo - 1}, jobId=${selectedJob != null ? selectedJob.jobId : null})}"
+	     th:href="@{/company/job/list(currentShowPageNo=${currentShowPageNo - 1}, jobId=${selectedJob != null ? selectedJob.jobId : null})}"
 	     class="page-link">
 	    이전
 	  </a>
@@ -237,7 +237,7 @@
 	  <!-- 페이지 번호 -->
 	  <th:block th:each="i : ${#numbers.sequence(1, totalPage)}">
 	    <a th:if="${i != currentShowPageNo}"
-	       th:href="@{/user-service/company/job/list(currentShowPageNo=${i}, jobId=${selectedJob != null ? selectedJob.jobId : null})}"
+	       th:href="@{/company/job/list(currentShowPageNo=${i}, jobId=${selectedJob != null ? selectedJob.jobId : null})}"
 	       th:text="${i}"
 	       class="page-link">
 	    </a>
@@ -250,7 +250,7 @@
 	
 	  <!-- 다음 -->
 	  <a th:if="${currentShowPageNo < totalPage}"
-	     th:href="@{/user-service/company/job/list(currentShowPageNo=${currentShowPageNo + 1}, jobId=${selectedJob != null ? selectedJob.jobId : null})}"
+	     th:href="@{/company/job/list(currentShowPageNo=${currentShowPageNo + 1}, jobId=${selectedJob != null ? selectedJob.jobId : null})}"
 	     class="page-link">
 	    다음
 	  </a>

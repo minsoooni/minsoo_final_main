@@ -12,27 +12,10 @@
   <script type="text/javascript" th:inline="javascript">
   document.addEventListener("DOMContentLoaded", function () {
 
-    /* ===================== 1) 미니탭(예치금/포인트) ===================== */
-    /*
-    const miniTabBtns = document.querySelectorAll(".mini-tab-btn");
-    const miniTabPanels = document.querySelectorAll(".mini-tab-panel");
-
-    miniTabBtns.forEach(btn => {
-      btn.addEventListener("click", () => {
-        miniTabBtns.forEach(b => b.classList.remove("active"));
-        miniTabPanels.forEach(p => p.classList.remove("show"));
-
-        btn.classList.add("active");
-        const target = document.getElementById(btn.dataset.target);
-        if (target) target.classList.add("show");
-      });
-    });
-    */
-
     /* ===================== 2) PortOne V1 결제 초기화 ===================== */
     const impCode = /*[[${impCode}]]*/ "imp_XXXX";
-    const readyUrl = "/user-service" + /*[[@{/company/Wallet/payments/ready}]]*/ "";
-    const completeUrl = "/user-service" + /*[[@{/company/Wallet/payments/complete}]]*/ "";
+    const readyUrl = /*[[@{/company/Wallet/payments/ready}]]*/ "";
+    const completeUrl = /*[[@{/company/Wallet/payments/complete}]]*/ "";
 
     if (!window.IMP) {
       alert("결제 모듈 로딩 실패(IMP 없음)");
@@ -166,13 +149,13 @@
     <li class="nav-item">
       <a class="nav-link"
          th:classappend="${activeTab}=='wallet' ? ' active' : ''"
-         th:href="@{/user-service/company/wallet(menu='wallet', tab='wallet')}"
+         th:href="@{/company/wallet(menu='wallet', tab='wallet')}"
          role="tab">지갑 · 거래내역</a>
     </li>
     <li class="nav-item">
       <a class="nav-link"
          th:classappend="${activeTab}=='payment' ? ' active' : ''"
-         th:href="@{/user-service/company/wallet(menu='wallet', tab='payment')}"
+         th:href="@{/company/wallet(menu='wallet', tab='payment')}"
          role="tab">결제 내역</a>
     </li>
   </ul>
