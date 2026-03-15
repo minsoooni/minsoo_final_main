@@ -31,6 +31,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/members")
 public class MemberApiController {
 
+	String ctxPath = "http://localhost:8000/user-service/";
+
+	
     private final MemberService memberService;
 
     public MemberApiController(MemberService memberService) {
