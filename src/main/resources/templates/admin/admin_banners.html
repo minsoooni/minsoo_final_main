@@ -116,6 +116,9 @@
         document.getElementById('approveModal').classList.add('open');
       };
       window.confirmApprove = function() {
+    	  
+    	if(!confirm("정말 이 배너를 승인하시겠습니까?")) return;  
+    	  
         var id = targetId;
         fetch(API + '/' + id + '/approve', { method: 'POST' })
           .then(function(res) {
@@ -135,6 +138,9 @@
         document.getElementById('rejectModal').classList.add('open');
       };
       window.confirmReject = function() {
+    	  
+    	if(!confirm("정말 이 배너를 반려하시겠습니까?")) return;  
+    	  
         var reason = document.getElementById('rejectReason').value.trim();
         if (!reason) {
           document.getElementById('rejectReason').classList.add('error');
@@ -259,9 +265,12 @@
            th:classappend="${banner.status}"
            th:attr="data-status=${banner.status}">
 
-        <div class="banner-thumb">
+        <div class="banner-thumb"> <!-- 삼항연산자로 -->
           <img th:if="${banner.imageFileUrl != null}"
-               th:src="@{${banner.imageFileUrl}}" alt="배너 이미지">
+		     th:src="${banner.imageFileUrl.startsWith('/') 
+		              ? banner.imageFileUrl 
+		              : '/' + banner.imageFileUrl}"
+		     alt="배너 이미지">
           <span th:if="${banner.imageFileUrl == null}">이미지 없음</span>
         </div>
 
