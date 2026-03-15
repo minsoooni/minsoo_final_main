@@ -9,7 +9,7 @@
   <style type="text/css"></style>
 
   <script th:inline="javascript">
-  const contextPath = /*[[@{/}]]*/ "";
+  const contextPath = "/user-service" + /*[[@{/}]]*/ "";
   
   let bannerPrice = 0;
   let pointBalance = 0;
@@ -293,7 +293,7 @@
     </div>
 
     <div class="bn-actions">
-      <a class="bn-ghost" th:href="@{/company/banner/list}">
+      <a class="bn-ghost" th:href="@{/user-service/company/banner/list}">
         <i class="fa-solid fa-arrow-left"></i> 목록으로
       </a>
     </div>

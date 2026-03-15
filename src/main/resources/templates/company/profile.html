@@ -16,7 +16,7 @@
 
   // 탭 이동
   function goTab(tab){
-    const baseUrl = /*[[@{/company/profile}]]*/ "";
+    const baseUrl = "/user-service" + /*[[@{/company/profile}]]*/ "";
     location.href = baseUrl + "?tab=" + tab;
   }
 
@@ -27,7 +27,7 @@
   async function saveProfileByTab() {
 
     const activeTab = document.getElementById("activeTabValue").value;
-    const contextPath = /*[[@{/}]]*/ "";
+    const contextPath = "/user-service" + /*[[@{/}]]*/ "";
 
     let formId = "";
     let apiUrl = "";

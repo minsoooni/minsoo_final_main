@@ -8,7 +8,7 @@
   <style type="text/css"></style>
   
   <script th:inline="javascript">
-  const contextPath = /*[[@{/}]]*/ "";
+  const contextPath = "/user-service" + /*[[@{/}]]*/ "";
   
   document.addEventListener("click", async (e) => {
    // 1) ⋮ 버튼 클릭 -> 메뉴 토글
@@ -49,10 +49,11 @@
 	
 	  // 상세 미리보기에서 현재 선택된 공고를 보고 있었다면, 목록으로 이동
 	  // (간단히 새로고침)
-	  location.href = /*[[@{/company/job/list}]]*/ "/company/job/list";
+	  location.href = contextPath + "/company/job/list";
 	  return;
    }
 
+   
    // 2) 메뉴 내부 클릭은 행 클릭(selectJob)으로 안 올라가게 막기
    if (e.target.closest(".job-menu")) {
 	  e.stopPropagation(); // 중요
@@ -70,7 +71,7 @@
     // action 영역(⋮/메뉴) 클릭이면 무시
     if (e && e.target && e.target.closest(".job-actions")) return;
   
-    const baseUrl = /*[[@{/company/job/list}]]*/ '';
+    const baseUrl = contextPath +  "/company/job/list";
     location.href = baseUrl + '?jobId=' + encodeURIComponent(jobId);
   }
   </script>
@@ -88,7 +89,7 @@
       <div class="job-desc">채용 공고를 생성하고 관리하세요</div>
     </div>
 
-    <a class="btn btn-dark job-add-btn" th:href="@{/company/job/job_write}">
+    <a class="btn btn-dark job-add-btn" th:href="@{/user-service/company/job/job_write}">
       <i class="fa-solid fa-plus"></i> 공고 등록
     </a>
   </div>
@@ -201,7 +202,7 @@
 			    <div class="job-menu" hidden>
 			      <!-- 수정: GET 이동 -->
 			      <a class="job-menu-item"
-			         th:href="@{/company/job/update(jobId=${job.jobId})}">수정</a>
+			         th:href="@{/user-service/company/job/update(jobId=${job.jobId})}">수정</a>
 			  
 			      <!-- 삭제: AJAX DELETE -->
                   <button type="button" class="job-menu-item js-delete"
@@ -228,7 +229,7 @@
     <div class="job-pagination" th:if="${totalPage > 1}">
 	  <!-- 이전 -->
 	  <a th:if="${currentShowPageNo > 1}"
-	     th:href="@{/company/job/list(currentShowPageNo=${currentShowPageNo - 1}, jobId=${selectedJob != null ? selectedJob.jobId : null})}"
+	     th:href="@{/user-service/company/job/list(currentShowPageNo=${currentShowPageNo - 1}, jobId=${selectedJob != null ? selectedJob.jobId : null})}"
 	     class="page-link">
 	    이전
 	  </a>
@@ -236,7 +237,7 @@
 	  <!-- 페이지 번호 -->
 	  <th:block th:each="i : ${#numbers.sequence(1, totalPage)}">
 	    <a th:if="${i != currentShowPageNo}"
-	       th:href="@{/company/job/list(currentShowPageNo=${i}, jobId=${selectedJob != null ? selectedJob.jobId : null})}"
+	       th:href="@{/user-service/company/job/list(currentShowPageNo=${i}, jobId=${selectedJob != null ? selectedJob.jobId : null})}"
 	       th:text="${i}"
 	       class="page-link">
 	    </a>
@@ -249,7 +250,7 @@
 	
 	  <!-- 다음 -->
 	  <a th:if="${currentShowPageNo < totalPage}"
-	     th:href="@{/company/job/list(currentShowPageNo=${currentShowPageNo + 1}, jobId=${selectedJob != null ? selectedJob.jobId : null})}"
+	     th:href="@{/user-service/company/job/list(currentShowPageNo=${currentShowPageNo + 1}, jobId=${selectedJob != null ? selectedJob.jobId : null})}"
 	     class="page-link">
 	    다음
 	  </a>

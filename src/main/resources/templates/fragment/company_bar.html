@@ -13,7 +13,7 @@
       <span class="sub">기업 채용 관리</span>
       
       <!--/*메인페이지 이동[임시]*/-->
-      <a th:href="@{/index}">메인페이지[임시]</a>
+      <a th:href="@{/user-service/index}">메인페이지[임시]</a>
     </div>
 
     <div class="topbar-right">
@@ -35,44 +35,44 @@
     <aside class="company-sidebar">
 	  <ul>
 	    <li th:classappend="${activeMenu}=='company_dashboard' ? ' active' : ''">
-	      <a th:href="@{/company/company_dashboard(menu='company_dashboard')}">
+	      <a th:href="@{/user-service/company/company_dashboard(menu='company_dashboard')}">
 	        <i class="fa-solid fa-chart-line"></i><span>대시보드</span>
 	      </a>
 	    </li>
 	
 	    <li th:classappend="${activeMenu}=='profile' ? ' active' : ''">
-	      <a th:href="@{/company/profile(tab='basic')}">
+	      <a th:href="@{/user-service/company/profile(tab='basic')}">
 	        <i class="fa-regular fa-building"></i><span>기업 프로필</span>
 	      </a>
 	    </li>
 	
 	    <li th:classappend="${activeMenu}=='job' ? ' active' : ''">
-	      <a th:href="@{/company/job/list}">
+	      <a th:href="@{/user-service/company/job/list}">
 	        <i class="fa-regular fa-file-lines"></i><span>채용 공고</span>
 	      </a>
 	    </li>
 	
 	    <li th:classappend="${activeMenu}=='applicant' ? ' active' : ''">
-	      <a th:href="@{/company/applicant/list}">
+	      <a th:href="@{/user-service/company/applicant/list}">
 	        <i class="fa-regular fa-user"></i><span>지원자 관리</span>
 	      </a>
 	    </li>
 	
 	    <li th:classappend="${activeMenu}=='offer' ? ' active' : ''">
-	      <a th:href="@{/company/offer/list}">
+	      <a th:href="@{/user-service/company/offer/list}">
 	        <i class="fa-regular fa-envelope"></i><span>제안서 관리</span>
 	      </a>
 	    </li>
 	
 	    <li th:classappend="${activeMenu}=='banner' ? ' active' : ''">
-	      <a th:href="@{/company/banner/list}">
+	      <a th:href="@{/user-service/company/banner/list}">
 	        <i class="fa-solid fa-bullhorn"></i><span>배너 광고</span>
 	      </a>
 	    </li>
 	
 	
 	    <li th:classappend="${activeMenu}=='wallet' ? ' active' : ''">
-	      <a th:href="@{/company/wallet(menu='wallet', tab='wallet')}">
+	      <a th:href="@{/user-service/company/wallet(menu='wallet', tab='wallet')}">
 	        <i class="fa-solid fa-coins"></i><span>포인트 &amp; 지갑</span>
 	      </a>
 	    </li>
@@ -85,7 +85,7 @@
 	
 	
 	    <li th:classappend="${activeMenu}=='talent' ? ' active' : ''">
-	      <a th:href="@{/company/talent(menu='talent')}">
+	      <a th:href="@{/user-service/company/talent(menu='talent')}">
 	        <i class="fa-solid fa-magnifying-glass"></i><span>인재 검색</span>
 	      </a>
 	    </li>
