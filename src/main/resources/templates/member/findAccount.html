@@ -71,7 +71,7 @@
   <script th:inline="javascript">
     document.addEventListener('DOMContentLoaded', function () {
 
-      const ctx = /*[[@{/}]]*/ "";
+      const ctx = /*[[@{/user-service}]]*/ "";
       const base = (ctx || "").replace(/\/$/, "");
 
       const memberTabs = document.querySelectorAll('.jp-login-tab');
@@ -442,7 +442,7 @@
 
             <!-- 기업 아이디 찾기 -->
             <div id="panel-company-id" class="jp-login-panel">
-              <form th:action="@{/member/find/companyId}" method="post" novalidate>
+              <form th:action="@{/user-service/member/find/companyId}" method="post" novalidate>
                 <input type="hidden" name="memberType" value="company">
                 <input type="hidden" name="findType" value="id">
 
@@ -465,7 +465,7 @@
 
                 <div class="jp-find-help-links">
                   로그인 페이지로 돌아가기
-                  <a class="jp-link" th:href="@{/member/login(tab='company')}">기업 로그인</a>
+                  <a class="jp-link" th:href="@{/user-service/member/login(tab='company')}">기업 로그인</a>
                 </div>
 
                 <div class="jp-find-result-box" th:if="${resultType == 'companyId' and foundMemberId != null}">
@@ -526,14 +526,14 @@
 
                 <div class="jp-find-help-links">
                   로그인 페이지로 돌아가기
-                  <a class="jp-link" th:href="@{/member/login(tab='company')}">기업 로그인</a>
+                  <a class="jp-link" th:href="@{/user-service/member/login(tab='company')}">기업 로그인</a>
                 </div>
               </form>
             </div>
 
             <!-- 개인 아이디 찾기 -->
             <div id="panel-member-id" class="jp-login-panel d-none">
-              <form th:action="@{/member/find/memberId}" method="post" novalidate>
+              <form th:action="@{/user-service/member/find/memberId}" method="post" novalidate>
                 <input type="hidden" name="memberType" value="member">
                 <input type="hidden" name="findType" value="id">
 
@@ -617,7 +617,7 @@
 
                 <div class="jp-find-help-links">
                   로그인 페이지로 돌아가기
-                  <a class="jp-link" th:href="@{/member/login(tab='member')}">개인 로그인</a>
+                  <a class="jp-link" th:href="@{/user-service/member/login(tab='member')}">개인 로그인</a>
                 </div>
               </form>
             </div>

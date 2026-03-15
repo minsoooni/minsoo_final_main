@@ -84,6 +84,22 @@ public class MypageController {
             post.put("region", dto.getRegionName() != null ? dto.getRegionName() : "");
             post.put("salary", dto.getSalary() != null ? String.format("%,d만원", dto.getSalary()) : "협의");
 
+            // 매칭 점수 (항목별)
+            int regionScore = dto.getRegionScore() != null ? dto.getRegionScore() : 0;
+            int categoryScore = dto.getCategoryScore() != null ? dto.getCategoryScore() : 0;
+            int salaryScore = dto.getSalaryScore() != null ? dto.getSalaryScore() : 0;
+            int techScore = dto.getTechScore() != null ? dto.getTechScore() : 0;
+            int totalRaw = regionScore + categoryScore + salaryScore + techScore;
+            // 만점 = 5 + 3 + 2 + 기술수*2 (간이 계산: 기술 만점을 10으로 가정)
+            int maxScore = 5 + 3 + 2 + Math.max(techScore, 4);
+            int matchPercent = maxScore > 0 ? Math.min((int) Math.round((double) totalRaw / maxScore * 100), 100) : 0;
+            post.put("matchScore", String.valueOf(matchPercent));
+            post.put("regionScore", String.valueOf(regionScore));
+            post.put("categoryScore", String.valueOf(categoryScore));
+            post.put("salaryScore", String.valueOf(salaryScore));
+            post.put("techScore", String.valueOf(techScore));
+            post.put("matchedSkills", dto.getMatchedSkills() != null ? dto.getMatchedSkills() : "");
+
             // D-day 계산
             if (dto.getDeadlineAt() != null && !"".equals(dto.getDeadlineAt())) {
                 try {

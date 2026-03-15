@@ -16,8 +16,8 @@
     document.addEventListener('DOMContentLoaded', function () {
 
       // API base (contextPath 자동 포함)
-      const apiBase = /*[[@{/api/members}]]*/ '';
-
+      const apiBase = /*[[@{/user-service/api/members}]]*/ '';
+	  
       // ===== 공통 유틸 =====
       function setMsg(el, ok, msg) {
         if (!el) return;
@@ -306,7 +306,7 @@
 
             <div class="text-muted" style="font-size:13px;">
               기업 회원이신가요?
-              <a class="jp-link" th:href="@{/member/registerCompanyMember}">기업 회원가입</a>
+              <a class="jp-link" th:href="@{/user-service/member/registerCompanyMember}">기업 회원가입</a>
             </div>
           </div>
         </div>
@@ -319,8 +319,8 @@
               <div class="jp-join-card__desc">필수 항목(*)을 입력해 주세요.</div>
             </div>
 
-            <form th:action="@{/member/registerMemberEnd}" th:object="${req}" method="post" novalidate>
-
+			<form th:action="@{/user-service/member/registerMemberEnd}" th:object="${req}" method="post" novalidate>
+				
               <div class="jp-form-section">
                 <div class="jp-form-section__title">계정 정보</div>
 
@@ -418,7 +418,7 @@
                 <button type="submit" class="btn btn-primary btn-block jp-join-btn">개인 회원가입</button>
                 <div class="text-center mt-3" style="font-size:13px;">
                   이미 계정이 있으신가요?
-                  <a class="jp-link" th:href="@{/member/login}">로그인</a>
+                  <a class="jp-link" th:href="@{/user-service/member/login}">로그인</a>
                 </div>
               </div>
 

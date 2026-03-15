@@ -61,4 +61,12 @@ public class JobPostingListDTO {
     // === 화면 표시용 === //
     private String dDay;               // D-day 표시 문자열 (SQL에서 계산)
     private String dDayUrgent;          // D-day 긴급 여부 (Y/N)
+
+    // === 매칭 점수 (추천/매칭도 표시용) === //
+    private Integer matchScore;        // 매칭 총점 (0~100)
+    private Integer regionScore;       // 지역 매칭 점수 (0/3/5)
+    private Integer categoryScore;     // 직무 매칭 점수 (0/3)
+    private Integer salaryScore;       // 연봉 매칭 점수 (0/2)
+    private Integer techScore;         // 기술스택 매칭 점수 (일치수*2)
+    private String matchedSkills;      // 일치 기술명 (콤마 구분, 예: "Java,Spring")
 }
