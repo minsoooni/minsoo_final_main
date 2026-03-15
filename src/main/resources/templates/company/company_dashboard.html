@@ -21,65 +21,164 @@
 
   <!-- KPI 카드 -->
   <div class="dash-grid">
-    <div class="kpi">
+
+    <!-- 채용 공고 현황 -->
+    <div class="kpi kpi-job-status">
       <div class="kpi-top">
-        <span class="kpi-label">진행중인 공고</span>
+        <span class="kpi-label">채용 공고 현황</span>
         <i class="fa-regular fa-calendar"></i>
       </div>
-      <div class="kpi-val">
-        <span th:text="${dashboard.ongoingJobCount}">0</span> <span>건</span>
+
+      <div class="job-kpi-grid">
+        <div class="kpi-stat-card">
+          <div class="kpi-stat-label status-pending">대기</div>
+          <div class="kpi-stat-count">
+            <span th:text="${dashboard.jobWaitingCount}">0</span>
+            <span class="unit">건</span>
+          </div>
+        </div>
+
+        <div class="kpi-stat-card">
+          <div class="kpi-stat-label status-primary">게시중</div>
+          <div class="kpi-stat-count">
+            <span th:text="${dashboard.jobPostingCount}">0</span>
+            <span class="unit">건</span>
+          </div>
+        </div>
+
+        <div class="kpi-stat-card">
+          <div class="kpi-stat-label status-muted">마감</div>
+          <div class="kpi-stat-count">
+            <span th:text="${dashboard.jobClosedCount}">0</span>
+            <span class="unit">건</span>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="kpi">
+
+    <!-- 총 지원자 + 확인 필요 지원 -->
+    <div class="kpi kpi-combined kpi-wide">
       <div class="kpi-top">
-        <span class="kpi-label">총 지원자</span>
+        <span class="kpi-label">지원자 현황</span>
         <i class="fa-regular fa-user"></i>
       </div>
-      <div class="kpi-val">
-        <span th:text="${dashboard.totalApplicantCount}">0</span> <span>명</span>
+
+      <div class="kpi-combined-body">
+        <div class="kpi-main-block">
+          <div class="kpi-main-title">총 지원자</div>
+          <div class="kpi-main-value">
+            <span th:text="${dashboard.totalApplicantCount}">0</span><span>명</span>
+          </div>
+          <div class="kpi-main-desc">전체 공고 기준 누적 지원 인원</div>
+        </div>
+
+        <div class="kpi-side-block">
+          <div class="kpi-side-title">확인 필요 지원</div>
+
+          <div class="kpi-side-grid cols-2">
+            <div class="kpi-stat-card">
+              <div class="kpi-stat-label status-primary">미열람</div>
+              <div class="kpi-stat-count">
+                <span th:text="${dashboard.applicantUnreadCount}">0</span>
+                <span class="unit">건</span>
+              </div>
+            </div>
+
+            <div class="kpi-stat-card">
+              <div class="kpi-stat-label status-accent">면접요청</div>
+              <div class="kpi-stat-count">
+                <span th:text="${dashboard.applicantInterviewRequestCount}">0</span>
+                <span class="unit">건</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="kpi">
+    <!-- 발송 제안서 현황 -->
+    <div class="kpi kpi-offer-status">
       <div class="kpi-top">
-        <span class="kpi-label">미확인 지원</span>
-        <i class="fa-regular fa-envelope"></i>
-      </div>
-      <div class="kpi-val kpi-blue">
-        <span th:text="${dashboard.unreadApplicantCount}">0</span> <span>건</span>
-      </div>
-    </div>
-
-    <div class="kpi">
-      <div class="kpi-top">
-        <span class="kpi-label">발송된 제안서</span>
+        <span class="kpi-label">발송 제안서 현황</span>
         <i class="fa-regular fa-paper-plane"></i>
       </div>
-      <div class="kpi-val">
-        <span th:text="${dashboard.sentOfferCount}">0</span> <span>건</span>
+
+      <div class="offer-kpi-grid">
+        <div class="kpi-stat-card">
+          <div class="kpi-stat-label status-pending">미응답</div>
+          <div class="kpi-stat-count">
+            <span th:text="${dashboard.offerPendingCount}">0</span>
+            <span class="unit">건</span>
+          </div>
+        </div>
+
+        <div class="kpi-stat-card">
+          <div class="kpi-stat-label status-success">수락</div>
+          <div class="kpi-stat-count">
+            <span th:text="${dashboard.offerAcceptedCount}">0</span>
+            <span class="unit">건</span>
+          </div>
+        </div>
+
+        <div class="kpi-stat-card">
+          <div class="kpi-stat-label status-danger">거절</div>
+          <div class="kpi-stat-count">
+            <span th:text="${dashboard.offerRejectedCount}">0</span>
+            <span class="unit">건</span>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="kpi">
+    <!-- 포인트 잔액 + 등록 배너 -->
+    <div class="kpi kpi-combined kpi-wide">
       <div class="kpi-top">
-        <span class="kpi-label">포인트 잔액</span>
+        <span class="kpi-label">포인트 / 배너 현황</span>
         <i class="fa-solid fa-coins"></i>
       </div>
-      <div class="kpi-val">
-        <span th:text="${#numbers.formatInteger(dashboard.pointBalance, 3, 'COMMA')}">0</span> <span>P</span>
+
+      <div class="kpi-combined-body">
+        <div class="kpi-main-block">
+          <div class="kpi-main-title">포인트 잔액</div>
+          <div class="kpi-main-value">
+            <span th:text="${#numbers.formatInteger(dashboard.pointBalance, 3, 'COMMA')}">0</span><span>P</span>
+          </div>
+          <div class="kpi-main-desc">배너 등록 및 광고 결제에 사용 가능한 포인트</div>
+        </div>
+
+        <div class="kpi-side-block">
+          <div class="kpi-side-title">등록 배너</div>
+
+          <div class="kpi-side-grid cols-3">
+            <div class="kpi-stat-card">
+              <div class="kpi-stat-label status-pending">처리중</div>
+              <div class="kpi-stat-count">
+                <span th:text="${dashboard.bannerPendingCount}">0</span>
+                <span class="unit">건</span>
+              </div>
+            </div>
+
+            <div class="kpi-stat-card">
+              <div class="kpi-stat-label status-success">승인완료</div>
+              <div class="kpi-stat-count">
+                <span th:text="${dashboard.bannerApprovedCount}">0</span>
+                <span class="unit">건</span>
+              </div>
+            </div>
+
+            <div class="kpi-stat-card">
+              <div class="kpi-stat-label status-danger">반려</div>
+              <div class="kpi-stat-count">
+                <span th:text="${dashboard.bannerRejectedCount}">0</span>
+                <span class="unit">건</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="kpi">
-      <div class="kpi-top">
-        <span class="kpi-label">등록 배너</span>
-        <i class="fa-regular fa-image"></i>
-      </div>
-      <div class="kpi-val">
-        <span th:text="${dashboard.bannerCount}">0</span> <span>건</span>
-      </div>
-    </div>
   </div>
 
   <!-- 최근 채용 공고 -->
@@ -91,31 +190,61 @@
       </a>
     </div>
 
-    <!-- 데이터가 있을 때 -->
     <th:block th:if="${dashboard.recentJobs != null and !#lists.isEmpty(dashboard.recentJobs)}">
-      <div class="job-row" th:each="job : ${dashboard.recentJobs}">
-        <div class="job-left">
-          <div class="job-title">
-            <span th:text="${job.title}">공고명</span>
+      <div class="job-card" th:each="job : ${dashboard.recentJobs}">
+        <div class="job-card-top">
+          <div class="job-title-row">
+            <div class="job-title" th:text="${job.title}">공고명</div>
+
             <span class="badge"
-			      th:classappend="${job.status == '게시중'} ? ' badge-dark' : ' badge-light'"
-			      th:text="${job.statusText}">게시중</span>
+                  th:classappend="
+                    ${job.status == '대기'} ? ' badge-pending' :
+                    (${job.status == '게시중'} ? ' badge-primary' : ' badge-muted')"
+                  th:text="${job.statusText}">게시중</span>
           </div>
-          <div class="job-meta">
+
+          <div class="job-sub-line">
             <span th:text="${job.workTypeText}">정규직</span>
-            ·
-            마감:
-            <span th:text="${job.deadlineAt != null ? #dates.format(job.deadlineAt, 'yyyy. M. d.') : '상시채용'}">2026. 3. 16.</span>
           </div>
         </div>
-        <div class="job-right">
-          <span><i class="fa-regular fa-eye"></i> <span th:text="${job.viewCount}">0</span></span>
-          <span><i class="fa-regular fa-user"></i> <span th:text="${job.applicantCount}">0</span></span>
+
+        <div class="job-card-body">
+          <div class="job-info-grid">
+            <div class="job-info-item">
+              <span class="job-info-label">마감일</span>
+              <span class="job-info-value"
+                    th:text="${job.deadlineAt != null ? #dates.format(job.deadlineAt, 'yyyy. M. d.') : '상시채용'}">
+                2026. 3. 16.
+              </span>
+            </div>
+
+            <div class="job-info-item">
+              <span class="job-info-label">모집인원</span>
+              <span class="job-info-value">
+                <span th:text="${job.headcount}">0</span>명
+              </span>
+            </div>
+
+            <div class="job-info-item">
+              <span class="job-info-label">조회수</span>
+              <span class="job-info-value">
+                <i class="fa-regular fa-eye"></i>
+                <span th:text="${job.viewCount}">0</span>
+              </span>
+            </div>
+
+            <div class="job-info-item">
+              <span class="job-info-label">스크랩</span>
+              <span class="job-info-value">
+                <i class="fa-regular fa-bookmark"></i>
+                <span th:text="${job.scrapCount}">0</span>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </th:block>
 
-    <!-- 데이터가 없을 때 -->
     <div class="empty-box" th:if="${dashboard.recentJobs == null or #lists.isEmpty(dashboard.recentJobs)}">
       최근 등록된 채용 공고가 없습니다.
     </div>
@@ -134,24 +263,55 @@
       </div>
 
       <th:block th:if="${dashboard.recentApplicants != null and !#lists.isEmpty(dashboard.recentApplicants)}">
-        <div class="app-row" th:each="app : ${dashboard.recentApplicants}">
-          <div class="app-left">
-            <div class="app-avatar"><i class="fa-regular fa-user"></i></div>
-            <div>
-              <div class="app-name" th:text="${app.applicantName}">홍길동</div>
-              <div class="app-desc" th:text="${app.resumeTitle}">이력서 제목</div>
+        <div class="app-card" th:each="app : ${dashboard.recentApplicants}">
+
+          <div class="app-card-top">
+            <div class="app-user">
+              <div class="app-avatar">
+                <i class="fa-regular fa-user"></i>
+              </div>
+
+              <div class="app-user-info">
+                <div class="app-name-row">
+                  <div class="app-name" th:text="${app.applicantName}">홍길동</div>
+
+                  <span class="pill"
+                        th:classappend="
+                          ${app.processStatus == 0} ? ' pill-primary' :
+                          (${app.processStatus == 1} ? ' pill-muted' :
+                          (${app.processStatus == 2} ? ' pill-muted-strong' :
+                          (${app.processStatus == 3} ? ' pill-accent' :
+                          (${app.processStatus == 4} ? ' pill-success' : ' pill-danger'))))"
+                        th:text="${app.processStatusText}">미열람</span>
+                </div>
+
+                <div class="app-job-line">
+                  <i class="fa-regular fa-briefcase"></i>
+                  <span>지원 공고 :</span>
+                  <span th:text="${app.jobTitle}">공고명</span>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="app-right">
-            <div class="app-job" th:text="${app.jobTitle}">공고명</div>
-            <div class="app-meta"
-                 th:text="${app.appliedAt != null ? #dates.format(app.appliedAt, 'yyyy. M. d.') : '-'}">2026. 2. 10.</div>
+
+          <div class="app-card-body">
+            <div class="app-info-row">
+              <span class="app-info-label">이력서</span>
+              <span class="app-info-value"
+                    th:text="${app.resumeTitle != null and !#strings.isEmpty(app.resumeTitle) ? app.resumeTitle : '이력서 제목 없음'}">
+                이력서 제목
+              </span>
+            </div>
+
+            <div class="app-info-row">
+              <span class="app-info-label">지원일</span>
+              <span class="app-info-value"
+                    th:text="${app.appliedAt != null ? #dates.format(app.appliedAt, 'yyyy. M. d.') : '-'}">
+                2026. 3. 15.
+              </span>
+            </div>
           </div>
-          <span class="pill"
-                th:classappend="
-                  ${app.processStatus == 3} ? ' pill-dark' :
-                  (${app.processStatus == 2} ? ' pill-gray' : ' pill-light')"
-                th:text="${app.processStatusText}">합격</span>
+
         </div>
       </th:block>
 
@@ -174,9 +334,9 @@
           <div class="offer-title" th:text="${offer.title}">제안서 제목</div>
           <div class="offer-sub" th:text="${offer.jobTitle}">공고명</div>
           <div class="offer-stats">
+            <span class="pending">미응답 <span th:text="${offer.unreadCount}">0</span></span>
             <span class="ok">수락 <span th:text="${offer.acceptedCount}">0</span></span>
             <span class="no">거절 <span th:text="${offer.rejectedCount}">0</span></span>
-            <span class="muted">미열람 <span th:text="${offer.unreadCount}">0</span></span>
           </div>
           <div class="offer-right">
             <div>총 <span th:text="${offer.totalSentCount}">0</span>명 발송</div>

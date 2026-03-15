@@ -52,7 +52,7 @@
 	        parameterType="com.spring.app.company.domain.TalentSearchConditionDTO"
 	        resultType="com.spring.app.company.domain.TalentResumeDTO">
 	
-	    SELECT
+		SELECT
 	        r.RESUME_ID          AS resumeId,
 	        r.FK_MEMBERID        AS memberId,
 	        m.NAME               AS name,
@@ -68,7 +68,59 @@
 	        r.UPLOADED_AT        AS uploadedAt,
 	        r.IS_PRIMARY         AS isPrimary,
 	        r.ALLOW_SCOUT        AS allowScout,
-	        r.IS_DELETED         AS isDeleted
+	        r.IS_DELETED         AS isDeleted,
+	
+	        /* 대표 학력 1건 */
+	        (
+	            SELECT el.EDU_LEVEL_NAME
+	            FROM TBL_RESUME_EDUCATION re
+	            LEFT JOIN TBL_EDUCATION_LEVEL el
+	              ON re.FK_EDU_LEVEL_CODE = el.EDU_LEVEL_CODE
+	            WHERE re.FK_RESUME_ID = r.RESUME_ID
+	            ORDER BY re.SORT ASC, re.GRADUATIONDATE DESC NULLS LAST
+	            FETCH FIRST 1 ROWS ONLY
+	        ) AS education,
+	
+	        /* 총 경력 연수 */ 
+	        CASE
+	            WHEN EXISTS (
+	                SELECT 1
+	                FROM TBL_RESUME_CAREER c
+	                WHERE c.FK_RESUME_ID = r.RESUME_ID
+	            )
+	            THEN
+	                '경력 ' ||
+	                (
+	                    SELECT NVL(FLOOR(SUM(MONTHS_BETWEEN(NVL(c.LEAVEDATE, SYSDATE), c.JOINDATE)) / 12), 0)
+	                    FROM TBL_RESUME_CAREER c
+	                    WHERE c.FK_RESUME_ID = r.RESUME_ID
+	                ) || '년'
+	            ELSE '신입'
+	        END AS career,
+	
+	        /* 기술스택 문자열 */ 
+	        (
+	            SELECT LISTAGG(s.SKILL_NAME, '||') WITHIN GROUP (ORDER BY s.SKILL_NAME)
+	            FROM TBL_RESUME_TECHSTACK rt
+	            JOIN TBL_SKILL s
+	              ON rt.FK_SKILL_ID = s.SKILL_ID
+	            WHERE rt.FK_RESUME_ID = r.RESUME_ID
+	        ) AS techStackNamesRaw,
+	
+	        /* 기술스택 개수 */
+	        (
+	            SELECT COUNT(*)
+	            FROM TBL_RESUME_TECHSTACK rt
+	            WHERE rt.FK_RESUME_ID = r.RESUME_ID
+	        ) AS techStackCount,
+	
+	        /* 포트폴리오 개수 */
+	        (
+	            SELECT COUNT(*)
+	            FROM TBL_RESUME_PORTFOLIO p
+	            WHERE p.FK_RESUME_ID = r.RESUME_ID
+	        ) AS portfolioCount
+	
 	    FROM TBL_RESUME r
 	    JOIN TBL_MEMBER m
 	      ON m.MEMBERID = r.FK_MEMBERID
@@ -76,6 +128,7 @@
 	      ON jc.CATEGORY_ID = r.FK_CATEGORY_ID
 	    LEFT JOIN TBL_REGION rg
 	      ON rg.REGION_CODE = r.FK_REGION_CODE
+	
 	    WHERE r.IS_PRIMARY = 1
 	      AND r.IS_DELETED = 0
 	      AND r.ALLOW_SCOUT = 1
@@ -106,13 +159,70 @@
 	    <if test="salaryMax != null">
 	      AND r.DESIRED_SALARY <![CDATA[<=]]> #{salaryMax}
 	    </if>
+	    
+        <if test="skillIds != null and skillIds.size() > 0">
+	      AND EXISTS (
+	        SELECT 1
+	        FROM TBL_RESUME_TECHSTACK rt
+	        WHERE rt.FK_RESUME_ID = r.RESUME_ID
+	          AND rt.FK_SKILL_ID IN
+	          <foreach collection="skillIds" item="skillId" open="(" separator="," close=")">
+	            #{skillId}
+	          </foreach>
+	      )
+	    </if>
+	
+	    <if test="careerMin != null">
+	      AND (
+	        SELECT NVL(FLOOR(SUM(MONTHS_BETWEEN(NVL(c.LEAVEDATE, SYSDATE), c.JOINDATE)) / 12), 0)
+	        FROM TBL_RESUME_CAREER c
+	        WHERE c.FK_RESUME_ID = r.RESUME_ID
+	      ) <![CDATA[>=]]> #{careerMin}
+	    </if>
+	
+	    <if test="careerMax != null">
+	      AND (
+	        SELECT NVL(FLOOR(SUM(MONTHS_BETWEEN(NVL(c.LEAVEDATE, SYSDATE), c.JOINDATE)) / 12), 0)
+	        FROM TBL_RESUME_CAREER c
+	        WHERE c.FK_RESUME_ID = r.RESUME_ID
+	      ) <![CDATA[<=]]> #{careerMax}
+	    </if>
+	
+	    <if test="educationLevel != null and educationLevel != ''">
+	      AND EXISTS (
+	        SELECT 1
+	        FROM TBL_RESUME_EDUCATION e
+	        JOIN TBL_EDUCATION_LEVEL el
+	          ON e.FK_EDU_LEVEL_CODE = el.EDU_LEVEL_CODE
+	        WHERE e.FK_RESUME_ID = r.RESUME_ID
+	          AND el.EDU_LEVEL_NAME = #{educationLevel}
+	      )
+	    </if>
+	
+	    <if test="updatedWithin != null">
+	      AND r.UPLOADED_AT <![CDATA[>=]]> SYSDATE - #{updatedWithin}
+	    </if>
+	
+	    <if test="hasPortfolio != null and hasPortfolio == 1">
+	      AND EXISTS (
+	        SELECT 1
+	        FROM TBL_RESUME_PORTFOLIO p
+	        WHERE p.FK_RESUME_ID = r.RESUME_ID
+	      )
+	    </if>
 	
 	    <choose>
+	      <when test="sort == 'career'">
+	        ORDER BY
+	          (
+	            SELECT NVL(FLOOR(SUM(MONTHS_BETWEEN(NVL(c.LEAVEDATE, SYSDATE), c.JOINDATE)) / 12), 0)
+	            FROM TBL_RESUME_CAREER c
+	            WHERE c.FK_RESUME_ID = r.RESUME_ID
+	          ) DESC,
+	          r.UPLOADED_AT DESC
+	      </when>
 	      <when test="sort == 'salary'">
 	        ORDER BY r.DESIRED_SALARY DESC NULLS LAST, r.UPLOADED_AT DESC
-	      </when>
-	      <when test="sort == 'oldest'">
-	        ORDER BY r.UPLOADED_AT ASC
 	      </when>
 	      <otherwise>
 	        ORDER BY r.UPLOADED_AT DESC
@@ -349,6 +459,7 @@
 	    WHERE RT.fk_resume_id = #{resumeId}
 	    ORDER BY SC.skill_category_id ASC, S.skill_name ASC
 	</select>
+	
 	
 	
 	

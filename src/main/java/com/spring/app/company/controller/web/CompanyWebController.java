@@ -56,8 +56,18 @@ public class CompanyWebController {
         model.addAttribute("activeMenu", menu);
         
         String memberId = authentication.getName(); // 로그인한 기업 회원 아이디
+        
         // 대시보드 전체 데이터 조회
         CompanyDashboardDTO dashboard = service.getCompanyDashboard(memberId);
+        //System.out.println(dashboard.getRecentApplicants());
+        /*
+        [DashboardApplicantDTO(applicationId=13, applicantName=구직자, resumeTitle=경력이력서, jobTitle=디자이너 급구, appliedAt=Sat Mar 14 17:48:05 KST 2026, processStatus=0, processStatusText=지원완료), 
+        DashboardApplicantDTO(applicationId=12, applicantName=구직자, resumeTitle=경력이력서, jobTitle=디자이너 급구, appliedAt=Fri Mar 13 21:05:22 KST 2026, processStatus=0, processStatusText=지원완료), 
+        DashboardApplicantDTO(applicationId=11, applicantName=구직자, resumeTitle=경력이력서, jobTitle=디자이너 급구, appliedAt=Fri Mar 13 20:51:31 KST 2026, processStatus=0, processStatusText=지원완료), 
+        DashboardApplicantDTO(applicationId=10, applicantName=구직자, resumeTitle=경력이력서, jobTitle=디자이너 급구, appliedAt=Fri Mar 13 18:54:12 KST 2026, processStatus=0, processStatusText=지원완료), 
+        DashboardApplicantDTO(applicationId=9, applicantName=구직자, resumeTitle=경력이력서, jobTitle=디자이너 급구, appliedAt=Fri Mar 13 18:06:09 KST 2026, processStatus=0, processStatusText=지원완료)]
+        */
+        
         model.addAttribute("dashboard", dashboard);
         
         return "company/company_dashboard";

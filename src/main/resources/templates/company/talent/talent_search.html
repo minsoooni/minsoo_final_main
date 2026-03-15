@@ -6,8 +6,25 @@
   <title>인재 검색</title>
   <link rel="stylesheet" th:href="@{/css/company/talent_search.css}">
   <style type="text/css"></style>
-  <script type="text/javascript"></script>
+  <script type="text/javascript">
+  document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("talentSearchForm");
+    const keywordInput = document.getElementById("talentKeyword");
+    const quickKeywords = document.querySelectorAll(".quick-keyword");
+  
+    quickKeywords.forEach(function (button) {
+      button.addEventListener("click", function () {
+        const keyword = this.dataset.keyword;
+        keywordInput.value = keyword;
+        form.submit();
+      });
+    });
+  });
+  </script>
 </head>
+
+
+
 
 <body>
 <section class="dash">
@@ -19,38 +36,41 @@
       <p class="ta-desc">공개된 이력서를 검색하고 우수 인재에게 제안서를 보내세요</p>
     </div>
 
-    <div class="page-actions">
+	<!--  
+    <div class="page-actions" >
       <a class="btn btn-outline-dark btn-sm"
          th:href="@{/company/talent(menu='talent', onlyLike=1)}">
         <i class="fa-regular fa-bookmark"></i>
         찜한 인재 (0)
       </a>
     </div>
+    -->
   </div>
 
   <!-- 검색 박스 -->
   <div class="panel talent-searchbox">
-    <form method="get" th:action="@{/company/talent}">
+    <form method="get" th:action="@{/company/talent}" id="talentSearchForm">
       <input type="hidden" name="menu" value="talent"/>
 
       <div class="talent-searchrow">
         <div class="talent-searchinput">
           <i class="fa-solid fa-magnifying-glass"></i>
           <input type="text"
-                 name="keyword"
-                 class="form-control"
-                 th:value="${searchDto != null ? searchDto.keyword : ''}"
-                 placeholder="이름, 이력서 제목, 직무로 검색...">
+			     id="talentKeyword"
+			     name="keyword"
+			     class="form-control"
+			     th:value="${searchDto != null ? searchDto.keyword : ''}"
+			     placeholder="이름, 이력서 제목, 직무로 검색...">
         </div>
       </div>
 
       <div class="talent-chips">
-        <button type="submit" class="chip" name="keyword" value="백엔드">백엔드</button>
-        <button type="submit" class="chip" name="keyword" value="프론트엔드">프론트엔드</button>
-        <button type="submit" class="chip" name="keyword" value="DevOps">DevOps</button>
-        <button type="submit" class="chip" name="keyword" value="UI/UX 디자이너">UI/UX 디자이너</button>
-        <button type="submit" class="chip" name="keyword" value="데이터 분석">데이터 분석</button>
-      </div>
+	    <button type="button" class="chip quick-keyword" data-keyword="백엔드">백엔드</button>
+	    <button type="button" class="chip quick-keyword" data-keyword="프론트엔드">프론트엔드</button>
+	    <button type="button" class="chip quick-keyword" data-keyword="DevOps">DevOps</button>
+	    <button type="button" class="chip quick-keyword" data-keyword="UI/UX 디자이너">UI/UX 디자이너</button>
+	    <button type="button" class="chip quick-keyword" data-keyword="데이터 분석">데이터 분석</button>
+	  </div>
     </form>
   </div>
 
@@ -293,11 +313,22 @@
               </span>
             </div>
 
-            <div class="resume-rows">
+            <div class="resume-rows core-info-row">
               <div class="row-label">희망 직무</div>
               <div class="resume-pill"
                    th:if="${resume.categoryName != null and resume.categoryName != ''}"
                    th:text="${resume.categoryName}">백엔드</div>
+
+              <div class="row-label salary-label">희망 연봉</div>
+              <div class="resume-pill salary-pill"
+                   th:text="${resume.desiredSalary != null ? #numbers.formatInteger(resume.desiredSalary, 3, 'COMMA') + '만원' : '협의'}">0만원</div>
+
+              <div class="row-label"
+                   th:if="${resume.portfolioCount != null and resume.portfolioCount > 0}">포트폴리오</div>
+              <div class="resume-pill portfolio-pill"
+                   th:if="${resume.portfolioCount != null and resume.portfolioCount > 0}">
+                보유
+              </div>
             </div>
 
             <!-- 기술 스택 -->
@@ -311,16 +342,12 @@
                     th:text="${skillName}">Java</span>
 
               <span class="tag tag-more"
-                    th:if="${#lists.size(resume.techStackNames) > 5}"
-                    th:text="'+' + (${#lists.size(resume.techStackNames)} - 5)">+1</span>
+                    th:if="${resume.techStackCount != null and resume.techStackCount > 5}"
+                    th:text="'+' + (${resume.techStackCount} - 5)">+1</span>
             </div>
 
             <div class="resume-bottom">
-              <div class="salary">
-                희망 연봉:
-                <span th:text="${resume.desiredSalary != null ? #numbers.formatInteger(resume.desiredSalary, 3, 'COMMA') + '만원' : '협의'}">0만원</span>
-              </div>
-
+              <div></div>
               <div class="bottom-actions">
                 <a class="btn btn-light btn-sm"
                    th:href="@{/company/talent/detail(resumeId=${resume.resumeId})}">
@@ -328,6 +355,7 @@
                 </a>
               </div>
             </div>
+            
           </div>
 
           <button class="bookmark" type="button" title="찜">

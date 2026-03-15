@@ -3,6 +3,7 @@ package com.spring.app.company.service;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -112,15 +113,39 @@ public class CompanyService_imple implements CompanyService {
         CompanyDashboardDTO dto = new CompanyDashboardDTO();
 
         // ===== KPI =====
-        dto.setOngoingJobCount(boardMapper.selectOngoingJobCount(memberId));
-        dto.setTotalApplicantCount(boardMapper.selectTotalApplicantCount(memberId));
-        dto.setUnreadApplicantCount(boardMapper.selectUnreadApplicantCount(memberId));
-        dto.setSentOfferCount(boardMapper.selectSentOfferCount(memberId));
+        dto.setOngoingJobCount(boardMapper.selectOngoingJobCount(memberId)); //게시중인 공고
 
+        // 공고 상태별 갯수
+        dto.setJobWaitingCount(boardMapper.selectJobWaitingCount(memberId));
+        dto.setJobPostingCount(boardMapper.selectJobPostingCount(memberId));
+        dto.setJobClosedCount(boardMapper.selectJobClosedCount(memberId));
+        
+        dto.setTotalApplicantCount(boardMapper.selectTotalApplicantCount(memberId)); //총 지원자
+        
+        dto.setUnreadApplicantCount(boardMapper.selectUnreadApplicantCount(memberId)); //미확인 지원자
+        
+        // 지원자 상태별(미열람/면접요청) 구직자 수
+        dto.setApplicantUnreadCount(boardMapper.selectApplicantUnreadCount(memberId)); // 미열람
+        dto.setApplicantInterviewRequestCount(boardMapper.selectApplicantInterviewRequestCount(memberId)); // 면접요청
+        
+        
+        dto.setSentOfferCount(boardMapper.selectSentOfferCount(memberId)); //발송한 제안서 갯수
+        
+        // 제안서 상태별 건수
+        dto.setOfferPendingCount(boardMapper.selectOfferPendingCount(memberId));
+        dto.setOfferAcceptedCount(boardMapper.selectOfferAcceptedCount(memberId));
+        dto.setOfferRejectedCount(boardMapper.selectOfferRejectedCount(memberId));
+
+        
         Long pointBalance = boardMapper.selectPointBalance(memberId);
         dto.setPointBalance(pointBalance != null ? pointBalance : 0L);
 
-        dto.setBannerCount(boardMapper.selectBannerCount(memberId));
+        dto.setBannerCount(boardMapper.selectBannerCount(memberId)); //배너 갯수
+        
+        //배너 상태별 갯수
+        dto.setBannerPendingCount(boardMapper.selectBannerPendingCount(memberId));
+        dto.setBannerApprovedCount(boardMapper.selectBannerApprovedCount(memberId));
+        dto.setBannerRejectedCount(boardMapper.selectBannerRejectedCount(memberId));
 
         // ===== 최근 목록 =====
         dto.setRecentJobs(boardMapper.selectRecentJobs(memberId));
@@ -1349,8 +1374,17 @@ public class CompanyService_imple implements CompanyService {
     //공개 대표이력서 목록
     @Override
     public List<TalentResumeDTO> getPublicPrimaryResumeList(TalentSearchConditionDTO searchDto) {
-        return talentMapper.selectPublicPrimaryResumeList(searchDto);
+        List<TalentResumeDTO> list = talentMapper.selectPublicPrimaryResumeList(searchDto);
+
+        for (TalentResumeDTO dto : list) {
+            if (dto.getTechStackNamesRaw() != null && !dto.getTechStackNamesRaw().isBlank()) {
+                dto.setTechStackNames(Arrays.asList(dto.getTechStackNamesRaw().split("\\|\\|")));
+            }
+        }
+
+        return list;
     }
+    
     //공개 대표이력서 수
     @Override
     public int getPublicPrimaryResumeCount(TalentSearchConditionDTO searchDto) {

@@ -18,16 +18,49 @@
 	
 	
 	<!-- ===================================================== -->
+	<!-- 1-1. 대기 공고 수 -->
+	<!-- ===================================================== -->
+	<select id="selectJobWaitingCount" parameterType="string" resultType="int">
+	    SELECT COUNT(*)
+	    FROM TBL_JOB_POSTING
+	    WHERE FK_MEMBERID = #{memberId}
+	      AND STATUS = '대기'
+	</select>
+	
+	<!-- ===================================================== -->
+	<!-- 1-2. 게시중 공고 수 -->
+	<!-- ===================================================== -->
+	<select id="selectJobPostingCount" parameterType="string" resultType="int">
+	    SELECT COUNT(*)
+	    FROM TBL_JOB_POSTING
+	    WHERE FK_MEMBERID = #{memberId}
+	      AND STATUS = '게시중'
+	</select>
+	
+	<!-- ===================================================== -->
+	<!-- 1-3. 마감 공고 수 -->
+	<!-- ===================================================== -->
+	<select id="selectJobClosedCount" parameterType="string" resultType="int">
+	    SELECT COUNT(*)
+	    FROM TBL_JOB_POSTING
+	    WHERE FK_MEMBERID = #{memberId}
+	      AND STATUS = '마감'
+	</select>
+	
+	
+	
+	<!-- ===================================================== -->
     <!-- 2. 총 지원자 수 -->
     <!-- 해당 기업이 등록한 공고에 지원한 전체 지원자 수 -->
     <!-- ===================================================== -->
     <select id="selectTotalApplicantCount" parameterType="string" resultType="int">
-        SELECT COUNT(*)
-        FROM TBL_JOB_APPLICATION A
-        JOIN TBL_JOB_POSTING J
-          ON A.FK_JOB_ID = J.JOB_ID
-        WHERE J.FK_MEMBERID = #{memberId}
-    </select>
+	    SELECT COUNT(*)
+	    FROM TBL_JOB_APPLICATION A
+	    JOIN TBL_JOB_POSTING J
+	      ON A.FK_JOB_ID = J.JOB_ID
+	    WHERE J.FK_MEMBERID = #{memberId}
+	      AND A.CANCELLED_AT IS NULL
+	</select>
 	
 	
 	
@@ -37,13 +70,38 @@
     <!-- VIEWED_AT 이 NULL 이면 아직 열람 안한 지원으로 가정 -->
     <!-- ===================================================== -->
     <select id="selectUnreadApplicantCount" parameterType="string" resultType="int">
-        SELECT COUNT(*)
-        FROM TBL_JOB_APPLICATION A
-        JOIN TBL_JOB_POSTING J
-          ON A.FK_JOB_ID = J.JOB_ID
-        WHERE J.FK_MEMBERID = #{memberId}
-          AND A.VIEWED_AT IS NULL
-    </select>
+	    SELECT COUNT(*)
+	    FROM TBL_JOB_APPLICATION A
+	    JOIN TBL_JOB_POSTING J
+	      ON A.FK_JOB_ID = J.JOB_ID
+	    WHERE J.FK_MEMBERID = #{memberId}
+	      AND A.CANCELLED_AT IS NULL
+	      AND A.VIEWED_AT IS NULL
+	</select>
+	
+	<!-- 3-1. 미열람 구직자 수 -->
+	<select id="selectApplicantUnreadCount" parameterType="string" resultType="int">
+	    SELECT COUNT(*)
+	    FROM TBL_JOB_APPLICATION A
+	    JOIN TBL_JOB_POSTING J
+	      ON A.FK_JOB_ID = J.JOB_ID
+	    WHERE J.FK_MEMBERID = #{memberId}
+	      AND A.CANCELLED_AT IS NULL
+	      AND A.PROCESS_STATUS = 0
+	</select>
+	
+	<!-- 3-2. 면접요청 구직자 수 -->
+	<select id="selectApplicantInterviewRequestCount" parameterType="string" resultType="int">
+	    SELECT COUNT(*)
+	    FROM TBL_JOB_APPLICATION A
+	    JOIN TBL_JOB_POSTING J
+	      ON A.FK_JOB_ID = J.JOB_ID
+	    WHERE J.FK_MEMBERID = #{memberId}
+	      AND A.CANCELLED_AT IS NULL
+	      AND A.PROCESS_STATUS = 3
+	</select>
+	
+	
 	
 	
 	<!-- ===================================================== -->
@@ -58,6 +116,43 @@
 	      ON OS.FK_JOB_ID = JP.JOB_ID
 	    WHERE JP.FK_MEMBERID = #{memberId}
 	</select>
+    
+    <!-- 4-1. 제안서 미응답 구직자 수 -->
+    <select id="selectOfferPendingCount" parameterType="string" resultType="int">
+	    SELECT COUNT(*)
+	    FROM TBL_OFFER_RESPONSE ORR
+	    JOIN TBL_OFFER_SUBMIT OS
+	      ON ORR.FK_OFFER_SUBMIT_ID = OS.OFFER_SUBMIT_ID
+	    JOIN TBL_JOB_POSTING JP
+	      ON OS.FK_JOB_ID = JP.JOB_ID
+	    WHERE JP.FK_MEMBERID = #{memberId}
+	      AND ORR.RESPONSE_STATUS = 0
+	</select>
+    
+    <!-- 4-2. 제안서 수락 구직자 수 -->
+    <select id="selectOfferAcceptedCount" parameterType="string" resultType="int">
+	    SELECT COUNT(*)
+	    FROM TBL_OFFER_RESPONSE ORR
+	    JOIN TBL_OFFER_SUBMIT OS
+	      ON ORR.FK_OFFER_SUBMIT_ID = OS.OFFER_SUBMIT_ID
+	    JOIN TBL_JOB_POSTING JP
+	      ON OS.FK_JOB_ID = JP.JOB_ID
+	    WHERE JP.FK_MEMBERID = #{memberId}
+	      AND ORR.RESPONSE_STATUS = 1
+	</select>
+    
+    <!-- 4-3. 제안서 거절 구직자 수 -->
+    <select id="selectOfferRejectedCount" parameterType="string" resultType="int">
+	    SELECT COUNT(*)
+	    FROM TBL_OFFER_RESPONSE ORR
+	    JOIN TBL_OFFER_SUBMIT OS
+	      ON ORR.FK_OFFER_SUBMIT_ID = OS.OFFER_SUBMIT_ID
+	    JOIN TBL_JOB_POSTING JP
+	      ON OS.FK_JOB_ID = JP.JOB_ID
+	    WHERE JP.FK_MEMBERID = #{memberId}
+	      AND ORR.RESPONSE_STATUS = 2
+	</select>
+    
     
     
     
@@ -84,6 +179,36 @@
         FROM TBL_BANNER
         WHERE FK_MEMBERID = #{memberId}
     </select>
+    
+    <!-- ===================================================== -->
+	<!-- 6-1. 처리중 배너 수 -->
+	<!-- ===================================================== -->
+	<select id="selectBannerPendingCount" parameterType="string" resultType="int">
+	    SELECT COUNT(*)
+	    FROM TBL_BANNER
+	    WHERE FK_MEMBERID = #{memberId}
+	      AND STATUS = '처리중'
+	</select>
+	
+	<!-- ===================================================== -->
+	<!-- 6-2. 승인완료 배너 수 -->
+	<!-- ===================================================== -->
+	<select id="selectBannerApprovedCount" parameterType="string" resultType="int">
+	    SELECT COUNT(*)
+	    FROM TBL_BANNER
+	    WHERE FK_MEMBERID = #{memberId}
+	      AND STATUS = '승인완료'
+	</select>
+	
+	<!-- ===================================================== -->
+	<!-- 6-3. 반려 배너 수 -->
+	<!-- ===================================================== -->
+	<select id="selectBannerRejectedCount" parameterType="string" resultType="int">
+	    SELECT COUNT(*)
+	    FROM TBL_BANNER
+	    WHERE FK_MEMBERID = #{memberId}
+	      AND STATUS = '반려'
+	</select>
 	
 	
 	
@@ -92,6 +217,7 @@
 	<!-- 최근 생성순 3건 -->
 	<!-- CAREER_TYPE 은 대시보드에서 제외 -->
 	<!-- WORK_TYPE / STATUS 는 문자열 값 그대로 사용 -->
+	<!-- 스크랩 수 JOIN 하여 조회 -->
 	<!-- ===================================================== -->
 	<select id="selectRecentJobs" parameterType="string"
 	        resultType="com.spring.app.company.domain.DashboardJobDTO">
@@ -105,17 +231,28 @@
 	            J.STATUS AS statusText,
 	            J.DEADLINE_AT AS deadlineAt,
 	            NVL(J.VIEW_COUNT, 0) AS viewCount,
+	            NVL(J.HEADCOUNT, 0) AS headcount,
+	
 	            (
 	                SELECT COUNT(*)
 	                FROM TBL_JOB_APPLICATION A
 	                WHERE A.FK_JOB_ID = J.JOB_ID
-	            ) AS applicantCount
+	                  AND A.CANCELLED_AT IS NULL
+	            ) AS applicantCount,
+	
+	            (
+	                SELECT COUNT(*)
+	                FROM TBL_JOB_SCRAP S
+	                WHERE S.FK_JOB_ID = J.JOB_ID
+	            ) AS scrapCount
+	
 	        FROM TBL_JOB_POSTING J
-	        WHERE J.FK_MEMBERID = #{memberId} AND J.STATUS != '삭제됨'
+	        WHERE J.FK_MEMBERID = #{memberId}
+	          AND J.STATUS != '삭제됨'
 	        ORDER BY J.CREATED_AT DESC
 	    )
 	    WHERE ROWNUM <![CDATA[<=]]> 3
-	</select>    
+	</select>   
     
     
     
@@ -126,36 +263,38 @@
     <!-- PROCESS_STATUS 값은 실제 프로젝트 기준으로 수정 -->
     <!-- ===================================================== -->
     <select id="selectRecentApplicants" parameterType="string"
-            resultType="com.spring.app.company.domain.DashboardApplicantDTO">
-        SELECT *
-        FROM (
-            SELECT
-                A.APPLICATION_ID AS applicationId,
-                A.NAME AS applicantName,
-                SR.TITLE AS resumeTitle,
-                J.TITLE AS jobTitle,
-                A.APPLIED_AT AS appliedAt,
-                A.PROCESS_STATUS AS processStatus,
-
-                CASE A.PROCESS_STATUS
-                    WHEN 0 THEN '지원완료'
-                    WHEN 1 THEN '검토중'
-                    WHEN 2 THEN '면접'
-                    WHEN 3 THEN '합격'
-                    WHEN 4 THEN '불합격'
-                    ELSE '대기'
-                END AS processStatusText
-
-            FROM TBL_JOB_APPLICATION A
-            JOIN TBL_JOB_POSTING J
-              ON A.FK_JOB_ID = J.JOB_ID
-            LEFT JOIN TBL_SUBMITTED_RESUME SR
-              ON A.FK_SUBMITTED_RESUME_ID = SR.SUBMITTED_RESUME_ID
-            WHERE J.FK_MEMBERID = #{memberId}
-            ORDER BY A.APPLIED_AT DESC
-        )
-        WHERE ROWNUM <![CDATA[<=]]> 5
-    </select>
+	        resultType="com.spring.app.company.domain.DashboardApplicantDTO">
+	    SELECT *
+	    FROM (
+	        SELECT
+	            A.APPLICATION_ID AS applicationId,
+	            A.NAME AS applicantName,
+	            SR.TITLE AS resumeTitle,
+	            J.TITLE AS jobTitle,
+	            A.APPLIED_AT AS appliedAt,
+	            A.PROCESS_STATUS AS processStatus,
+	
+	            CASE A.PROCESS_STATUS
+	                WHEN 0 THEN '미열람'
+	                WHEN 1 THEN '열람'
+	                WHEN 2 THEN '서류탈락'
+	                WHEN 3 THEN '면접요청'
+	                WHEN 4 THEN '합격'
+	                WHEN 5 THEN '불합격'
+	                ELSE '대기'
+	            END AS processStatusText
+	
+	        FROM TBL_JOB_APPLICATION A
+	        JOIN TBL_JOB_POSTING J
+	          ON A.FK_JOB_ID = J.JOB_ID
+	        LEFT JOIN TBL_SUBMITTED_RESUME SR
+	          ON A.FK_SUBMITTED_RESUME_ID = SR.SUBMITTED_RESUME_ID
+	        WHERE J.FK_MEMBERID = #{memberId}
+	          AND A.CANCELLED_AT IS NULL
+	        ORDER BY A.APPLIED_AT DESC
+	    )
+	    WHERE ROWNUM <![CDATA[<=]]> 5
+	</select>
     
     
     
@@ -168,6 +307,7 @@
 	<!-- RESPONSE_STATUS: 0=대기, 1=수락, 2=거절 가정 -->
 	<!-- 미열람은 VIEWED_AT IS NULL 기준 -->
 	<!-- ===================================================== -->
+	<!--  
 	<select id="selectRecentOffers" parameterType="string"
 	        resultType="com.spring.app.company.domain.DashboardOfferDTO">
 	    SELECT *
@@ -194,6 +334,52 @@
 	
 	        GROUP BY OS.FK_OFFER_LETTER_ID
 	        ORDER BY MAX(OS.SEND_AT) DESC
+	    )
+	    WHERE ROWNUM <![CDATA[<=]]> 5
+	</select>
+	-->
+	<select id="selectRecentOffers" parameterType="string"
+	        resultType="com.spring.app.company.domain.DashboardOfferDTO">
+	    SELECT *
+	    FROM (
+	        SELECT
+	            S.offerLetterId,
+	            S.title,
+	            S.jobTitle,
+	            NVL(R.acceptedCount, 0) AS acceptedCount,
+	            NVL(R.rejectedCount, 0) AS rejectedCount,
+	            NVL(R.pendingCount, 0) AS unreadCount,
+	            S.totalSentCount,
+	            S.expireAt
+	        FROM
+	        (
+	            SELECT
+	                OS.FK_OFFER_LETTER_ID AS offerLetterId,
+	                MAX(OS.TITLE) AS title,
+	                MAX(JP.TITLE) AS jobTitle,
+	                COUNT(OS.OFFER_SUBMIT_ID) AS totalSentCount,
+	                MAX(OS.EXPIRE_AT) AS expireAt,
+	                MAX(OS.SEND_AT) AS lastSendAt
+	            FROM TBL_OFFER_SUBMIT OS
+	            JOIN TBL_JOB_POSTING JP
+	              ON OS.FK_JOB_ID = JP.JOB_ID
+	            WHERE JP.FK_MEMBERID = #{memberId}
+	            GROUP BY OS.FK_OFFER_LETTER_ID
+	        ) S
+	        LEFT JOIN
+	        (
+	            SELECT
+	                OS.FK_OFFER_LETTER_ID AS offerLetterId,
+	                SUM(CASE WHEN ORR.RESPONSE_STATUS = 0 THEN 1 ELSE 0 END) AS pendingCount,
+	                SUM(CASE WHEN ORR.RESPONSE_STATUS = 1 THEN 1 ELSE 0 END) AS acceptedCount,
+	                SUM(CASE WHEN ORR.RESPONSE_STATUS = 2 THEN 1 ELSE 0 END) AS rejectedCount
+	            FROM TBL_OFFER_RESPONSE ORR
+	            JOIN TBL_OFFER_SUBMIT OS
+	              ON ORR.FK_OFFER_SUBMIT_ID = OS.OFFER_SUBMIT_ID
+	            GROUP BY OS.FK_OFFER_LETTER_ID
+	        ) R
+	          ON S.offerLetterId = R.offerLetterId
+	        ORDER BY S.lastSendAt DESC
 	    )
 	    WHERE ROWNUM <![CDATA[<=]]> 5
 	</select>
