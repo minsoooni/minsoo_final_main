@@ -11,9 +11,6 @@
 <div id="offerListContent">
 
 <style>
-  /* ══════════════════════════════════════════
-     받은 제안 페이지
-     ══════════════════════════════════════════ */
 
   /* ── 상단 요약 카드 ── */
   .os-card {
@@ -325,7 +322,7 @@
   }
 </style>
 
-  <!-- ══════════ 헤더 ══════════ -->
+  <!-- 헤더 -->
   <div class="container-fluid px-4 py-4">
 
   <div class="js-page-header">
@@ -333,7 +330,7 @@
     <p class="js-page-subtitle">기업이 귀하에게 보낸 입사 제안입니다.</p>
   </div>
 
-  <!-- ══════════ 요약 카드 ══════════ -->
+  <!-- 요약 카드 -->
   <div class="row mb-4">
     <div class="col-6 col-md-3 mb-2">
       <div class="os-card">
@@ -373,7 +370,7 @@
     </div>
   </div>
 
-  <!-- ══════════ 탭 ══════════ -->
+  <!-- 탭 -->
   <ul class="nav of-tabs" id="offerTabs">
     <li class="nav-item">
       <a class="nav-link active" href="#" data-filter="all">
@@ -397,7 +394,7 @@
     </li>
   </ul>
 
-  <!-- ══════════ 검색바 ══════════ -->
+  <!-- 검색바 -->
   <div class="js-search-bar d-flex align-items-center" style="gap: 10px;">
     <div class="flex-fill position-relative">
       <i class="fas fa-search position-absolute text-muted"
@@ -412,7 +409,7 @@
     </select>
   </div>
 
-  <!-- ══════════ 제안 없음 ══════════ -->
+  <!-- 제안 없음 -->
   <div th:if="${#lists.isEmpty(offers)}" class="of-empty" id="emptyState">
     <i class="fas fa-envelope-open fa-3x mb-3"></i>
     <p class="h6 mt-2">받은 제안이 없습니다.</p>
@@ -422,14 +419,14 @@
     </a>
   </div>
 
-  <!-- ══════════ 필터 결과 없음 (JS에서 토글) ══════════ -->
+  <!-- 필터 결과 없음 (JS에서 토글) -->
   <div id="filterEmpty" class="of-empty" style="display:none;">
     <i class="fas fa-search fa-3x mb-3"></i>
     <p class="h6 mt-2">검색 결과가 없습니다.</p>
     <p class="small text-muted">검색어나 필터 조건을 변경해 보세요.</p>
   </div>
 
-  <!-- ══════════ 제안 목록 ══════════ -->
+  <!-- 제안 목록 -->
   <div id="offerListContainer">
 
     <div th:each="offer : ${offers}"
@@ -636,9 +633,9 @@
   (function() {
 
     // context-path 자동 처리
-    var contextPath = /*[[@{/}]]*/ '/';
+    var contextPath = /*[[@{/}]]*/ '';
 
-    // ═══════════════ 탭 필터링 ═══════════════
+    //  탭 필터링
     var currentFilter = 'all';
 
     document.querySelectorAll('#offerTabs .nav-link').forEach(function(tab) {
@@ -657,7 +654,7 @@
     });
 
 
-    // ═══════════════ 검색 ═══════════════
+    // 검색
     var searchInput = document.getElementById('searchInput');
     var searchTimer = null;
 
@@ -669,14 +666,14 @@
     });
 
 
-    // ═══════════════ 정렬 ═══════════════
+    //  정렬
     var sortSelect = document.getElementById('sortSelect');
     sortSelect.addEventListener('change', function() {
       applyFilterAndSearch();
     });
 
 
-    // ═══════════════ 통합 필터/검색/정렬 함수 ═══════════════
+    // 통합 필터/검색/정렬 함수
     function applyFilterAndSearch() {
       var keyword = searchInput.value.trim().toLowerCase();
       var sortBy = sortSelect.value;
@@ -748,7 +745,7 @@
     }
 
 
-    // ═══════════════ 상세보기 토글 + 열람 처리 ═══════════════
+    // 상세보기 토글 + 열람 처리
     document.querySelectorAll('.btn-toggle-detail').forEach(function(btn) {
       btn.addEventListener('click', function() {
         var targetId = this.getAttribute('data-target');
@@ -807,7 +804,7 @@
     });
 
 
-    // ═══════════════ 수락 처리 (AJAX) ═══════════════
+    // 수락 처리 (AJAX)
     document.querySelectorAll('.btn-do-accept').forEach(function(btn) {
       btn.addEventListener('click', function() {
         var offerSubmitId = this.getAttribute('data-offer-submit-id');
@@ -860,7 +857,7 @@
     });
 
 
-    // ═══════════════ 거절 처리 (모달 확인 후 AJAX) ═══════════════
+    // 거절 처리 (모달 확인 후 AJAX)
     document.querySelectorAll('.btn-confirm-reject').forEach(function(btn) {
       btn.addEventListener('click', function() {
         var offerSubmitId = this.getAttribute('data-offer-submit-id');
@@ -917,7 +914,7 @@
     });
 
 
-    // ═══════════════ 카운트 재계산 (클라이언트 사이드) ═══════════════
+    // 카운트 재계산
     function updateCountsAfterResponse() {
       var cards = document.querySelectorAll('#offerListContainer .of-card');
       var total = 0, pending = 0, accepted = 0, rejected = 0;

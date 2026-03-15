@@ -62,6 +62,7 @@ logging:
 
 server:
   port: 8001
+  forward-headers-strategy: framework
   servlet:
     encoding:
       charset: UTF-8
