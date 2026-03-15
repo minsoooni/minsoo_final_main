@@ -34,6 +34,8 @@ public class MemberController {
 	    this.passwordEncoder = passwordEncoder;
 	}
 	
+	String ctxPath = "http://localhost:8000/user-service/";
+		
 	// =========================== 공용 ===========================
 	
 	// 로그인 페이지 이동
