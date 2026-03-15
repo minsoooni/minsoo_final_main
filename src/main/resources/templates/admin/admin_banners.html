@@ -338,18 +338,18 @@
       </span>
       <div class="pagination">
         <!-- ↓ 수정: /admin/banners -> /user-service/admin/banners -->
-        <a th:href="@{/user-service/admin/banners(page=1)}"
+        <a th:href="@{/admin/banners(page=1)}"
            th:classappend="${currentPage == 1} ? 'disabled'">«</a>
-        <a th:href="@{/user-service/admin/banners(page=${currentPage > 1 ? currentPage-1 : 1})}"
+        <a th:href="@{/admin/banners(page=${currentPage > 1 ? currentPage-1 : 1})}"
            th:classappend="${currentPage == 1} ? 'disabled'">이전</a>
         <span th:each="i : ${#numbers.sequence(1, totalPages)}">
-          <a th:href="@{/user-service/admin/banners(page=${i})}"
+          <a th:href="@{/admin/banners(page=${i})}"
              th:text="${i}"
              th:classappend="${i == currentPage} ? 'active'"></a>
         </span>
-        <a th:href="@{/user-service/admin/banners(page=${currentPage < totalPages ? currentPage+1 : totalPages})}"
+        <a th:href="@{/admin/banners(page=${currentPage < totalPages ? currentPage+1 : totalPages})}"
            th:classappend="${currentPage == totalPages} ? 'disabled'">다음</a>
-        <a th:href="@{/user-service/admin/banners(page=${totalPages})}"
+        <a th:href="@{/admin/banners(page=${totalPages})}"
            th:classappend="${currentPage == totalPages} ? 'disabled'">»</a>
       </div>
     </div>

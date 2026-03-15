@@ -269,23 +269,23 @@
 		        총 <span th:text="${totalCount}">0</span>명 회원
 		    </span>
 		    <div class="pagination">
-		        <a th:href="@{/user-service/admin/members(page=1,search=${param.search},status=${param.status})}"
+		        <a th:href="@{/admin/members(page=1,search=${param.search},status=${param.status})}"
 		           th:classappend="${currentPage == 1} ? 'disabled'">«</a>
 		
-		        <a th:href="@{/user-service/admin/members(page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search},status=${param.status})}"
+		        <a th:href="@{/admin/members(page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search},status=${param.status})}"
 		           th:classappend="${currentPage == 1} ? 'disabled'">이전</a>
 		
 		        <span th:each="i : ${#numbers.sequence(1, totalPages)}">
-		            <a th:href="@{/user-service/admin/members(page=${i},search=${param.search},status=${param.status})}"
+		            <a th:href="@{/admin/members(page=${i},search=${param.search},status=${param.status})}"
 		               th:text="${i}"
 		               th:classappend="${i == currentPage} ? 'active'">
 		            </a>
 		        </span>
 		
-		        <a th:href="@{/user-service/admin/members(page=${currentPage < totalPages ? currentPage+1 : totalPages},search=${param.search},status=${param.status})}"
+		        <a th:href="@{/admin/members(page=${currentPage < totalPages ? currentPage+1 : totalPages},search=${param.search},status=${param.status})}"
 		           th:classappend="${currentPage == totalPages} ? 'disabled'">다음</a>
 		
-		        <a th:href="@{/user-service/admin/members(page=${totalPages},search=${param.search},status=${param.status})}"
+		        <a th:href="@{/admin/members(page=${totalPages},search=${param.search},status=${param.status})}"
 		           th:classappend="${currentPage == totalPages} ? 'disabled'">»</a>
 		    </div>
 		</div>

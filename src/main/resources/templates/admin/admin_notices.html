@@ -483,18 +483,18 @@
     <div class="table-footer">
       <span class="total-count">총 <span th:text="${totalCount}"></span>개의 공지사항</span>
       <div class="pagination">
-        <a th:href="@{/user-service/admin/notices(page=1,search=${param.search})}"
+        <a th:href="@{/admin/notices(page=1,search=${param.search})}"
            th:classappend="${currentPage == 1} ? 'disabled'">«</a>
-        <a th:href="@{/user-service/admin/notices(page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search})}"
+        <a th:href="@{/admin/notices(page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search})}"
            th:classappend="${currentPage == 1} ? 'disabled'">이전</a>
         <span th:each="i : ${#numbers.sequence(1, totalPages)}">
-          <a th:href="@{/user-service/admin/notices(page=${i},search=${param.search})}"
+          <a th:href="@{/admin/notices(page=${i},search=${param.search})}"
              th:text="${i}"
              th:classappend="${i == currentPage} ? 'active'"></a>
         </span>
-        <a th:href="@{/user-service/admin/notices(page=${currentPage < totalPages ? currentPage+1 : totalPages},search=${param.search})}"
+        <a th:href="@{/admin/notices(page=${currentPage < totalPages ? currentPage+1 : totalPages},search=${param.search})}"
            th:classappend="${currentPage == totalPages} ? 'disabled'">다음</a>
-        <a th:href="@{/user-service/admin/notices(page=${totalPages},search=${param.search})}"
+        <a th:href="@{/admin/notices(page=${totalPages},search=${param.search})}"
            th:classappend="${currentPage == totalPages} ? 'disabled'">»</a>
       </div>
     </div>

@@ -507,19 +507,19 @@
 		        총 <span th:text="${totalCount}">0</span>개 기업
 		    </span>
 		    <div class="pagination">
-		        <a th:href="@{/user-service/admin/companies(page=1,search=${param.search},status=${param.status},approval=${param.approval})}"
+		        <a th:href="@{/admin/companies(page=1,search=${param.search},status=${param.status},approval=${param.approval})}"
 		           th:classappend="${currentPage == 1} ? 'disabled'">«</a>
-		        <a th:href="@{/user-service/admin/companies(page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search},status=${param.status},approval=${param.approval})}"
+		        <a th:href="@{/admin/companies(page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search},status=${param.status},approval=${param.approval})}"
 		           th:classappend="${currentPage == 1} ? 'disabled'">이전</a>
 		        <span th:each="i : ${#numbers.sequence(1, totalPages)}">
-		            <a th:href="@{/user-service/admin/companies(page=${i},search=${param.search},status=${param.status},approval=${param.approval})}"
+		            <a th:href="@{/admin/companies(page=${i},search=${param.search},status=${param.status},approval=${param.approval})}"
 		               th:text="${i}"
 		               th:classappend="${i == currentPage} ? 'active'">
 		            </a>
 		        </span>
-		        <a th:href="@{/user-service/admin/companies(page=${currentPage < totalPages ? currentPage+1 : totalPages},search=${param.search},status=${param.status},approval=${param.approval})}"
+		        <a th:href="@{/admin/companies(page=${currentPage < totalPages ? currentPage+1 : totalPages},search=${param.search},status=${param.status},approval=${param.approval})}"
 		           th:classappend="${currentPage == totalPages} ? 'disabled'">다음</a>
-		        <a th:href="@{/user-service/admin/companies(page=${totalPages},search=${param.search},status=${param.status},approval=${param.approval})}"
+		        <a th:href="@{/admin/companies(page=${totalPages},search=${param.search},status=${param.status},approval=${param.approval})}"
 		           th:classappend="${currentPage == totalPages} ? 'disabled'">»</a>
 		    </div>
 		</div>
