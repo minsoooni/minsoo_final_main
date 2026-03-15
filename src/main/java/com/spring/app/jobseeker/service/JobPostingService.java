@@ -60,4 +60,12 @@ public interface JobPostingService {
 
     // 지원자 통계 조회
     Map<String, Object> getApplicantStats(Long jobId);
+
+    // === 매칭도 관련 === //
+
+    // 채용상세 매칭도 조회 (특정 공고 vs 내 대표이력서)
+    Map<String, Object> getMatchScoreForJob(Long jobId, String memberId);
+
+    // 유사 공고 추천 (같은 직무/기술스택/지역 기준, 최대 4건)
+    List<JobPostingListDTO> getSimilarJobPostings(Long jobId);
 }

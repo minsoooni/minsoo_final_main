@@ -106,4 +106,12 @@ public interface JobPostingDAO {
 
     // 최근본 공고 전체 삭제
     int deleteAllViewedPosts(@Param("memberId") String memberId);
+
+    // === 매칭도 관련 === //
+
+    // 채용상세 매칭도 조회 (특정 공고 1개 vs 내 이력서)
+    Map<String, Object> selectMatchScoreForJob(Map<String, Object> paraMap);
+
+    // 유사 공고 추천 (같은 직무/기술스택/지역 기준, 최대 4건)
+    List<JobPostingListDTO> selectSimilarJobPostings(Map<String, Object> paraMap);
 }

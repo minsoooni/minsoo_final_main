@@ -49,10 +49,11 @@
 	
 	  // 상세 미리보기에서 현재 선택된 공고를 보고 있었다면, 목록으로 이동
 	  // (간단히 새로고침)
-	  location.href = /*[[@{/company/job/list}]]*/ "/company/job/list";
+	  location.href = contextPath + "/company/job/list";
 	  return;
    }
 
+   
    // 2) 메뉴 내부 클릭은 행 클릭(selectJob)으로 안 올라가게 막기
    if (e.target.closest(".job-menu")) {
 	  e.stopPropagation(); // 중요
@@ -70,7 +71,7 @@
     // action 영역(⋮/메뉴) 클릭이면 무시
     if (e && e.target && e.target.closest(".job-actions")) return;
   
-    const baseUrl = /*[[@{/company/job/list}]]*/ '';
+    const baseUrl = contextPath +  "/company/job/list";
     location.href = baseUrl + '?jobId=' + encodeURIComponent(jobId);
   }
   </script>
