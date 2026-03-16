@@ -8,24 +8,34 @@
   <!-- 상단 -->
   <header class="company-topbar">
     <div class="topbar-left">
-      <i class="fa-regular fa-building"></i>
-      <span class="logo">JobKorea</span>
-      <span class="sub">기업 채용 관리</span>
-      
-      <!--/*메인페이지 이동[임시]*/-->
-      <a th:href="@{/index}">메인페이지[임시]</a>
+      <a th:href="@{/index}" class="topbar-brand">
+        <span class="topbar-brand-icon">
+          <i class="fa-solid fa-briefcase"></i>
+        </span>
+        <span class="topbar-brand-text">
+          <span class="logo">JobKorea</span>
+          <span class="sub">기업 서비스</span>
+        </span>
+      </a>
     </div>
-
+  
     <div class="topbar-right">
-      <i class="fa-regular fa-bell"></i>
       <div class="profile">
-        <div class="topbar-avatar">T</div>
-        <div>
-          <div class="company-name">(주)테크이노베이션</div>
-          <div class="email">hr@techinno.co.kr</div>
-        </div>
-      </div>
+	    <div class="topbar-avatar"
+	         th:text="${loginCompanyInitial != null ? loginCompanyInitial : 'C'}">C</div>
+	    <div class="profile-meta">
+	      <div class="company-name"
+	           th:text="${loginCompanyName != null ? loginCompanyName : '기업명 미설정'}">
+	        기업명
+	      </div>
+	      <div class="email"
+	           th:text="${loginCompanyEmail != null ? loginCompanyEmail : '이메일 미등록'}">
+	        email@example.com
+	      </div>
+	    </div>
+	  </div>
     </div>
+    
   </header>
 
 

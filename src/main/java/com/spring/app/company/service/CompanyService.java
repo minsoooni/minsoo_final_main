@@ -19,6 +19,7 @@ import com.spring.app.company.domain.CompanyDashboardDTO;
 import com.spring.app.company.domain.CompanyProfileDTO;
 import com.spring.app.company.domain.CompanyProfileUpdateDTO;
 import com.spring.app.company.domain.CompanyProfileUpdateResponseDTO;
+import com.spring.app.company.domain.CompanyTopbarDTO;
 import com.spring.app.company.domain.ImageFileDTO;
 import com.spring.app.company.domain.JobPostingDTO;
 import com.spring.app.company.domain.JobPostingEditResponseDTO;
@@ -40,11 +41,13 @@ import com.spring.app.company.domain.TalentResumeDetailDTO;
 import com.spring.app.company.domain.TalentSearchConditionDTO;
 
 public interface CompanyService {
+
+	//기업 상단바 조회(기업ID, 기업명, 이메일)
+	CompanyTopbarDTO getCompanyTopbarInfo(String memberId);
+	
 	
 	// 기업 대시보드 전체 조회
     CompanyDashboardDTO getCompanyDashboard(String memberId);
-    
-	
     
     // 기업 프로필 조회
     CompanyProfileDTO getCompanyProfile(String memberId);

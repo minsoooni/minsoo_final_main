@@ -16,6 +16,7 @@ import com.spring.app.common.domain.JobCategoryDTO;
 import com.spring.app.company.domain.BannerListDTO;
 import com.spring.app.company.domain.CompanyDashboardDTO;
 import com.spring.app.company.domain.CompanyProfileDTO;
+import com.spring.app.company.domain.CompanyTopbarDTO;
 import com.spring.app.company.domain.JobPostingDTO;
 import com.spring.app.company.domain.MemberSimpleDTO;
 import com.spring.app.company.domain.OfferListDTO;
@@ -40,6 +41,45 @@ public class CompanyWebController {
     //포트원 결제를 위한 객체주입
     @Value("${portone.impCode}")
     private String impCode;
+    
+    
+    
+    
+    //기업 상단바 조회(기업ID, 기업명, 이메일)
+    @ModelAttribute
+    public void addCompanyTopbarInfo(Model model, Authentication authentication) {
+        if (authentication == null || authentication.getName() == null) {
+            return;
+        }
+
+        String memberId = authentication.getName();
+        CompanyTopbarDTO topbarInfo = service.getCompanyTopbarInfo(memberId);
+
+        if (topbarInfo == null) {
+            model.addAttribute("loginCompanyName", "기업명 미설정");
+            model.addAttribute("loginCompanyEmail", "이메일 미등록");
+            model.addAttribute("loginCompanyInitial", "C");
+            return;
+        }
+
+        String companyName = topbarInfo.getCompanyName();
+        String email = topbarInfo.getEmail();
+
+        model.addAttribute("loginCompanyName",
+                (companyName != null && !companyName.isBlank()) ? companyName : "기업명 미설정");
+
+        model.addAttribute("loginCompanyEmail",
+                (email != null && !email.isBlank()) ? email : "이메일 미등록");
+
+        String initial = "C";
+        if (companyName != null && !companyName.isBlank()) {
+            initial = companyName.substring(0, 1);
+        }
+
+        model.addAttribute("loginCompanyInitial", initial);
+    }
+    
+    
     
     
     // 기업용 페이지 기본

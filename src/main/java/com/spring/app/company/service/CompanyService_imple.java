@@ -33,6 +33,7 @@ import com.spring.app.company.domain.CompanyDashboardDTO;
 import com.spring.app.company.domain.CompanyProfileDTO;
 import com.spring.app.company.domain.CompanyProfileUpdateDTO;
 import com.spring.app.company.domain.CompanyProfileUpdateResponseDTO;
+import com.spring.app.company.domain.CompanyTopbarDTO;
 import com.spring.app.company.domain.ImageFileDTO;
 import com.spring.app.company.domain.JobPostingDTO;
 import com.spring.app.company.domain.JobPostingEditResponseDTO;
@@ -105,6 +106,12 @@ public class CompanyService_imple implements CompanyService {
 	               .toLocalDate();
 	}
 	
+	
+	//기업 상단바 조회(기업ID, 기업명, 이메일)
+	@Override
+	public CompanyTopbarDTO getCompanyTopbarInfo(String memberId) {
+	    return profileMapper.selectCompanyTopbarInfo(memberId);
+	}
 	
 	//기업 대시보드 전체 조회해오기
 	@Override
