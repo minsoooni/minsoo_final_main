@@ -323,3 +323,47 @@
 .job-menu form .job-menu-item{
   width: 100%;
 }
+
+
+.text-red{
+  color:#ff0000;   /* 빨간색 */
+  font-weight:600;
+}
+
+
+/* 페이지바 CSS */
+.job-pagination{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:8px;
+  margin-top:20px;
+  flex-wrap:wrap;
+}
+
+.job-pagination .page-link{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:36px;
+  height:36px;
+  padding:0 12px;
+  border:1px solid #d1d5db;
+  border-radius:8px;
+  background:#fff;
+  color:#374151;
+  text-decoration:none;
+  font-size:14px;
+  font-weight:500;
+}
+
+.job-pagination .page-link:hover{
+  background:#f3f4f6;
+}
+
+.job-pagination .page-link.active{
+  background:#2563eb;
+  color:#fff;
+  border-color:#2563eb;
+  font-weight:700;
+}

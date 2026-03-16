@@ -111,11 +111,25 @@
           },
           scales: {
             x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#9ca3af' } },
-            y: { beginAtZero: true, grid: { color: '#f3f4f6' }, ticks: { font: { size: 11 }, color: '#9ca3af' } }
+            y: {
+              beginAtZero: true,
+              grid: { color: '#f3f4f6' },
+              ticks: { font: { size: 11 }, color: '#9ca3af', stepSize: 1 },
+              afterDataLimits: function(axis) {
+                var max = axis.max;
+                if (max <= 10) {
+                  axis.max = 10;
+                  axis.chart.options.scales.y.ticks.stepSize = 1;
+                } else {
+                  axis.max = Math.ceil(max / 10) * 10;
+                  axis.chart.options.scales.y.ticks.stepSize = 10;
+                }
+              }
+            }
           }
         }
       });
-      
+
       const appLabels = /*[[${dailyApplicationStats.![statDate]}]]*/ [];
       const appData   = /*[[${dailyApplicationStats.![applicationCount]}]]*/ [];
 
@@ -146,11 +160,25 @@
           },
           scales: {
             x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#9ca3af' } },
-            y: { beginAtZero: true, grid: { color: '#f3f4f6' }, ticks: { font: { size: 11 }, color: '#9ca3af' } }
+            y: {
+              beginAtZero: true,
+              grid: { color: '#f3f4f6' },
+              ticks: { font: { size: 11 }, color: '#9ca3af', stepSize: 1 },
+              afterDataLimits: function(axis) {
+                var max = axis.max;
+                if (max <= 10) {
+                  axis.max = 10;
+                  axis.chart.options.scales.y.ticks.stepSize = 1;
+                } else {
+                  axis.max = Math.ceil(max / 10) * 10;
+                  axis.chart.options.scales.y.ticks.stepSize = 10;
+                }
+              }
+            }
           }
         }
       });
-      
+
     });
   </script>
 </head>
@@ -199,8 +227,7 @@
 
   <!-- 차트 영역 -->
   <div class="charts-grid">
-    
-   <div class="chart-card">
+    <div class="chart-card">
       <div class="title">일별 회원 가입 추이 (최근 7일)</div>
       <div class="chart-container"><canvas id="memberChart"></canvas></div>
     </div>
@@ -209,56 +236,53 @@
       <div class="chart-container"><canvas id="applicationChart"></canvas></div>
     </div>
   </div>
-  
-  
 
   <!-- 알림 카드 -->
-<div class="alerts-grid" style="grid-template-columns: repeat(2, 1fr);">
+  <div class="alerts-grid" style="grid-template-columns: repeat(2, 1fr);">
 
-  <!-- 신고 처리 대기 -->
-  <div class="alert-card">
-	    <div class="header">
-	      <div class="title"><span>⚠️</span><span>신고 처리 대기</span></div>
-	      <span class="count red"
-	            th:text="${pendingJobReportCount + pendingPostReportCount + pendingCommentReportCount}">0</span>
-	    </div>
-	    <div class="alert-item">
-	  <div class="info"><div class="name">채용공고 신고</div></div>
-	  <div class="action" th:text="${pendingJobReportCount} + '건'">0건</div>
-	</div>
-	<div class="alert-item">
-	  <div class="info"><div class="name">게시글 신고</div></div>
-	  <div class="action" th:text="${pendingPostReportCount} + '건'">0건</div>
-	</div>
-	<div class="alert-item">
-	  <div class="info"><div class="name">댓글 신고</div></div>
-	  <div class="action" th:text="${pendingCommentReportCount} + '건'">0건</div>
-	</div>
-  </div>
-
-  <!-- 기업 승인 대기 -->
-  <div class="alert-card">
-    <div class="header">
-      <div class="title"><span>🏢</span><span>대기 중인 기업 승인</span></div>
-      <span class="count gray"
-            th:text="${pendingCompanies != null ? pendingCompanies.size() : 0}">0</span>
+    <!-- 신고 처리 대기 -->
+    <div class="alert-card">
+      <div class="header">
+        <div class="title"><span>⚠️</span><span>신고 처리 대기</span></div>
+        <span class="count red"
+              th:text="${pendingJobReportCount + pendingPostReportCount + pendingCommentReportCount}">0</span>
+      </div>
+      <div class="alert-item">
+        <div class="info"><div class="name">채용공고 신고</div></div>
+        <div class="action" th:text="${pendingJobReportCount} + '건'">0건</div>
+      </div>
+      <div class="alert-item">
+        <div class="info"><div class="name">게시글 신고</div></div>
+        <div class="action" th:text="${pendingPostReportCount} + '건'">0건</div>
+      </div>
+      <div class="alert-item">
+        <div class="info"><div class="name">댓글 신고</div></div>
+        <div class="action" th:text="${pendingCommentReportCount} + '건'">0건</div>
+      </div>
     </div>
-    <th:block th:if="${pendingCompanies != null and !pendingCompanies.isEmpty()}">
-      <div class="alert-item" th:each="company : ${pendingCompanies}">
-       <div class="info">
-		  <div class="name" th:text="${company.companyName}">기업명</div>
-		  <div class="detail">기업 인증</div>
-		  <div class="date" th:text="${company.infoCreatedAt}">날짜</div>
-		</div>
-        
-		</div>
-    </th:block>
-    <div class="empty-msg" th:if="${pendingCompanies == null or pendingCompanies.isEmpty()}">
-      대기 중인 승인이 없습니다.
-    </div>
-  </div>
 
-</div>
+    <!-- 기업 승인 대기 -->
+    <div class="alert-card">
+      <div class="header">
+        <div class="title"><span>🏢</span><span>대기 중인 기업 승인</span></div>
+        <span class="count gray"
+              th:text="${pendingCompanies != null ? pendingCompanies.size() : 0}">0</span>
+      </div>
+      <th:block th:if="${pendingCompanies != null and !pendingCompanies.isEmpty()}">
+        <div class="alert-item" th:each="company : ${pendingCompanies}">
+          <div class="info">
+            <div class="name" th:text="${company.companyName}">기업명</div>
+            <div class="detail">기업 인증</div>
+            <div class="date" th:text="${company.infoCreatedAt}">날짜</div>
+          </div>
+        </div>
+      </th:block>
+      <div class="empty-msg" th:if="${pendingCompanies == null or pendingCompanies.isEmpty()}">
+        대기 중인 승인이 없습니다.
+      </div>
+    </div>
+
+  </div>
 
   <!-- 최근 채용공고 -->
   <div class="table-section">
@@ -281,8 +305,8 @@
           <td th:text="${job.deadlineAt != null ? job.deadlineAt : '상시'}">-</td>
           <td>
             <span class="status-badge"
-      th:classappend="${job.status == '진행중'} ? 'active' : 'closed'"
-      th:text="${job.status == '진행중'} ? '진행중' : ${job.status}">진행중</span>
+                  th:classappend="${job.status == '진행중' or job.status == '게시중'} ? 'active' : 'closed'"
+                  th:text="${job.status}">진행중</span>
           </td>
         </tr>
       </tbody>
@@ -315,7 +339,7 @@
 </section>
 
 <script th:inline="javascript">
-  
+
 </script>
 
 </body>

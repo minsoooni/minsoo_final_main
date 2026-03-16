@@ -204,6 +204,19 @@ public class JobPostingController {
 		// === 신고사유 목록 === //
 		mav.addObject("reportReasons", jobPostingService.getReportReasonList());
 
+		// === 매칭도 조회 (로그인 + 대표이력서 있을 때만) === //
+		if (authentication != null && authentication.isAuthenticated()) {
+			String loginId3 = authentication.getName();
+			Map<String, Object> matchData = jobPostingService.getMatchScoreForJob(id, loginId3);
+			if (matchData != null) {
+				mav.addObject("matchData", matchData);
+			}
+		}
+
+		// === 유사 공고 추천 (항상 표시) === //
+		List<JobPostingListDTO> similarPosts = jobPostingService.getSimilarJobPostings(id);
+		mav.addObject("similarPosts", similarPosts);
+
 		// === 공고 상태 판별 === //
 		boolean isClosed = false;
 		boolean isPrivate = false;

@@ -106,5 +106,10 @@ public class AdminStatsService_imple implements AdminStatsService {
     public List<Map<String, Object>> getPostCountByBoard() {
         return adminStatsDAO.getPostCountByBoard();
     }    
+    
+    @Override
+    public int getInactiveBoardCount() {
+        return adminStatsDAO.getInactiveBoardCount();
+    }
    
 }

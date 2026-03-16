@@ -67,11 +67,12 @@
 
     <!-- ══════════════ 채용공고 통계 ══════════════ -->
 
-    <!-- 활성 채용공고 수 (진행중 + active) -->
+    <!-- 활성 채용공고 수 (진행중 + 게시중) -->
     <select id="getActiveJobCount" resultType="int">
 	    SELECT COUNT(*)
 	    FROM TBL_JOB_POSTING
-	    WHERE IS_HIDDEN = 0
+	    WHERE STATUS IN ('게시중', '진행중')
+	    AND IS_HIDDEN = 0
 	</select>
 
     <!-- 이번 달 신규 등록 수 -->
@@ -83,10 +84,12 @@
 
     <!-- 이번 달 마감 수 (DEADLINE_AT 기준) -->
     <select id="getThisMonthClosedJobCount" resultType="int">
-        SELECT COUNT(*)
-        FROM TBL_JOB_POSTING
-        WHERE TRUNC(DEADLINE_AT, 'MM') = TRUNC(SYSDATE, 'MM')
-    </select>
+	    SELECT COUNT(*)
+	    FROM TBL_JOB_POSTING
+	    WHERE TRUNC(DEADLINE_AT, 'MM') = TRUNC(SYSDATE, 'MM')
+	      AND DEADLINE_AT &lt; SYSDATE
+	      AND STATUS = '마감'
+	</select>
 
     <!-- 상태별 공고 수 -->
     <select id="getJobCountByStatus" parameterType="int" resultType="int">
@@ -108,14 +111,14 @@
 
     <!-- 최근 30일 일별 마감 추이 (DEADLINE_AT 기준) -->
     <select id="getDailyJobClosedLast30" resultType="map">
-        SELECT
-            TO_CHAR(DEADLINE_AT, 'MM/DD') AS "day",
-            COUNT(*)                       AS "count"
-        FROM TBL_JOB_POSTING
-        WHERE DEADLINE_AT >= SYSDATE - 30
-        GROUP BY TO_CHAR(DEADLINE_AT, 'MM/DD'), TRUNC(DEADLINE_AT)
-        ORDER BY TRUNC(DEADLINE_AT)
-    </select>
+	    SELECT TO_CHAR(DEADLINE_AT, 'MM/DD') AS "day", COUNT(*) AS "count"
+	    FROM TBL_JOB_POSTING
+	    WHERE DEADLINE_AT >= SYSDATE - 30
+	      AND DEADLINE_AT &lt; SYSDATE
+	      AND STATUS = '마감'
+	    GROUP BY TO_CHAR(DEADLINE_AT, 'MM/DD'), TRUNC(DEADLINE_AT)
+	    ORDER BY TRUNC(DEADLINE_AT)
+	</select>
 
     <!-- ══════════════ 게시판 통계 ══════════════ -->
 
@@ -123,6 +126,7 @@
     <select id="getTotalPostCount" resultType="int">
 		SELECT COUNT(*) FROM TBL_POST
 		WHERE POST_STATUS != 'DELETED'
+		 AND IS_HIDDEN = 0
 	</select>
 
     <!-- 이번 달 신규 게시글 수 -->
@@ -130,6 +134,7 @@
         SELECT COUNT(*) FROM TBL_POST
 		WHERE TRUNC(CREATED_AT, 'MM') = TRUNC(SYSDATE, 'MM')
 		AND POST_STATUS != 'DELETED'
+		 AND IS_HIDDEN = 0
     </select>
 
     <!-- 숨김 처리된 게시글 수 -->
@@ -145,17 +150,34 @@
 		FROM TBL_POST
 		WHERE CREATED_AT >= SYSDATE - 30
 		AND POST_STATUS != 'DELETED'
+		AND IS_HIDDEN = 0
 		GROUP BY TO_CHAR(CREATED_AT, 'MM/DD'), TRUNC(CREATED_AT)
 		ORDER BY TRUNC(CREATED_AT)
     </select>
 
 	<!-- 게시판별 게시글 수 -->
 	<select id="getPostCountByBoard" resultType="map">
-    SELECT FK_BOARD_ID AS "boardId", COUNT(*) AS "count"
-    FROM TBL_POST
-    WHERE POST_STATUS != 'DELETED'
-    GROUP BY FK_BOARD_ID
-    ORDER BY FK_BOARD_ID
+	    SELECT b.TITLE AS "boardTitle", COUNT(*) AS "count"
+	    FROM TBL_POST p
+	    JOIN TBL_BOARD b ON p.FK_BOARD_ID = b.BOARD_ID
+	    WHERE p.POST_STATUS != 'DELETED'
+	      AND p.IS_HIDDEN = 0
+	    GROUP BY b.BOARD_ID, b.TITLE
+	    ORDER BY b.BOARD_ID
+	</select>
+	
+	<!-- 이번 달 게시글 0건인 게시판 수 (비활성 게시판) -->
+	<select id="getInactiveBoardCount" resultType="int">
+	    SELECT COUNT(*)
+	    FROM TBL_BOARD b
+	    WHERE NOT EXISTS (
+	        SELECT 1
+	        FROM TBL_POST p
+	        WHERE p.FK_BOARD_ID = b.BOARD_ID
+	          AND TRUNC(p.CREATED_AT, 'MM') = TRUNC(SYSDATE, 'MM')
+	          AND p.POST_STATUS != 'DELETED'
+	          AND p.IS_HIDDEN = 0
+	    )
 	</select>
 	
   

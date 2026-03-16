@@ -3,33 +3,32 @@
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.spring.app.admin.model.AdminBannerDAO">
 
-<!-- 확 -->
   <select id="selectBannerList" resultType="com.spring.app.admin.domain.AdminBannerDTO">
-	  SELECT * FROM (
-	      SELECT ROWNUM AS rn, a.* FROM (
-	          SELECT b.BANNER_ID     AS bannerId,
-	                 b.FK_MEMBERID   AS fkMemberId,
-	                 b.TITLE         AS title,
-	                 b.IMAGE_FILE_ID AS imageFileId,
-	                 img.FILE_URL    AS imageFileUrl,
-	                 b.START_AT      AS startAt,
-	                 b.END_AT        AS endAt,
-	                 b.STATUS        AS status,
-	                 b.REJECT_REASON AS rejectReason,
-	                 c.COMPANY_NAME  AS companyName,
-	                 pt.created_at   AS createdAt
-	          FROM TBL_BANNER b
-	          LEFT JOIN TBL_COMPANY c ON b.FK_MEMBERID = c.FK_MEMBERID
-	          LEFT JOIN TBL_IMAGE_FILE img ON img.FILE_ID = b.IMAGE_FILE_ID
-	          LEFT JOIN (
-	              SELECT FK_BANNER_ID, MIN(CREATED_AT) AS created_at
-	              FROM TBL_POINT_TRANSACTION
-	              GROUP BY FK_BANNER_ID
-	          ) pt ON pt.FK_BANNER_ID = b.BANNER_ID
-	          ORDER BY b.BANNER_ID DESC
-	      ) a WHERE ROWNUM &lt;= #{offset} + #{limit}
-	  ) WHERE rn > #{offset}
-	</select>
+    SELECT * FROM (
+        SELECT ROWNUM AS rn, a.* FROM (
+            SELECT b.BANNER_ID     AS bannerId,
+                   b.FK_MEMBERID   AS fkMemberId,
+                   b.TITLE         AS title,
+                   b.IMAGE_FILE_ID AS imageFileId,
+                   img.FILE_URL    AS imageFileUrl,
+                   b.START_AT      AS startAt,
+                   b.END_AT        AS endAt,
+                   b.STATUS        AS status,
+                   b.REJECT_REASON AS rejectReason,
+                   c.COMPANY_NAME  AS companyName,
+                   pt.created_at   AS createdAt
+            FROM TBL_BANNER b
+            LEFT JOIN TBL_COMPANY c ON b.FK_MEMBERID = c.FK_MEMBERID
+            LEFT JOIN TBL_IMAGE_FILE img ON img.FILE_ID = b.IMAGE_FILE_ID
+            LEFT JOIN (
+                SELECT FK_BANNER_ID, MIN(CREATED_AT) AS created_at
+                FROM TBL_POINT_TRANSACTION
+                GROUP BY FK_BANNER_ID
+            ) pt ON pt.FK_BANNER_ID = b.BANNER_ID
+            ORDER BY b.BANNER_ID DESC
+        ) a WHERE ROWNUM &lt;= #{offset} + #{limit}
+    ) WHERE rn > #{offset}
+  </select>
 
   <select id="selectBannerCount" resultType="int">
     SELECT COUNT(*) FROM TBL_BANNER
@@ -53,37 +52,83 @@
     UPDATE TBL_BANNER SET STATUS = '승인완료' WHERE BANNER_ID = #{bannerId}
   </update>
 
-	<!-- 페이징 기법 -->
-	<select id="selectBannerCountByStatus" resultType="int">
+  <select id="selectBannerCountByStatus" resultType="int">
     SELECT COUNT(*) FROM TBL_BANNER WHERE STATUS = #{status}
-	</select>
-	
-	<!-- 배너 단건 조회 (알림용) -->
-	<select id="selectBannerById" resultType="com.spring.app.admin.domain.AdminBannerDTO">
-	    SELECT BANNER_ID   AS bannerId,
-	           FK_MEMBERID AS fkMemberId,
-	           TITLE       AS title
-	    FROM TBL_BANNER
-	    WHERE BANNER_ID = #{bannerId}
-	</select>
-	
-	<select id="selectActiveBannerList" resultType="com.spring.app.admin.domain.AdminBannerDTO">
-	    SELECT b.BANNER_ID     AS bannerId,
-	           b.FK_MEMBERID   AS fkMemberId,
-	           b.FK_JOB_ID     AS fkJobId,
-	           b.TITLE         AS title,
-	           b.IMAGE_FILE_ID AS imageFileId,
-	           img.FILE_URL    AS imageFileUrl,
-	           b.START_AT      AS startAt,
-	           b.END_AT        AS endAt,
-	           b.STATUS        AS status,
-	           c.COMPANY_NAME  AS companyName
-	    FROM TBL_BANNER b
-	    LEFT JOIN TBL_COMPANY c ON b.FK_MEMBERID = c.FK_MEMBERID
-	    LEFT JOIN TBL_IMAGE_FILE img ON img.FILE_ID = b.IMAGE_FILE_ID
-	    WHERE b.STATUS = '승인완료'
-	    AND b.START_AT &lt;= SYSDATE
-	    AND b.END_AT   &gt;= SYSDATE
-	    ORDER BY b.PRIORITY DESC
-	</select>
+  </select>
+
+  <select id="selectBannerById" resultType="com.spring.app.admin.domain.AdminBannerDTO">
+    SELECT BANNER_ID   AS bannerId,
+           FK_MEMBERID AS fkMemberId,
+           TITLE       AS title
+    FROM TBL_BANNER
+    WHERE BANNER_ID = #{bannerId}
+  </select>
+
+  <select id="selectActiveBannerList" resultType="com.spring.app.admin.domain.AdminBannerDTO">
+    SELECT b.BANNER_ID     AS bannerId,
+           b.FK_MEMBERID   AS fkMemberId,
+           b.FK_JOB_ID     AS fkJobId,
+           b.TITLE         AS title,
+           b.IMAGE_FILE_ID AS imageFileId,
+           img.FILE_URL    AS imageFileUrl,
+           b.START_AT      AS startAt,
+           b.END_AT        AS endAt,
+           b.STATUS        AS status,
+           c.COMPANY_NAME  AS companyName
+    FROM TBL_BANNER b
+    LEFT JOIN TBL_COMPANY c ON b.FK_MEMBERID = c.FK_MEMBERID
+    LEFT JOIN TBL_IMAGE_FILE img ON img.FILE_ID = b.IMAGE_FILE_ID
+    WHERE b.STATUS = '승인완료'
+    AND b.START_AT &lt;= SYSDATE
+    AND b.END_AT   &gt;= SYSDATE
+    ORDER BY b.PRIORITY DESC
+  </select>
+
+  <!-- 배너의 USE 트랜잭션 금액 조회 (절대값) -->
+  <select id="selectBannerUseAmount" resultType="java.lang.Long">
+    SELECT ABS(DELTA_AVAILABLE)
+    FROM TBL_POINT_TRANSACTION
+    WHERE FK_BANNER_ID = #{bannerId}
+      AND TX_TYPE = 'USE'
+      AND TX_STATUS = 'DONE'
+      AND ROWNUM = 1
+  </select>
+
+  <!-- 지갑 ID 조회 -->
+  <select id="selectWalletIdByMemberId" resultType="java.lang.Long">
+    SELECT POINT_WALLET_ID
+    FROM TBL_POINT_WALLET
+    WHERE FK_MEMBERID = #{fkMemberId}
+  </select>
+
+  <!-- 환불 트랜잭션 INSERT -->
+  <insert id="insertRefundTransaction">
+    INSERT INTO TBL_POINT_TRANSACTION (
+        POINT_TX_ID,
+        FK_POINT_WALLET_ID,
+        FK_PAYMENT_ID,
+        FK_BANNER_ID,
+        TX_TYPE,
+        TX_STATUS,
+        DELTA_AVAILABLE,
+        CREATED_AT
+    ) VALUES (
+        (SELECT NVL(MAX(POINT_TX_ID), 0) + 1 FROM TBL_POINT_TRANSACTION),
+        #{walletId},
+        NULL,
+        #{bannerId},
+        'CHARGE',
+        'DONE',
+        #{amount},
+        SYSDATE
+    )
+  </insert>
+
+  <!-- 지갑 잔액 업데이트 (환불) -->
+  <update id="updateWalletRefund">
+    UPDATE TBL_POINT_WALLET
+    SET AVAILABLE_BALANCE = AVAILABLE_BALANCE + #{amount}
+    WHERE POINT_WALLET_ID = #{walletId}
+  </update>
+
 </mapper>

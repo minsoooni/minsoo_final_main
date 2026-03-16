@@ -24,9 +24,8 @@
         </button>
     </div>
 
-    <!-- ============================== -->
-    <!--  기본 정보 수정 폼              -->
-    <!-- ============================== -->
+  
+    <!-- ======= 기본 정보 수정 폼 ======= -->
     <form th:action="@{/jobseeker/profile/edit}" method="post" id="profileForm" novalidate>
 
         <div class="card shadow-sm mb-4">
@@ -44,7 +43,7 @@
                                th:value="${member.name}"
                                class="form-control"
                                required
-                               maxlength="50"
+                               maxlength="16"
                                pattern="^[가-힣a-zA-Z]+$"
                                title="이름은 한글 또는 영문자만 입력 가능합니다."
                                placeholder="이름을 입력하세요">
@@ -119,9 +118,8 @@
         </div>
     </form>
 
-    <!-- ============================== -->
-    <!--  비밀번호 변경 폼              -->
-    <!-- ============================== -->
+
+    <!-- ======= 비밀번호 변경 폼 ======= -->
     <form th:action="@{/jobseeker/profile/password}" method="post" id="passwordForm" novalidate class="mt-4">
 
         <div class="card shadow-sm mb-4">
@@ -190,9 +188,8 @@
         </div>
     </form>
 
-    <!-- ============================== -->
-    <!--  커뮤니티 인증                 -->
-    <!-- ============================== -->
+   
+    <!-- ======= 커뮤니티 인증 ======= -->
     <div class="card shadow-sm mb-4 mt-4">
         <div class="card-body p-4">
             <h5 class="font-weight-bold mb-3">
@@ -219,7 +216,7 @@
                                    id="communityCompanyName"
                                    class="form-control"
                                    required
-                                   maxlength="100"
+                                   maxlength="33"
                                    placeholder="현재 재직 중인 회사명을 입력하세요">
                         </div>
                         <button type="submit" class="btn btn-primary" style="white-space: nowrap;">인증하기</button>
@@ -244,7 +241,7 @@
                                name="communityCompanyName"
                                class="form-control"
                                required
-                               maxlength="100"
+                               maxlength="33"
                                placeholder="변경할 회사명을 입력하세요">
                         <button type="submit" class="btn btn-outline-primary" style="white-space: nowrap;">변경</button>
                     </form>
@@ -261,9 +258,8 @@
         </div>
     </div>
 
-    <!-- ============================== -->
-    <!--  대표이력서 연동 (수정 불가)    -->
-    <!-- ============================== -->
+
+    <!-- ======= 대표이력서 연동 (수정 불가) ======= -->
     <div class="card shadow-sm mb-4 mt-4">
         <div class="card-body p-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -313,9 +309,8 @@
 
 </div>
 
-<!-- ============================== -->
-<!--  JavaScript                   -->
-<!-- ============================== -->
+
+<!-- ======= JavaScript ======= -->
 <script th:inline="javascript">
 document.addEventListener('DOMContentLoaded', function () {
 
@@ -461,25 +456,133 @@ document.addEventListener('DOMContentLoaded', function () {
     if (profileForm) {
         profileForm.addEventListener('submit', async function (e) {
             if (profileSubmitting) return;
+            e.preventDefault();
 
-            // 브라우저 기본 validation
-            if (!profileForm.checkValidity()) {
-                e.preventDefault();
-                profileForm.reportValidity();
+            // ===== 필드별 유효성 검사 =====
+            const name = profileForm.querySelector('[name="name"]');
+            const birthDate = profileForm.querySelector('[name="birthDate"]');
+            const gender = profileForm.querySelector('[name="gender"]');
+            const phoneInput = document.getElementById('phone');
+
+            // --- 이름 ---
+            if (!name.value.trim()) {
+                alert('이름을 입력해주세요.');
+                name.focus();
+                return;
+            }
+            if (name.value.trim().length > 16) {
+                alert('이름은 16자 이내로 입력해주세요.');
+                name.focus();
+                return;
+            }
+            if (!/^[가-힣a-zA-Z]+$/.test(name.value.trim())) {
+                alert('이름은 한글 또는 영문자만 입력 가능합니다.');
+                name.focus();
                 return;
             }
 
-            e.preventDefault();
+            // --- 생년월일 ---
+            if (!birthDate.value) {
+                alert('생년월일을 선택해주세요.');
+                birthDate.focus();
+                return;
+            }
 
-            // 이메일 중복 검사
-            const emailOk = await validateEmailDup();
+            var parts = birthDate.value.split('-');
+            var y = parseInt(parts[0]), m = parseInt(parts[1]), d = parseInt(parts[2]);
+            var checkDate = new Date(y, m - 1, d);
+            if (checkDate.getFullYear() !== y || checkDate.getMonth() !== m - 1 || checkDate.getDate() !== d) {
+                alert('존재하지 않는 날짜입니다.');
+                birthDate.focus();
+                return;
+            }
+
+            var birth = new Date(birthDate.value);
+            var today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (birth > today) {
+                alert('생년월일은 오늘 이후 날짜를 선택할 수 없습니다.');
+                birthDate.focus();
+                return;
+            }
+
+            if (y < 1900) {
+                alert('생년월일을 정확하게 입력해주세요.');
+                birthDate.focus();
+                return;
+            }
+
+            // --- 성별 ---
+            if (!gender.value) {
+                alert('성별을 선택해주세요.');
+                gender.focus();
+                return;
+            }
+
+            // --- 이메일 ---
+            if (!emailInput.value.trim()) {
+                alert('이메일을 입력해주세요.');
+                emailInput.focus();
+                return;
+            }
+            if (emailInput.value.trim().length > 100) {
+                alert('이메일은 100자 이내로 입력해주세요.');
+                emailInput.focus();
+                return;
+            }
+            if (!emailInput.checkValidity()) {
+                alert('이메일 형식이 올바르지 않습니다.');
+                emailInput.focus();
+                return;
+            }
+            var emailOk = await validateEmailDup();
             if (!emailOk) {
                 emailInput.focus();
                 return;
             }
 
+            // --- 전화번호 ---
+            if (!phoneInput.value.trim()) {
+                alert('전화번호를 입력해주세요.');
+                phoneInput.focus();
+                return;
+            }
+            if (!/^01[0-9]-[0-9]{3,4}-[0-9]{4}$/.test(phoneInput.value)) {
+                alert('전화번호 형식이 올바르지 않습니다. (예: 010-1234-5678)');
+                phoneInput.focus();
+                return;
+            }
+
             profileSubmitting = true;
             profileForm.submit();
+        });
+    }
+
+    // ===== 커뮤니티 인증 폼 제출 =====
+    var communityForm = document.getElementById('communityForm');
+    if (communityForm) {
+        communityForm.addEventListener('submit', function (e) {
+            var input = document.getElementById('communityCompanyName');
+            if (!input.value.trim()) {
+                e.preventDefault();
+                alert('직장명을 입력해주세요.');
+                input.focus();
+                return;
+            }
+        });
+    }
+
+    var communityChangeForm = document.getElementById('communityChangeForm');
+    if (communityChangeForm) {
+        communityChangeForm.addEventListener('submit', function (e) {
+            var input = communityChangeForm.querySelector('[name="communityCompanyName"]');
+            if (!input.value.trim()) {
+                e.preventDefault();
+                alert('변경할 직장명을 입력해주세요.');
+                input.focus();
+                return;
+            }
         });
     }
 

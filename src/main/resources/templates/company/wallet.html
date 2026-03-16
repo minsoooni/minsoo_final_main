@@ -12,23 +12,6 @@
   <script type="text/javascript" th:inline="javascript">
   document.addEventListener("DOMContentLoaded", function () {
 
-    /* ===================== 1) 미니탭(예치금/포인트) ===================== */
-    /*
-    const miniTabBtns = document.querySelectorAll(".mini-tab-btn");
-    const miniTabPanels = document.querySelectorAll(".mini-tab-panel");
-
-    miniTabBtns.forEach(btn => {
-      btn.addEventListener("click", () => {
-        miniTabBtns.forEach(b => b.classList.remove("active"));
-        miniTabPanels.forEach(p => p.classList.remove("show"));
-
-        btn.classList.add("active");
-        const target = document.getElementById(btn.dataset.target);
-        if (target) target.classList.add("show");
-      });
-    });
-    */
-
     /* ===================== 2) PortOne V1 결제 초기화 ===================== */
     const impCode = /*[[${impCode}]]*/ "imp_XXXX";
     const readyUrl = /*[[@{/company/Wallet/payments/ready}]]*/ "";

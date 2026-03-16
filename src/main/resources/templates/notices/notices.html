@@ -88,7 +88,7 @@
         const search = document.getElementById('searchInput').value;
         const params = new URLSearchParams();
         if (search) params.append('search', search);
-        location.href = '/finalProject/notice?' + params.toString();
+        location.href = 'http://localhost:8000/user-service/notice?' + params.toString();
       };
       document.getElementById('searchInput').addEventListener('keydown', e => {
         if (e.key === 'Enter') applySearch();
@@ -96,7 +96,7 @@
 
       /* ── 상세 모달 (서버에서 fetch) ── */
       window.openDetail = function (id) {
-        fetch('/finalProject/notice/' + id + '/detail')
+    	  fetch('http://localhost:8000/user-service/notice/' + id + '/detail')
           .then(res => res.json())
           .then(data => {
             document.getElementById('detailBadge').className = 'badge ' + (data.pinnedYn === 'Y' ? 'important' : 'normal');
