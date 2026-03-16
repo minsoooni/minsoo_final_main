@@ -90,11 +90,7 @@
       throw new Error('AUTH_CHECK_FAILED');
     }
 
-    const token = getAccessToken();
-
-    const redirectUrl = url + '?token=' + encodeURIComponent(token);
-
-    window.location.href = redirectUrl;
+    window.location.href = url;
 
     return false;
   }
