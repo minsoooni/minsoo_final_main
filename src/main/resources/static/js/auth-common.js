@@ -1,5 +1,5 @@
 (function () {
-  const reissueUrl = 'http://localhost:8000/user-service/auth/reissue';
+  const reissueUrl = '/user-service/auth/reissue';
 
   function getAccessToken() {
     return sessionStorage.getItem('accessToken');
