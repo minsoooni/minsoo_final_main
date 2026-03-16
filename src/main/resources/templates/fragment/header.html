@@ -72,8 +72,8 @@
           <!-- MSA 로그 -->
           <th:block sec:authorize="isAnonymous()">
             <div class="ml-3 pl-3 border-left" style="border-color:#e5e7eb !important;">
-              <a class="jp-auth__link" th:href="@{/user-service/member/login}">MSA 로그인</a>
-              <a class="jp-auth__link ml-2" th:href="@{/user-service/member/registerMember}">MSA 회원가입</a>
+              <a class="jp-auth__link" th:href="@{/member/login}">MSA 로그인</a>
+              <a class="jp-auth__link ml-2" th:href="@{/member/registerMember}">MSA 회원가입</a>
             </div>
           </th:block>
 
@@ -124,17 +124,17 @@
             <!-- 권한별 메뉴분기 -->
             <!-- 관리자 -->
             <th:block sec:authorize="hasRole('ADMIN')">
-              <a class="jp-auth__link" th:href="@{/user-service/admin/admin_dashboard}">관리자</a>
+              <a class="jp-auth__link" th:href="@{/admin/admin_dashboard}">관리자</a>
             </th:block>
 
             <!-- 기업 -->
             <th:block sec:authorize="hasRole('COMPANY')">
-              <a class="jp-auth__link" th:href="@{/user-service/company/company_dashboard}">기업페이지</a>
+              <a class="jp-auth__link" th:href="@{/company/company_dashboard}">기업페이지</a>
             </th:block>
 
             <!-- 개인 -->
             <th:block sec:authorize="hasRole('MEMBER')">
-              <a class="jp-auth__link" th:href="@{/user-service/jobseeker/dashboard}">마이페이지</a>
+              <a class="jp-auth__link" th:href="@{/jobseeker/dashboard}">마이페이지</a>
             </th:block>
 
             <!--  모놀리틱 로그아웃
@@ -144,7 +144,7 @@
             -->
 
             <div class="ml-2">
-              <form th:action="@{/user-service/security/logout}" method="post" class="m-0" onsubmit="return handleLogout();">
+              <form th:action="@{/security/logout}" method="post" class="m-0" onsubmit="return handleLogout();">
                 <button type="submit" class="jp-auth__link btn btn-link p-0">MSA 로그아웃</button>
               </form>
             </div>
