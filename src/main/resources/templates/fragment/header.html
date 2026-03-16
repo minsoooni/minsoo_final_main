@@ -54,8 +54,8 @@
           <!-- msa버전 board-service 커뮤니티 이동 -->
           <li class="nav-item">
             <a class="nav-link"
-               th:href="@{/community}"
-               onclick="return window.JPAuth.moveWithAuthCheck(event, this.href, '/user-service/auth/check');">커뮤니티</a>
+               href="/board-service/community"
+               onclick="return window.JPAuth.moveWithAuthCheck(event, '/board-service/community', '/user-service/auth/check');">커뮤니티</a>
           </li>
 
           <li class="nav-item"><a class="nav-link" th:href="@{/notice}">공지사항</a></li>
