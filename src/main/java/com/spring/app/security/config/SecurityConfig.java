@@ -178,9 +178,23 @@ public class SecurityConfig {
                     if (session != null) {
                         session.invalidate();
                     }
+
+                    jakarta.servlet.http.Cookie accessTokenCookie = new jakarta.servlet.http.Cookie("accessToken", null);
+                    accessTokenCookie.setPath("/");
+                    accessTokenCookie.setMaxAge(0);
+                    response.addCookie(accessTokenCookie);
+
+                    jakarta.servlet.http.Cookie refreshTokenCookie = new jakarta.servlet.http.Cookie("refreshToken", null);
+                    refreshTokenCookie.setPath("/");
+                    refreshTokenCookie.setMaxAge(0);
+                    response.addCookie(refreshTokenCookie);
+
+                    jakarta.servlet.http.Cookie jsessionCookie = new jakarta.servlet.http.Cookie("JSESSIONID", null);
+                    jsessionCookie.setPath("/");
+                    jsessionCookie.setMaxAge(0);
+                    response.addCookie(jsessionCookie);
                 })
-                .deleteCookies("accessToken", "refreshToken", "JSESSIONID")
-                .logoutSuccessUrl("/index")
+                .logoutSuccessUrl("/user-service/index")
         );
 
         http.exceptionHandling(ex -> ex
