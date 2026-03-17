@@ -1,17 +1,9 @@
 (function () {
   const reissueUrl = '/user-service/auth/reissue';
 
-  function getAccessToken() {
-    return sessionStorage.getItem('accessToken');
-  }
 
-  function setAccessToken(token) {
-    if (!token) return;
-    sessionStorage.setItem('accessToken', token);
-  }
 
   function clearAccessToken() {
-    sessionStorage.removeItem('accessToken');
     localStorage.removeItem('loginUser');
     localStorage.removeItem('JWT');
   }
@@ -30,17 +22,15 @@
      const contentType = response.headers.get('content-type') || '';
      const data = contentType.includes('application/json') ? await response.json() : null;
 
-     if (!response.ok || !data || !data.accessToken) {
-       console.warn('[JPAuth] accessToken 재발급 실패', data);
-       clearAccessToken();
-       throw new Error((data && data.error) ? data.error : 'REISSUE_FAILED');
-     }
+	 if (!response.ok || !data || !data.accessToken) {
+	   console.warn('[JPAuth] accessToken 재발급 실패', data);
+	   clearAccessToken();
+	   throw new Error((data && data.error) ? data.error : 'REISSUE_FAILED');
+	 }
 
-     setAccessToken(data.accessToken);
+	 console.log('[JPAuth] accessToken 재발급 성공');
 
-     console.log('[JPAuth] accessToken 재발급 성공');
-
-     return data.accessToken;
+	 return data.accessToken;
    }
 
   async function authFetch(url, options = {}) {
