@@ -33,38 +33,31 @@
 	 return data.accessToken;
    }
 
-  async function authFetch(url, options = {}) {
-    const originalOptions = { ...options };
-    const originalHeaders = { ...(options.headers || {}) };
+   async function authFetch(url, options = {}) {
+     const originalOptions = { ...options };
+     const originalHeaders = { ...(options.headers || {}) };
 
-    let token = getAccessToken();
+     const attemptRequest = async () => {
+       return fetch(url, {
+         ...originalOptions,
+         headers: originalHeaders,
+         credentials: 'include'
+       });
+     };
 
-    const attemptRequest = async (accessToken) => {
-      const headers = { ...originalHeaders };
+     let response = await attemptRequest();
 
-      if (accessToken) {
-        headers['Authorization'] = 'Bearer ' + accessToken;
-      }
+     if (response.status !== 401) {
+       return response;
+     }
 
-      return fetch(url, {
-        ...originalOptions,
-        headers
-      });
-    };
+     console.warn('[JPAuth] 401 감지 - 재발급 시도');
 
-    let response = await attemptRequest(token);
+     await reissueAccessToken();
+     response = await attemptRequest();
 
-    if (response.status !== 401) {
-      return response;
-    }
-
-    console.warn('[JPAuth] 401 감지 - 재발급 시도');
-
-    token = await reissueAccessToken();
-    response = await attemptRequest(token);
-
-    return response;
-  }
+     return response;
+   }
 
   async function moveWithAuthCheck(event, url, checkUrl) {
     event.preventDefault();
