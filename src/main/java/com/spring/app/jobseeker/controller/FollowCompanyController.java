@@ -24,10 +24,9 @@ public class FollowCompanyController {
         this.followCompanyService = followCompanyService;
     }
 
-    // ====================================================
+   
     // 관심 기업 목록 페이지
     // GET /jobseeker/company/followcompanylist
-    // ====================================================
     @GetMapping("company/followcompanylist")
     public ModelAndView followCompanyList(
             @RequestParam(value = "keyword", required = false, defaultValue = "") String keyword,

@@ -285,9 +285,9 @@
               <div style="width:100px; height:6px; background:#E5E7EB; border-radius:3px; overflow:hidden;">
                 <div th:style="'width:' + (${matchData['salaryScore'] > 0} ? '100' : '0') + '%; height:100%; border-radius:3px; background:#D97706;'"></div>
               </div>
-              <span style="font-size:12px; font-weight:600; min-width:50px; text-align:right;"
-                    th:style="(${matchData['salaryScore'] > 0} ? 'color:#059669;' : 'color:#9CA3AF;')"
-                    th:text="${matchData['salaryScore'] > 0} ? '✓ 부합' : '미확인'">부합</span>
+              <span th:if="${matchData['salaryScore'] > 0}" style="font-size:12px; font-weight:600; min-width:50px; text-align:right; color:#059669;">✓ 부합</span>
+              <span th:if="${matchData['salaryScore'] == 0 and matchData['hasSalary'] != null and matchData['hasSalary'] > 0}" style="font-size:12px; font-weight:600; min-width:50px; text-align:right; color:#DC2626;">불부합</span>
+              <span th:if="${matchData['salaryScore'] == 0 and (matchData['hasSalary'] == null or matchData['hasSalary'] == 0)}" style="font-size:12px; font-weight:600; min-width:50px; text-align:right; color:#9CA3AF;">미확인</span>
             </div>
           </div>
 

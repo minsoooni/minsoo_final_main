@@ -38,10 +38,9 @@ public class MypageController {
         this.passwordEncoder = passwordEncoder;
     }
 
-    // ====================================================
+    
     // 마이페이지 대시보드
     // GET /jobseeker/dashboard
-    // ====================================================
     @GetMapping("dashboard")
     public ModelAndView dashboard(ModelAndView mav, Principal principal) {
 
@@ -90,7 +89,7 @@ public class MypageController {
             int salaryScore = dto.getSalaryScore() != null ? dto.getSalaryScore() : 0;
             int techScore = dto.getTechScore() != null ? dto.getTechScore() : 0;
             int totalRaw = regionScore + categoryScore + salaryScore + techScore;
-            // 만점 = 5 + 3 + 2 + 기술수*2 (간이 계산: 기술 만점을 10으로 가정)
+            // 만점 = 5(지역) + 3(직무) + 2(연봉) + 기술(실제 점수와 4 중 큰 값)
             int maxScore = 5 + 3 + 2 + Math.max(techScore, 4);
             int matchPercent = maxScore > 0 ? Math.min((int) Math.round((double) totalRaw / maxScore * 100), 100) : 0;
             post.put("matchScore", String.valueOf(matchPercent));
@@ -120,10 +119,9 @@ public class MypageController {
         return mav;
     }
 
-    // ====================================================
+   
     // 프로필 조회 페이지
     // GET /jobseeker/profile
-    // ====================================================
     @GetMapping("profile")
     public ModelAndView profile(ModelAndView mav, Principal principal) {
 
@@ -139,10 +137,9 @@ public class MypageController {
         return mav;
     }
 
-    // ====================================================
+   
     // 프로필 수정 폼 페이지
     // GET /jobseeker/profile/edit
-    // ====================================================
     @GetMapping("profile/edit")
     public ModelAndView profileEdit(ModelAndView mav, Principal principal) {
 
@@ -158,10 +155,9 @@ public class MypageController {
         return mav;
     }
 
-    // ====================================================
+   
     // 프로필 수정 처리
     // POST /jobseeker/profile/edit
-    // ====================================================
     @PostMapping("profile/edit")
     public String profileUpdate(
             @RequestParam("name") String name,
@@ -193,10 +189,9 @@ public class MypageController {
         return "redirect:/jobseeker/profile";
     }
 
-    // ====================================================
+   
     // 비밀번호 수정 처리
     // POST /jobseeker/profile/password
-    // ====================================================
     @PostMapping("profile/password")
     public String passwordUpdate(
             @RequestParam("currentPassword") String currentPassword,
@@ -233,10 +228,9 @@ public class MypageController {
         return "redirect:/jobseeker/profile/edit";
     }
 
-    // ====================================================
+   
     // 커뮤니티 인증 등록/변경
     // POST /jobseeker/profile/community
-    // ====================================================
     @PostMapping("profile/community")
     public String communityVerify(
             @RequestParam("communityCompanyName") String communityCompanyName,
@@ -262,10 +256,9 @@ public class MypageController {
         return "redirect:/jobseeker/profile/edit";
     }
 
-    // ====================================================
+   
     // 커뮤니티 인증 취소
     // POST /jobseeker/profile/community/cancel
-    // ====================================================
     @PostMapping("profile/community/cancel")
     public String communityCancelVerify(
             Principal principal,

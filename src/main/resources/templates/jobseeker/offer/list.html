@@ -102,7 +102,7 @@
     border: 1px solid #e9ecef;
     border-radius: 12px;
     margin-bottom: 16px;
-    overflow: hidden;
+    overflow: visible;
     transition: box-shadow 0.2s;
   }
   .of-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
@@ -121,18 +121,32 @@
   }
   .of-logo img { width: 100%; height: 100%; object-fit: contain; }
 
-  /* 미열람 카드 강조 */
+  /* 미열람 카드 강조 (C스타일: 그림자 + 테두리) */
   .of-card.is-unread {
-    border-left: 4px solid #2563EB;
-    background: linear-gradient(90deg, #f7faff 0%, #fff 5%);
+    box-shadow: 0 4px 16px rgba(37,99,235,0.12);
+    border-color: #93C5FD;
   }
   .unread-dot {
-    width: 10px; height: 10px;
+    width: 8px; height: 8px;
     background: #2563EB;
     border-radius: 50%;
     display: inline-block;
-    box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
-    margin-right: 4px;
+    margin-right: 5px;
+    animation: pulse-dot 2s infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(37,99,235,0.4); }
+    50% { box-shadow: 0 0 0 6px rgba(37,99,235,0); }
+  }
+
+  /* NEW 뱃지 (24시간 이내 제안) */
+  .of-card { position: relative; }
+  .new-badge {
+    position: absolute; top: -6px; right: 16px;
+    background: linear-gradient(135deg, #2563EB, #3B82F6);
+    color: #fff; font-size: 10px; font-weight: 800; padding: 3px 10px;
+    border-radius: 4px; letter-spacing: 1px;
+    box-shadow: 0 2px 6px rgba(37,99,235,0.3);
   }
 
   /* 기업명 + 타입 */
@@ -234,22 +248,23 @@
     background: #EFF6FF;
   }
   .of-card-footer .btn-accept {
-    background: #059669;
-    border-color: #059669;
+    background: #2563EB;
+    border-color: #2563EB;
     color: #fff;
     font-weight: 600;
   }
   .of-card-footer .btn-accept:hover {
-    background: #047857;
+    background: #1D4ED8;
   }
   .of-card-footer .btn-deny {
-    background: #E74C3C;
-    border-color: #E74C3C;
-    color: #fff;
+    background: #fff;
+    border: 1px solid #D1D5DB;
+    color: #6B7280;
     font-weight: 600;
   }
   .of-card-footer .btn-deny:hover {
-    background: #c0392b;
+    background: #F3F4F6;
+    color: #374151;
   }
   .of-card-footer .result-msg {
     font-size: 0.82rem;
@@ -392,6 +407,11 @@
         거절 <span class="cnt">(<span th:text="${rejectedCount}">0</span>)</span>
       </a>
     </li>
+    <li class="nav-item">
+      <a class="nav-link" href="#" data-filter="expired">
+        기간 만료 <span class="cnt">(<span th:text="${expiredCount}">0</span>)</span>
+      </a>
+    </li>
   </ul>
 
   <!-- 검색바 -->
@@ -439,6 +459,9 @@
                   data-expire-at=${offer.expireAt},
                   data-offer-submit-id=${offer.offerSubmitId}">
 
+      <!-- NEW 뱃지 (24시간 이내 제안) -->
+      <span th:if="${offer.isNew()}" class="new-badge">NEW</span>
+
       <div class="of-card-body">
         <div class="d-flex" style="gap:18px;">
 
@@ -467,6 +490,7 @@
                 <span th:if="${offer.status == 'PENDING'}"  class="of-status st-pending"><i class="fas fa-clock"></i> 검토중</span>
                 <span th:if="${offer.status == 'ACCEPTED'}" class="of-status st-accepted"><i class="fas fa-check-circle"></i> 수락</span>
                 <span th:if="${offer.status == 'REJECTED'}" class="of-status st-rejected"><i class="fas fa-times-circle"></i> 거절</span>
+                <span th:if="${offer.status == 'EXPIRED'}"  class="of-status st-rejected"><i class="fas fa-ban"></i> 기간 만료</span>
               </div>
             </div>
 
@@ -593,6 +617,11 @@
           <span th:if="${offer.status == 'REJECTED'}" class="result-msg">
             <i class="fas fa-info-circle"></i> 이미 응답한 제안입니다
           </span>
+
+          <!-- 기간 만료 -->
+          <span th:if="${offer.status == 'EXPIRED'}" class="result-msg" style="color:#DC2626;">
+            <i class="fas fa-ban"></i> 응답 기한이 만료되었습니다
+          </span>
         </div>
       </div>
     </div>
@@ -718,6 +747,8 @@
           matchFilter = (status === 'ACCEPTED');
         } else if (currentFilter === 'rejected') {
           matchFilter = (status === 'REJECTED');
+        } else if (currentFilter === 'expired') {
+          matchFilter = (status === 'EXPIRED');
         }
 
         // 검색 필터
@@ -792,6 +823,9 @@
                 if (badgeWrap) {
                   badgeWrap.innerHTML = '<span class="of-status st-pending"><i class="fas fa-clock"></i> 검토중</span>';
                 }
+                // NEW 뱃지 제거
+                var newBadge = card.querySelector('.new-badge');
+                if (newBadge) newBadge.remove();
                 updateCountsAfterResponse();
               }
             })
@@ -828,6 +862,10 @@
             if (badgeWrap) {
               badgeWrap.innerHTML = '<span class="of-status st-accepted"><i class="fas fa-check-circle"></i> 수락</span>';
             }
+
+            // NEW 뱃지 제거
+            var newBadge = card.querySelector('.new-badge');
+            if (newBadge) newBadge.remove();
 
             // 버튼 영역 → 응답 완료 메시지로 교체
             var actionArea = card.querySelector('[data-action-area]');
@@ -885,6 +923,10 @@
             if (badgeWrap) {
               badgeWrap.innerHTML = '<span class="of-status st-rejected"><i class="fas fa-times-circle"></i> 거절</span>';
             }
+
+            // NEW 뱃지 제거
+            var newBadge = card.querySelector('.new-badge');
+            if (newBadge) newBadge.remove();
 
             // 버튼 영역 → 응답 완료 메시지로 교체
             var actionArea = card.querySelector('[data-action-area]');

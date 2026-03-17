@@ -29,6 +29,7 @@
                R.photo_path      AS photoPath,
                R.fk_region_code  AS regionCode,
                R.fk_category_id  AS categoryId,
+               R.desired_salary  AS desiredSalary,
                RG.region_name    AS regionName,
                JC.category_name  AS categoryName
         FROM tbl_resume R

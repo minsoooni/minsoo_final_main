@@ -33,10 +33,9 @@ public class FollowCompanyApiController {
         this.followCompanyService = followCompanyService;
     }
 
-    // ====================================================
+   
     // 팔로우 해제 API
     // POST /api/follow/{companyMemberId}/delete
-    // ====================================================
     @Operation(
         summary = "팔로우 해제",
         description = "로그인한 구직자가 관심기업 목록에서 해당 기업의 팔로우를 해제한다."

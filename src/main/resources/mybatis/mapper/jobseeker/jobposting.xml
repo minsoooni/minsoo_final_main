@@ -258,6 +258,7 @@
                 <!-- ★ 매칭 점수 항목별 -->
                 <if test="regionCode != null">
                     CASE WHEN JP.fk_region_code = #{regionCode} THEN 5
+                         WHEN R.fk_parent_region_code = #{regionCode} THEN 5
                          WHEN R.fk_parent_region_code = (
                              SELECT fk_parent_region_code FROM tbl_region WHERE region_code = #{regionCode}
                          ) THEN 3
@@ -311,6 +312,7 @@
                 (
                     <if test="regionCode != null">
                         CASE WHEN JP.fk_region_code = #{regionCode} THEN 5
+                             WHEN R.fk_parent_region_code = #{regionCode} THEN 5
                              WHEN R.fk_parent_region_code = (
                                  SELECT fk_parent_region_code FROM tbl_region WHERE region_code = #{regionCode}
                              ) THEN 3
@@ -1134,8 +1136,10 @@
     <!-- ========================================================= -->
     <select id="selectMatchScoreForJob" parameterType="map" resultType="map">
         SELECT
-            <!-- 지역 매칭 -->
-            CASE WHEN JP.fk_region_code = #{regionCode} THEN 5
+            <!-- 지역 매칭 (구/군 정확히 일치 5점, 같은 시/도 3점, 이력서가 시/도 레벨이면 해당 시/도 하위 전체 일치 5점) -->
+            CASE
+                 WHEN JP.fk_region_code = #{regionCode} THEN 5
+                 WHEN R.fk_parent_region_code = #{regionCode} THEN 5
                  WHEN R.fk_parent_region_code = (
                      SELECT fk_parent_region_code FROM tbl_region WHERE region_code = #{regionCode}
                  ) THEN 3
@@ -1148,6 +1152,8 @@
                  AND JP.salary >= #{desiredSalary} * 0.8
                  AND JP.salary &lt;= #{desiredSalary} * 1.5
             THEN 2 ELSE 0 END AS "salaryScore",
+            <!-- 공고 연봉 존재 여부 (프론트에서 미확인/불부합 구분용) -->
+            CASE WHEN JP.salary IS NULL THEN 0 ELSE 1 END AS "hasSalary",
             <!-- 기술스택 매칭 점수 -->
             (SELECT COUNT(*) * 2
              FROM tbl_resume_techstack RT

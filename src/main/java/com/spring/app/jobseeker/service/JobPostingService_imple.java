@@ -421,7 +421,7 @@ public class JobPostingService_imple implements JobPostingService {
         List<JobPostingListDTO> list = jobPostingDAO.selectSimilarJobPostings(paraMap);
         for (JobPostingListDTO dto : list) {
             convertSkillNames(dto);
-            // 유사도 퍼센트 환산 (만점 기준 동일)
+            // 유사도 퍼센트 환산 (만점 = 3(직무) + 3(지역) + 기술수*2)
             if (dto.getMatchScore() != null) {
                 int techTotalCount = dto.getSkillList() != null ? dto.getSkillList().size() : 1;
                 int maxScore = 3 + 3 + (techTotalCount > 0 ? techTotalCount * 2 : 2);

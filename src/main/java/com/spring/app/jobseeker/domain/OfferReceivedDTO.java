@@ -57,15 +57,24 @@ public class OfferReceivedDTO {
 
     /**
      * 화면에 표시할 상태 문자열
-     * viewedAt == null && responseStatus == 0 → "UNREAD"
-     * viewedAt != null && responseStatus == 0 → "PENDING"
      * responseStatus == 1 → "ACCEPTED"
      * responseStatus == 2 → "REJECTED"
+     * 만료일 지남 && responseStatus == 0 → "EXPIRED"
+     * viewedAt == null && responseStatus == 0 → "UNREAD"
+     * viewedAt != null && responseStatus == 0 → "PENDING"
      */
     public String getStatus() {
         if (responseStatus == 1) return "ACCEPTED";
         if (responseStatus == 2) return "REJECTED";
-        if (viewedAt == null)    return "UNREAD";
+        // 만료일 체크: 미응답(0) 상태에서 만료일이 지났으면 EXPIRED
+        if (responseStatus == 0 && expireAt != null && !expireAt.isEmpty()) {
+            try {
+                java.time.LocalDate expire = java.time.LocalDate.parse(expireAt.substring(0, 10),
+                        java.time.format.DateTimeFormatter.ofPattern("yyyy.MM.dd"));
+                if (expire.isBefore(java.time.LocalDate.now())) return "EXPIRED";
+            } catch (Exception e) { /* 파싱 실패 시 무시 */ }
+        }
+        if (viewedAt == null) return "UNREAD";
         return "PENDING";
     }
 
@@ -75,5 +84,19 @@ public class OfferReceivedDTO {
     public String getSalaryText() {
         if (salary == null || salary == 0) return "협의";
         return String.format("%,d만원", salary);
+    }
+
+    /**
+     * 신규 제안 여부 (발송일이 24시간 이내)
+     */
+    public boolean isNew() {
+        if (sendAt == null || sendAt.isEmpty()) return false;
+        try {
+            java.time.LocalDateTime sent = java.time.LocalDateTime.parse(sendAt,
+                    java.time.format.DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm"));
+            return sent.isAfter(java.time.LocalDateTime.now().minusHours(24));
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

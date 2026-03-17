@@ -44,6 +44,7 @@ public class OfferController {
         mav.addObject("pendingCount",  counts.get("pendingCount"));
         mav.addObject("acceptedCount", counts.get("acceptedCount"));
         mav.addObject("rejectedCount", counts.get("rejectedCount"));
+        mav.addObject("expiredCount",  counts.get("expiredCount"));
 
         mav.setViewName("jobseeker/offer/list");
         return mav;
