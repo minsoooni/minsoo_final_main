@@ -85,12 +85,10 @@
     return false;
   }
 
-    window.JPAuth = {
-      getAccessToken,
-      setAccessToken,
-      clearAccessToken,
-      reissueAccessToken,
-      authFetch,
-      moveWithAuthCheck
-    };
+  window.JPAuth = {
+        clearAccessToken,
+        reissueAccessToken,
+        authFetch,
+        moveWithAuthCheck
+      };
   })();
