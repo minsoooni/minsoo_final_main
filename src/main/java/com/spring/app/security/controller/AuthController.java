@@ -50,6 +50,14 @@ public class AuthController {
                     SecurityContextHolder.getContext()
             );
 
+            ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", jwtToken.getAccessToken())
+                    .httpOnly(true)
+                    .secure(false)
+                    .path("/")
+                    .maxAge(jwtToken.getAccessTokenExpiresIn() / 1000)
+                    .sameSite("Lax")
+                    .build();
+
             ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", jwtToken.getRefreshToken())
                     .httpOnly(true)
                     .secure(false)
@@ -60,10 +68,10 @@ public class AuthController {
 
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("grantType", jwtToken.getGrantType());
-            body.put("accessToken", jwtToken.getAccessToken());
             body.put("accessTokenExpiresIn", jwtToken.getAccessTokenExpiresIn());
 
             return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
                     .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
                     .body(body);
 
@@ -109,6 +117,14 @@ public class AuthController {
 
             JwtToken jwtToken = authService.reissue(refreshToken);
 
+            ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", jwtToken.getAccessToken())
+                    .httpOnly(true)
+                    .secure(false)
+                    .path("/")
+                    .maxAge(jwtToken.getAccessTokenExpiresIn() / 1000)
+                    .sameSite("Lax")
+                    .build();
+
             ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", jwtToken.getRefreshToken())
                     .httpOnly(true)
                     .secure(false)
@@ -119,10 +135,10 @@ public class AuthController {
 
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("grantType", jwtToken.getGrantType());
-            body.put("accessToken", jwtToken.getAccessToken());
             body.put("accessTokenExpiresIn", jwtToken.getAccessTokenExpiresIn());
 
             return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
                     .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
                     .body(body);
 
