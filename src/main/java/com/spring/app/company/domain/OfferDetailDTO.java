@@ -9,6 +9,7 @@ import lombok.Data;
 //제안서 상세조회용 DTO
 public class OfferDetailDTO {
 	private Long offerLetterId;
+	private String jobTitle; //공고 제목
     private Long jobId;
     private String title;
     private String message;

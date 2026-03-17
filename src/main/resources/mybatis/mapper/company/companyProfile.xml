@@ -5,6 +5,7 @@
 <!-- ==== 루트 엘리먼트 & 네임스페이스 설정(프로젝트 전체내에서 유일해야 한다.) ==== -->
 <mapper namespace="com.spring.app.company.model.CompanyProfileMapper">
 
+
 	<!-- 기업 프로필 resultMap -->
 	<resultMap id="companyProfileResultMap" type="com.spring.app.company.domain.CompanyProfileDTO">
 	    <!-- TBL_COMPANY -->
@@ -49,6 +50,23 @@
 	    <result property="createdAt"        column="CREATED_AT"/>
 	    <result property="originalFilename" column="ORIGINAL_FILENAME"/>
 	</resultMap>
+	
+	
+	<!-- 기업 상단바 조회(기업ID, 기업명, 이메일) -->
+	<select id="selectCompanyTopbarInfo"
+	        parameterType="string"
+	        resultType="com.spring.app.company.domain.CompanyTopbarDTO">
+	
+	    SELECT
+	        MEMBERID AS memberId,
+	        NAME     AS companyName,
+	        EMAIL    AS email
+	    FROM TBL_MEMBER
+	    WHERE MEMBERID = #{memberId}
+	      AND STATUS = 1
+	      AND TYPE = 1
+	
+	</select>
 	
 	
 	

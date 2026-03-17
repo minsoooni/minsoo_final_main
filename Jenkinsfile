@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "raccoon304/jobfinder"
-        SERVER_IP = "98.84.141.91"
+        DOCKER_IMAGE = "raccoon304/jobfinder-main"
+        SERVER_IP = "50.17.103.160"
         APP_DIR = "/home/ubuntu/jobfinder"
     }
 
@@ -21,40 +21,35 @@ pipeline {
 
         stage('Build with Gradle') {
             steps {
-                dir('finalProject') {
-                    sh 'chmod +x ./gradlew'
-                    sh './gradlew clean build -x test'
-                }
+                sh 'chmod +x ./gradlew'
+                sh './gradlew clean build -x test'
             }
         }
 
         stage('Docker Build & Push') {
             steps {
-                dir('finalProject') {
-                    withCredentials([usernamePassword(
-                        credentialsId: 'dockerhub_info',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )]) {
-                        sh '''
-                            echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                            docker build -t $DOCKER_IMAGE:latest .
-                            docker push $DOCKER_IMAGE:latest
-                        '''
-                    }
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub_info',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh '''
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                        docker build -t $DOCKER_IMAGE:latest .
+                        docker push $DOCKER_IMAGE:latest
+                    '''
                 }
             }
         }
 
-        stage('Deploy with Docker Compose') {
+        stage('Deploy Main Service') {
             steps {
                 sshagent(['SERVER_SSH_KEY']) {
                     sh """
                         ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP '
-                            mkdir -p $APP_DIR
                             cd $APP_DIR
-                            docker compose pull
-                            docker compose up -d --force-recreate
+                            docker compose pull main-service
+                            docker compose up -d --no-deps main-service
                         '
                     """
                 }
@@ -64,10 +59,10 @@ pipeline {
 
     post {
         success {
-            echo "Compose deployment completed successfully."
+            echo "Main service deployment completed successfully."
         }
         failure {
-            echo "Deployment failed."
+            echo "Main service deployment failed."
         }
     }
 }

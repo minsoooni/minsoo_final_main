@@ -241,11 +241,12 @@
               class="btn btn-sm cp-tab-btn"
               th:classappend="${activeTab}=='basic' ? ' btn-dark active' : ' btn-light'"
               onclick="goTab('basic')">기본 정보</button>
-
+	  <!--  
       <button type="button"
               class="btn btn-sm cp-tab-btn"
               th:classappend="${activeTab}=='contact' ? ' btn-dark active' : ' btn-light'"
               onclick="goTab('contact')">연락처 정보</button>
+      -->
 
       <button type="button"
               class="btn btn-sm cp-tab-btn"
@@ -357,6 +358,7 @@
 		</select>
       </div>
 
+	  <!--  
       <div class="form-group cp-form-group">
         <label class="cp-form-label">직원수</label>
         <input type="text"
@@ -364,6 +366,7 @@
                value=""
                placeholder="직원수 컬럼 연결 전">
       </div>
+      -->
 
       <div class="form-group cp-form-group">
         <label class="cp-form-label">설립연도</label>
@@ -387,6 +390,7 @@
   <!-- =========================
        연락처 정보 탭
   ========================== -->
+  <!--  
   <div class="panel cp-card" th:if="${activeTab}=='contact'">
     <div class="panel-head cp-section-head">
       <h3>연락처 정보</h3>
@@ -400,6 +404,7 @@
       </div>
     </div>
   </div>
+  -->
 
 
   <!-- =========================

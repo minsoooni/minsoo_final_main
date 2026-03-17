@@ -19,6 +19,8 @@ import com.spring.app.company.domain.CompanyDashboardDTO;
 import com.spring.app.company.domain.CompanyProfileDTO;
 import com.spring.app.company.domain.CompanyProfileUpdateDTO;
 import com.spring.app.company.domain.CompanyProfileUpdateResponseDTO;
+import com.spring.app.company.domain.CompanyTopbarDTO;
+import com.spring.app.company.domain.DeletedOfferHistoryDTO;
 import com.spring.app.company.domain.ImageFileDTO;
 import com.spring.app.company.domain.JobPostingDTO;
 import com.spring.app.company.domain.JobPostingEditResponseDTO;
@@ -40,11 +42,13 @@ import com.spring.app.company.domain.TalentResumeDetailDTO;
 import com.spring.app.company.domain.TalentSearchConditionDTO;
 
 public interface CompanyService {
+
+	//기업 상단바 조회(기업ID, 기업명, 이메일)
+	CompanyTopbarDTO getCompanyTopbarInfo(String memberId);
+	
 	
 	// 기업 대시보드 전체 조회
     CompanyDashboardDTO getCompanyDashboard(String memberId);
-    
-	
     
     // 기업 프로필 조회
     CompanyProfileDTO getCompanyProfile(String memberId);
@@ -165,12 +169,13 @@ public interface CompanyService {
 	Long sendOffer(OfferSendRequestDTO req, String companyMemberId);
 
 	//제안서를 발송한 회원(memberId) 목록 조회
-	List<String> selectSentMemberIdsByOfferLetterId(Long offerLetterId);
+	List<String> selectSentMemberIdsByOfferLetterId(Long offerLetterId, String companyMemberId);
 	
 	//제안서 수신자 상세 조회
 	List<OfferRecipientDetailDTO> selectOfferRecipientDetailsByOfferLetterId(Long offerLetterId, String companyMemberId);
 	
-	
+	// 삭제된 원본 제안서 중 발송 이력이 있는 목록
+	List<DeletedOfferHistoryDTO> selectDeletedOfferHistoryList(String companyMemberId);
 	
 	
 	

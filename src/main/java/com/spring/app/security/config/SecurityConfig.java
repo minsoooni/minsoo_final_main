@@ -170,7 +170,7 @@ public class SecurityConfig {
     	http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
     	http.addFilterAfter(dormantAccountFilter, JwtAuthenticationFilter.class);
     	
-        http.logout(logout -> logout
+    	http.logout(logout -> logout
                 /* 로그아웃 처리 -> /security/logout 호출 시 로그아웃 수행, 세션 무효화 후 /index로 이동 */
                 .logoutUrl("/security/logout")
                 .addLogoutHandler((request, response, authentication) -> {
@@ -178,9 +178,23 @@ public class SecurityConfig {
                     if (session != null) {
                         session.invalidate();
                     }
+
+                    jakarta.servlet.http.Cookie accessTokenCookie = new jakarta.servlet.http.Cookie("accessToken", null);
+                    accessTokenCookie.setPath("/");
+                    accessTokenCookie.setMaxAge(0);
+                    response.addCookie(accessTokenCookie);
+
+                    jakarta.servlet.http.Cookie refreshTokenCookie = new jakarta.servlet.http.Cookie("refreshToken", null);
+                    refreshTokenCookie.setPath("/");
+                    refreshTokenCookie.setMaxAge(0);
+                    response.addCookie(refreshTokenCookie);
+
+                    jakarta.servlet.http.Cookie jsessionCookie = new jakarta.servlet.http.Cookie("JSESSIONID", null);
+                    jsessionCookie.setPath("/");
+                    jsessionCookie.setMaxAge(0);
+                    response.addCookie(jsessionCookie);
                 })
-                .logoutSuccessUrl("http://localhost:8000/user-service/index")
-                /* 필요 시 쿠키 삭제 등 추가 가능 -> .deleteCookies("remember-me") */
+                .logoutSuccessUrl("/index")
         );
 
         http.exceptionHandling(ex -> ex

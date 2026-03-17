@@ -2,12 +2,14 @@
 
 
 .ta-head{
-  display:flex; align-items:flex-start; justify-content:space-between;
-  margin-bottom:14px;
-  /* border: solid 2px red; */
+  display:flex;
+  /* align-items:flex-start;  */
+  /* justify-content:space-between; */
+  /* border: solid 1px red; */
 }
-.ta-title{ font-size:18px; font-weight:900; margin:0; }
-.ta-desc{ color:#6b7280; font-size:13px; margin-top:6px; }
+.ta-title{ font-size:18px; font-weight:900; /* border: solid 1px blue; */ }
+.ta-desc{ color:#6b7280; font-size:13px; margin-top:6px; /* border: solid 1px green; */ }
+
 
 /* ===== 검색 박스 ===== */
 .talent-searchbox{ padding:18px; }
@@ -134,7 +136,7 @@
   flex-wrap:wrap;
 }
 .row-label{
-  width:72px;
+  min-width:72px;
   font-size:12px;
   color:#666;
   font-weight:700;
@@ -194,4 +196,33 @@
   margin-top:12px;
   padding-top:10px;
   border-top:1px solid #f1f1f1;
+}
+
+
+
+
+.core-info-row{
+  row-gap: 8px;
+}
+
+.salary-label{
+  margin-left: 12px;
+}
+
+.salary-pill{
+  background: #f8fafc;
+  font-weight: 700;
+}
+
+.portfolio-pill{
+  background: #eef6ff;
+  color: #0b77ff;
+  border-color: #cfe2ff;
+}
+
+.resume-bottom{
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  margin-top:14px;
 }

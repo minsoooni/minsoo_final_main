@@ -16,6 +16,7 @@ import com.spring.app.common.domain.JobCategoryDTO;
 import com.spring.app.company.domain.BannerListDTO;
 import com.spring.app.company.domain.CompanyDashboardDTO;
 import com.spring.app.company.domain.CompanyProfileDTO;
+import com.spring.app.company.domain.CompanyTopbarDTO;
 import com.spring.app.company.domain.JobPostingDTO;
 import com.spring.app.company.domain.MemberSimpleDTO;
 import com.spring.app.company.domain.OfferListDTO;
@@ -42,6 +43,45 @@ public class CompanyWebController {
     private String impCode;
     
     
+    
+    
+    //기업 상단바 조회(기업ID, 기업명, 이메일)
+    @ModelAttribute
+    public void addCompanyTopbarInfo(Model model, Authentication authentication) {
+        if (authentication == null || authentication.getName() == null) {
+            return;
+        }
+
+        String memberId = authentication.getName();
+        CompanyTopbarDTO topbarInfo = service.getCompanyTopbarInfo(memberId);
+
+        if (topbarInfo == null) {
+            model.addAttribute("loginCompanyName", "기업명 미설정");
+            model.addAttribute("loginCompanyEmail", "이메일 미등록");
+            model.addAttribute("loginCompanyInitial", "C");
+            return;
+        }
+
+        String companyName = topbarInfo.getCompanyName();
+        String email = topbarInfo.getEmail();
+
+        model.addAttribute("loginCompanyName",
+                (companyName != null && !companyName.isBlank()) ? companyName : "기업명 미설정");
+
+        model.addAttribute("loginCompanyEmail",
+                (email != null && !email.isBlank()) ? email : "이메일 미등록");
+
+        String initial = "C";
+        if (companyName != null && !companyName.isBlank()) {
+            initial = companyName.substring(0, 1);
+        }
+
+        model.addAttribute("loginCompanyInitial", initial);
+    }
+    
+    
+    
+    
     // 기업용 페이지 기본
     @GetMapping({"", "/"})
     public String company() {
@@ -56,8 +96,18 @@ public class CompanyWebController {
         model.addAttribute("activeMenu", menu);
         
         String memberId = authentication.getName(); // 로그인한 기업 회원 아이디
+        
         // 대시보드 전체 데이터 조회
         CompanyDashboardDTO dashboard = service.getCompanyDashboard(memberId);
+        //System.out.println(dashboard.getRecentApplicants());
+        /*
+        [DashboardApplicantDTO(applicationId=13, applicantName=구직자, resumeTitle=경력이력서, jobTitle=디자이너 급구, appliedAt=Sat Mar 14 17:48:05 KST 2026, processStatus=0, processStatusText=지원완료), 
+        DashboardApplicantDTO(applicationId=12, applicantName=구직자, resumeTitle=경력이력서, jobTitle=디자이너 급구, appliedAt=Fri Mar 13 21:05:22 KST 2026, processStatus=0, processStatusText=지원완료), 
+        DashboardApplicantDTO(applicationId=11, applicantName=구직자, resumeTitle=경력이력서, jobTitle=디자이너 급구, appliedAt=Fri Mar 13 20:51:31 KST 2026, processStatus=0, processStatusText=지원완료), 
+        DashboardApplicantDTO(applicationId=10, applicantName=구직자, resumeTitle=경력이력서, jobTitle=디자이너 급구, appliedAt=Fri Mar 13 18:54:12 KST 2026, processStatus=0, processStatusText=지원완료), 
+        DashboardApplicantDTO(applicationId=9, applicantName=구직자, resumeTitle=경력이력서, jobTitle=디자이너 급구, appliedAt=Fri Mar 13 18:06:09 KST 2026, processStatus=0, processStatusText=지원완료)]
+        */
+        
         model.addAttribute("dashboard", dashboard);
         
         return "company/company_dashboard";

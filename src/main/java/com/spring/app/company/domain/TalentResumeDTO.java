@@ -43,6 +43,12 @@ public class TalentResumeDTO {
 
     // 업데이트일
     private Date uploadedAt;
+    
+    // 기술 스택 개수
+    private Integer techStackCount;
+
+    // 포트폴리오 보유 여부 표시용
+    private Integer portfolioCount;
 
     // 공개 여부 관련
     private Integer isPrimary;
@@ -54,6 +60,9 @@ public class TalentResumeDTO {
     private String career;
     private String portfolio;
 
+    // 기술 스택 원본 문자열 (LISTAGG 결과)
+    private String techStackNamesRaw;
+    
     // 기술 스택 출력용
     private List<String> techStackNames;
 }

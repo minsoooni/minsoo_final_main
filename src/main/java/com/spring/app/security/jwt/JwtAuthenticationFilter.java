@@ -31,6 +31,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String bearerToken = request.getHeader("Authorization");
         String token = resolveToken(bearerToken);
 
+        // 헤더에 없으면 쿠키에서 accessToken 확인
+        if (token == null && request.getCookies() != null) {
+            for (var cookie : request.getCookies()) {
+                if ("accessToken".equals(cookie.getName())) {
+                    token = cookie.getValue();
+                    break;
+                }
+            }
+        }
+
         if (token != null && jwtTokenProvider.validateToken(token)) {
             String memberId = jwtTokenProvider.getMemberId(token);
             List<String> roles = jwtTokenProvider.getRoles(token);

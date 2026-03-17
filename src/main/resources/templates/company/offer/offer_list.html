@@ -8,32 +8,33 @@
   <style type="text/css"></style>
 
   <script th:inline="javascript">
-  //페이지가 로드 시 함수
   $(function(){
-	  // 목록 페이지 진입 시 각각 제안서의 metrics 갱신
-	  refreshOfferMetrics();
+    refreshOfferMetrics();
+    loadDeletedOfferHistory();
   });
-  
-  
+
   const contextPath = /*[[@{/}]]*/ "";
 
   // ==============================
-  // API Endpoints (/company/api/offers)
+  // API Endpoints
   // ==============================
   const offerApiBase = `${contextPath}company/api/offers`;
 
   function offerDetailApi(id){ return `${offerApiBase}/${encodeURIComponent(id)}`; }
   function offerUpdateApi(id){ return `${offerApiBase}/${encodeURIComponent(id)}`; }
-  function offerSendApi(id){   return `${offerApiBase}/${encodeURIComponent(id)}/send`; }
-  function offerMetricsApi(){  return `${offerApiBase}/metrics`; }
+  function offerSendApi(id){ return `${offerApiBase}/${encodeURIComponent(id)}/send`; }
+  function offerMetricsApi(){ return `${offerApiBase}/metrics`; }
   function offerSentRecipientsApi(id){ return `${offerApiBase}/${encodeURIComponent(id)}/sent-recipients`; }
   function offerDeleteApi(id){ return `${offerApiBase}/${encodeURIComponent(id)}`; }
   function offerRecipientDetailApi(id){
-	  return `${offerApiBase}/${encodeURIComponent(id)}/recipient-details`;
-	}
+    return `${offerApiBase}/${encodeURIComponent(id)}/recipient-details`;
+  }
+  function deletedOfferHistoryApi(){
+    return `${contextPath}company/api/offers/deleted-history`;
+  }
 
   // ==============================
-  //  모달 Open / Close
+  // 모달 Open / Close
   // ==============================
   function openOfferModal(){
     const modal = document.getElementById("offerModal");
@@ -46,9 +47,26 @@
   function closeOfferModal(){
     const modal = document.getElementById("offerModal");
     if(!modal) return;
+
     modal.classList.remove("is-open");
     modal.setAttribute("aria-hidden","true");
     document.body.style.overflow = "";
+
+    // 상태 초기화
+    $("#hiddenOfferLetterId").val("");
+    $("#hiddenJobId").val("");
+
+    $("#ofm_jobId").val("");
+    $("#ofm_title").val("");
+    $("#ofm_message").val("");
+    $("#ofm_expire").val("");
+    
+    // 동적으로 생성한 옵션 삭제
+    $("#ofm_jobId option[data-temp='true']").remove();
+
+    $(".ofm-check").prop("checked", false).prop("disabled", false);
+    $(".ofm-sent-badge").hide();
+    $(".ofm-recvlist label").removeClass("is-sent");
   }
 
   document.addEventListener("keydown", function(e){
@@ -59,7 +77,7 @@
   });
 
   // ==============================
-  //  모드 전환 함수
+  // 모드 전환
   // ==============================
   function setCreateMode(){
     $("#offerModalTitle").text("채용 제안서 작성");
@@ -76,6 +94,7 @@
     $("#ofm_message").prop("readOnly", false);
 
     $("#hiddenOfferLetterId").val("");
+    $("#hiddenJobId").val("");
   }
 
   function setEditMode(){
@@ -109,93 +128,143 @@
   }
 
   // ==============================
-  //  작성 모드 열기
+  // textarea 자동 높이 조절
+  // ==============================
+  function autoResizeTextarea(el){
+    if(!el) return;
+    el.style.height = "auto";
+    el.style.height = el.scrollHeight + "px";
+  }
+
+  document.addEventListener("input", function(e){
+    if(e.target && e.target.id === "ofm_message"){
+      autoResizeTextarea(e.target);
+    }
+  });
+
+  // ==============================
+  // 작성 모드 열기
   // ==============================
   function openOfferModalForCreate(){
     openOfferModal();
     setCreateMode();
+
+    $("#hiddenOfferLetterId").val("");
+    $("#hiddenJobId").val("");
 
     $("#ofm_jobId").val("");
     $("#ofm_title").val("");
     $("#ofm_message").val("");
     $("#ofm_expire").val("");
 
-    $(".ofm-check").prop("checked", false);
+    autoResizeTextarea(document.getElementById("ofm_message"));
+    resetReceiverCheckboxUI();
   }
 
   // ==============================
-  //  상세 조회 공통
+  // 상세 조회 공통
   // ==============================
   function fetchOfferDetail(id, onSuccess){
     $.ajax({
       url: offerDetailApi(id),
       type: "GET",
       dataType: "json",
-      success: onSuccess,
+      success: function(res){
+        const offer = res?.item ?? res?.data ?? res;
+
+        if(!offer){
+          alert("제안서 상세 데이터가 없습니다.");
+          return;
+        }
+        onSuccess(offer);
+      },
       error: function(xhr){
+        console.log("detail error =", xhr.responseText);
         alert("상세 조회 실패: " + xhr.status);
       }
     });
   }
 
   // ==============================
-  //  수정 모드 열기 (상세 조회 → edit mode)
+  // 수정 모드 열기
   // ==============================
   function openOfferModalForEdit(id){
     fetchOfferDetail(id, function(offer){
       openOfferModal();
       setEditMode();
 
-      $("#ofm_jobId").val(offer.jobId ?? "");
+      const offerLetterId = offer.offerLetterId ?? id;
+      const jobId = offer.jobId != null ? String(offer.jobId) : "";
+
+      console.log("offer.jobId =", offer.jobId);
+      console.log("select option exists =", $("#ofm_jobId option[value='" + offer.jobId + "']").length);
+      console.log("all option values =",
+        $("#ofm_jobId option").map(function(){ return $(this).val(); }).get()
+      );
+      
+      //console.log("edit id =", id);
+      //console.log("edit offer =", offer);
+      //console.log("edit offerLetterId =", offerLetterId);
+      //console.log("edit jobId =", jobId);
+
+      // hidden 값
+      $("#hiddenOfferLetterId").val(offerLetterId);
+      $("#hiddenJobId").val(jobId);
+      
+	  // 옵션이 없으면 동적으로 추가
+      ensureJobOption(jobId, offer.jobTitle)
+
+      // 화면 표시값
+      $("#ofm_jobId").val(jobId);
       $("#ofm_title").val(offer.title ?? "");
       $("#ofm_message").val(offer.message ?? "");
-      autoResizeTextarea(document.getElementById("ofm_message"));
+      $("#ofm_expire").val("");
 
-      $("#hiddenOfferLetterId").val(offer.offerLetterId ?? id);
+      autoResizeTextarea(document.getElementById("ofm_message"));
     });
   }
 
   // ==============================
-  //  상세 → 발송 모드
+  // 발송 모드 열기
   // ==============================
   function openOfferModalForSend(id){
     fetchOfferDetail(id, function(offer){
       openOfferModal();
       setSendMode();
-  
-      $("#ofm_jobId").val(offer.jobId ?? "");
+
+      const offerLetterId = offer.offerLetterId ?? id;
+      const jobId = offer.jobId != null ? String(offer.jobId) : "";
+
+      $("#hiddenOfferLetterId").val(offerLetterId);
+      $("#hiddenJobId").val(jobId);
+      
+   	  // 옵션이 없으면 동적으로 추가
+      ensureJobOption(jobId, offer.jobTitle);
+
+      $("#ofm_jobId").val(jobId);
       $("#ofm_title").val(offer.title ?? "");
       $("#ofm_message").val(offer.message ?? "");
-      autoResizeTextarea(document.getElementById("ofm_message"));
-  
-      const offerLetterId = (offer.offerLetterId ?? id);
-      $("#hiddenOfferLetterId").val(offerLetterId);
-  
-      // 발송 모드에서는 만료일 새로 입력
       $("#ofm_expire").val("");
+
+      autoResizeTextarea(document.getElementById("ofm_message"));
       setExpireMinToday();
-  
-      // 수신자 체크 UI 초기화
       resetReceiverCheckboxUI();
-  
-      // 이미 발송한 회원 비활성화 처리
       markAlreadySentReceivers(offerLetterId);
     });
   }
 
   // ==============================
-  //  상세보기 버튼용 함수
+  // 상세보기 버튼
   // ==============================
   function showOfferRecipients(offerLetterId){
     loadRecipientDetails(offerLetterId);
   }
-  
-  
+
   // ==============================
-  //  제안서 작성 (POST /company/api/offers)
+  // 제안서 작성
   // ==============================
   function submitCreateOffer(){
-    const jobId = $("#ofm_jobId").val();
+    const jobId = $("#hiddenJobId").val() || $("#ofm_jobId").val();
     const title = $("#ofm_title").val()?.trim();
     const msg   = $("#ofm_message").val()?.trim();
 
@@ -226,7 +295,7 @@
       contentType: "application/json; charset=UTF-8",
       dataType: "json",
       data: JSON.stringify({
-        jobId: jobId ? Number(jobId) : null,
+        jobId: Number(jobId),
         title: title,
         message: msg
       }),
@@ -236,26 +305,49 @@
         location.reload();
       },
       error: function(xhr){
+        console.log("create error =", xhr.responseText);
         alert("등록 실패: " + xhr.status);
       }
     });
   }
 
   // ==============================
-  //  제안서 수정 (PUT /company/api/offers/{id})
+  // 공고 select 변경 시 hidden 동기화
+  // ==============================
+  $(document).on("change", "#ofm_jobId", function(){
+    $("#hiddenJobId").val($(this).val() || "");
+  });
+
+  // ==============================
+  // 제안서 수정
   // ==============================
   function submitUpdateOffer(){
     const offerLetterId = $("#hiddenOfferLetterId").val();
-    const jobId = $("#ofm_jobId").val();
+    const jobId = $("#hiddenJobId").val() || $("#ofm_jobId").val();
     const title = $("#ofm_title").val()?.trim();
     const msg   = $("#ofm_message").val()?.trim();
+
+    //console.log("update offerLetterId =", offerLetterId);
+    //console.log("update jobId =", jobId);
+    //console.log("update title =", title);
+    //console.log("update message =", msg);
 
     if(!offerLetterId){
       alert("offerLetterId가 없습니다.");
       return;
     }
+    if(!jobId){
+      alert("연결할 공고가 없습니다.");
+      $("#ofm_jobId").focus();
+      return;
+    }
     if(!title){
       alert("제안서 제목은 필수입니다.");
+      $("#ofm_title").focus();
+      return;
+    }
+    if(title.length > 200){
+      alert("제안서 제목은 200자 이하여야 합니다.");
       $("#ofm_title").focus();
       return;
     }
@@ -272,7 +364,7 @@
       dataType: "json",
       data: JSON.stringify({
         offerLetterId: Number(offerLetterId),
-        jobId: jobId ? Number(jobId) : null,
+        jobId: Number(jobId),
         title: title,
         message: msg
       }),
@@ -282,48 +374,48 @@
         location.reload();
       },
       error: function(xhr){
+        console.log("update error =", xhr.responseText);
         alert("수정 실패: " + xhr.status);
       }
     });
   }
 
-
-  //==============================
-  //  제안서 삭제 (DELETE /company/api/offers/{id})
+  // ==============================
+  // 제안서 삭제
   // ==============================
   function deleteOffer(offerLetterId){
-	  if(!offerLetterId){
-	    alert("offerLetterId가 없습니다.");
-	    return;
-	  }
+    if(!offerLetterId){
+      alert("offerLetterId가 없습니다.");
+      return;
+    }
 
-	  const ok = confirm("정말 삭제하시겠습니까?\n삭제하면 복구할 수 없습니다.");
-	  if(!ok) return;
+    const ok = confirm(
+      "정말 이 원본 제안서를 삭제하시겠습니까?\n" +
+      "삭제 후에는 제안서 목록에서 보이지 않으며 새로 발송할 수 없습니다.\n" +
+      "이미 발송된 제안 내역은 그대로 유지됩니다."
+    );
+    if(!ok) return;
 
-	  $.ajax({
-	    url: offerDeleteApi(offerLetterId),
-	    type: "DELETE",
-	    dataType: "json",
-	    success: function(res){
-	      if(res && res.result === "ok"){
-	        alert("삭제 완료");
-	        location.reload();
-	      } else {
-	        alert("삭제 실패");
-	      }
-	    },
-	    error: function(xhr){
-	      // 발송 이력이 있어서 FK로 삭제 불가하면 보통 409/500 등이 올 수 있음
-	      alert("삭제 실패: " + xhr.status);
-	    }
-	  });
-	}
-  
-  
-  
-  
+    $.ajax({
+      url: offerDeleteApi(offerLetterId),
+      type: "DELETE",
+      dataType: "json",
+      success: function(res){
+        if(res && res.result === "ok"){
+          alert("삭제 완료");
+          location.reload();
+        } else {
+          alert("삭제 실패");
+        }
+      },
+      error: function(xhr){
+        alert("삭제 실패: " + xhr.status);
+      }
+    });
+  }
+
   // ==============================
-  //  제안서 발송 (POST /company/api/offers/{id}/send)
+  // 제안서 발송
   // ==============================
   function submitSendOffer(){
     const offerLetterId = $("#hiddenOfferLetterId").val();
@@ -332,26 +424,26 @@
     const receiverIds = $(".ofm-check:checked")
       .map(function(){ return this.value; })
       .get();
-   
+
     if(!offerLetterId){
       alert("offerLetterId가 없습니다.");
       return;
     }
-   
+
     if(receiverIds.length === 0){
       alert("수신자를 선택하세요.");
       return;
     }
-   
+
     if(!expireAt){
       alert("만료일을 선택하세요.");
       $("#ofm_expire").focus();
       return;
     }
-   
+
     const today = new Date();
     today.setHours(0,0,0,0);
-   
+
     const expireDate = new Date(expireAt + "T00:00:00");
     if(expireDate < today){
       alert("만료일은 오늘 이후로 선택해야 합니다.");
@@ -384,8 +476,9 @@
     });
   }
 
-  
-  //만료일 input에 최소값 걸어주기
+  // ==============================
+  // 만료일 최소값 설정
+  // ==============================
   function setExpireMinToday(){
     const today = new Date();
     const yyyy = today.getFullYear();
@@ -393,101 +486,81 @@
     const dd = String(today.getDate()).padStart(2, "0");
     $("#ofm_expire").attr("min", `${yyyy}-${mm}-${dd}`);
   }
-  
-  
-  //이미 제안서를 발송한 수신자 memberId를 받아 UI에 반영해주는 함수
+
+  // ==============================
+  // 이미 발송한 수신자 표시
+  // ==============================
   function markAlreadySentReceivers(offerLetterId){
-	  $.ajax({
-	    url: offerSentRecipientsApi(offerLetterId),
-	    type: "GET",
-	    dataType: "json",
-	    success: function(res){
-	      const sentIds = (res && res.sentMemberIds) ? res.sentMemberIds : [];
-	      if(sentIds.length === 0) return;
+    $.ajax({
+      url: offerSentRecipientsApi(offerLetterId),
+      type: "GET",
+      dataType: "json",
+      success: function(res){
+        const sentIds = (res && res.sentMemberIds) ? res.sentMemberIds : [];
+        if(sentIds.length === 0) return;
 
-	      sentIds.forEach(function(memberId){
-	        const $chk = $(`.ofm-check[data-member-id='${memberId}']`);
-	        if($chk.length){
-	          $chk.prop("checked", false);     // 체크는 굳이 안 해도 됨(원하면 true로)
-	          $chk.prop("disabled", true);     // 재발송 방지
+        sentIds.forEach(function(memberId){
+          const $chk = $(`.ofm-check[data-member-id='${memberId}']`);
+          if($chk.length){
+            $chk.prop("checked", false);
+            $chk.prop("disabled", true);
+            $chk.closest("label").find(".ofm-sent-badge").show();
+            $chk.closest("label").addClass("is-sent");
+          }
+        });
+      },
+      error: function(xhr){
+        console.log("발송완료 수신자 조회 실패:", xhr.status);
+      }
+    });
+  }
 
-	          // 뱃지 보여주기
-	          $chk.closest("label").find(".ofm-sent-badge").show();
-
-	          // 라벨에 스타일 클래스 부여
-	          $chk.closest("label").addClass("is-sent");
-	        }
-	      });
-	    },
-	    error: function(xhr){
-	      // 실패해도 발송기능 자체는 동작해야 하니까 alert는 선택
-	      console.log("발송완료 수신자 조회 실패:", xhr.status);
-	    }
-	  });
-	}
-  
-  
-  
-  
-  
-  //모달-상세보기의 체크박스 상태 리셋 함수
+  // ==============================
+  // 체크박스 상태 초기화
+  // ==============================
   function resetReceiverCheckboxUI(){
-	  // 체크/disabled/뱃지/스타일 전부 초기화
-	  $(".ofm-check").prop("checked", false).prop("disabled", false);
+    $(".ofm-check").prop("checked", false).prop("disabled", false);
+    $(".ofm-sent-badge").hide();
+    $(".ofm-recvlist label").removeClass("is-sent");
+  }
 
-	  // 발송완료 뱃지 숨김
-	  $(".ofm-sent-badge").hide();
-
-	  // 라벨 스타일 초기화(선택)
-	  $(".ofm-rcv-item").removeClass("is-sent");
-	}
-  
-  
-  
-  
-  
-
-  //제안서_응답 상태 확인을 위한 함수
+  // ==============================
+  // 상단 통계 / 목록 metrics 갱신
+  // ==============================
   function refreshOfferMetrics(){
-	  $.ajax({
-	    url: offerMetricsApi(),
-	    type: "GET",
-	    dataType: "json",
-	    success: function(res){
-	      if(!res || res.result !== "ok") return;
+    $.ajax({
+      url: offerMetricsApi(),
+      type: "GET",
+      dataType: "json",
+      success: function(res){
+        if(!res || res.result !== "ok") return;
 
-	      // 1) 상단 summary 갱신
-	      const s = res.summary || {};
-	      $("#statSent").text(s.sent ?? 0);
-	      $("#statViewed").text(s.viewed ?? 0);
-	      $("#statAccepted").text(s.accepted ?? 0);
-	      $("#statRejected").text(s.rejected ?? 0);
+        const s = res.summary || {};
+        $("#statSent").text(s.sent ?? 0);
+        $("#statViewed").text(s.viewed ?? 0);
+        $("#statAccepted").text(s.accepted ?? 0);
+        $("#statRejected").text(s.rejected ?? 0);
 
-	      // 2) 목록 items 갱신
-	      const items = res.items || [];
-	      items.forEach(function(m){
-	        const $item = $(`.of-item[data-offer-letter-id='${m.offerLetterId}']`);
-	        if($item.length === 0) return;
+        const items = res.items || [];
+        items.forEach(function(m){
+          const $item = $(`.of-item[data-offer-letter-id='${m.offerLetterId}']`);
+          if($item.length === 0) return;
 
-	        $item.find(".metric-total").text(m.totalSent ?? 0);
-	        $item.find(".metric-viewed").text(m.viewedCnt ?? 0);
-	        $item.find(".metric-unread").text(m.unreadCnt ?? 0);
-	        $item.find(".metric-accept").text(m.acceptCnt ?? 0);
-	        $item.find(".metric-reject").text(m.rejectCnt ?? 0);
-	      });
-	    },
+          $item.find(".metric-total").text(m.totalSent ?? 0);
+          $item.find(".metric-viewed").text(m.viewedCnt ?? 0);
+          $item.find(".metric-unread").text(m.unreadCnt ?? 0);
+          $item.find(".metric-accept").text(m.acceptCnt ?? 0);
+          $item.find(".metric-reject").text(m.rejectCnt ?? 0);
+        });
+      },
       error: function(xhr){
         console.log("metrics 조회 실패:", xhr.status);
       }
     });
-  }//function refreshOfferMetrics(){}
-  
-  
-  
-  
-  
-  //==============================
-  //  제안서 수신자 상세에 대한 뱃지용 함수
+  }
+
+  // ==============================
+  // 상태 뱃지
   // ==============================
   function getResponseBadge(statusText){
     if(statusText === "수락"){
@@ -498,14 +571,13 @@
     }
     return `<span class="badge" style="background:#f3f4f6; color:#374151; border:1px solid #e5e7eb;">미응답</span>`;
   }
-  
-  
-  //==============================
-  //  수신자 상세 로딩 함수
-  // ==============================  
+
+  // ==============================
+  // 수신자 상세 로딩
+  // ==============================
   function loadRecipientDetails(offerLetterId){
     const $tbody = $("#recipientDetailBody");
-    
+
     $tbody.html(`
       <tr>
         <td colspan="6" style="text-align:center; color:#6b7280;">
@@ -513,7 +585,7 @@
         </td>
       </tr>
     `);
-    
+
     $.ajax({
       url: offerRecipientDetailApi(offerLetterId),
       type: "GET",
@@ -529,9 +601,8 @@
           `);
           return;
         }
-      
+
         const items = res.items || [];
-      
         if(items.length === 0){
           $tbody.html(`
             <tr>
@@ -542,7 +613,7 @@
           `);
           return;
         }
-        
+
         let html = "";
         items.forEach(function(item){
           html += `
@@ -559,7 +630,7 @@
             </tr>
           `;
         });
-      
+
         $tbody.html(html);
       },
       error: function(xhr){
@@ -571,55 +642,132 @@
           </tr>
         `);
       }
-    });//$.ajax({})
-  }//function loadRecipientDetails(offerLetterId){}
-  
-  
-  
-  
-  //==============================
-  //  날짜 포맷용 함수
-  // ==============================  
+    });
+  }
+
+  // ==============================
+  // 삭제된 제안서 발송 내역 로딩
+  // ==============================
+  function loadDeletedOfferHistory(){
+    const $box = $("#deletedOfferHistoryList");
+
+    $box.html(`<div class="preview-empty">불러오는 중...</div>`);
+
+    $.ajax({
+      url: deletedOfferHistoryApi(),
+      type: "GET",
+      dataType: "json",
+      success: function(res){
+        if(!res || res.result !== "ok"){
+          $box.html(`<div class="preview-empty" style="color:#ef4444;">삭제된 제안서 발송 내역을 불러오지 못했습니다.</div>`);
+          return;
+        }
+
+        const items = res.items || [];
+        if(items.length === 0){
+          $box.html(`<div class="preview-empty">삭제된 제안서의 발송 내역이 없습니다.</div>`);
+          return;
+        }
+
+        let html = "";
+        items.forEach(function(item){
+          html += `
+            <div class="of-item deleted-history-item" data-offer-letter-id="${item.offerLetterId}">
+              <div class="of-item__row">
+                <div>
+                  <p class="of-item__title">
+                    ${item.title ?? "-"}
+                    <span class="badge" style="margin-left:8px; background:#f3f4f6; color:#6b7280; border:1px solid #e5e7eb;">삭제된 원본</span>
+                  </p>
+                  <div class="of-item__sub">
+                    공고 ID: ${item.jobId ?? "-"} · 마지막 발송일: ${formatDateTime(item.lastSendAt)}
+                  </div>
+
+                  <div class="of-metrics">
+                    <span><b>발송</b> ${item.totalSent ?? 0}</span>
+                    <span><b>열람</b> ${item.viewedCnt ?? 0}</span>
+                    <span><b>미열람</b> ${item.unreadCnt ?? 0}</span>
+                    <span><b>수락</b> ${item.acceptCnt ?? 0}</span>
+                    <span><b>거절</b> ${item.rejectCnt ?? 0}</span>
+                  </div>
+                </div>
+
+                <div style="display:flex; gap:8px;">
+                  <button type="button" class="of-btn" onclick="openDeletedOfferHistory(${item.offerLetterId})">
+                    발송 내역 보기
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+
+        $box.html(html);
+      },
+      error: function(xhr){
+        $box.html(`<div class="preview-empty" style="color:#ef4444;">삭제된 제안서 발송 내역을 불러오지 못했습니다.</div>`);
+      }
+    });
+  }
+
+  // ==============================
+  // 삭제된 제안서 발송 내역 상세 보기
+  // ==============================
+  function openDeletedOfferHistory(offerLetterId){
+    loadRecipientDetails(offerLetterId);
+
+    const target = document.getElementById("recipientDetailSection");
+    if(target){
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+
+  // ==============================
+  // 날짜 포맷
+  // ==============================
   function formatDateTime(value){
     if(!value) return "-";
-  
+
     const d = new Date(value);
     if(isNaN(d.getTime())) return value;
-  
+
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, "0");
     const dd = String(d.getDate()).padStart(2, "0");
     const hh = String(d.getHours()).padStart(2, "0");
     const mi = String(d.getMinutes()).padStart(2, "0");
-  
+
     return `${yyyy}.${mm}.${dd} ${hh}:${mi}`;
   }
   
+  // 공고 option 보장 함수 추가
+  function ensureJobOption(jobId, jobTitle){
+    if(!jobId) return;
   
+    const jobIdStr = String(jobId);
+    const $select = $("#ofm_jobId");
+    const exists = $select.find(`option[value='${jobIdStr}']`).length > 0;
   
-  // ==============================
-  //  textarea 자동 높이 조절
-  // ==============================
-  function autoResizeTextarea(el){
-    if(!el) return;
-    el.style.height = "auto";
-    el.style.height = el.scrollHeight + "px";
-  }
-
-  document.addEventListener("input", function(e){
-    if(e.target.id === "ofm_message"){
-      autoResizeTextarea(e.target);
+    if(!exists){
+      const label = jobTitle
+        ? `${jobTitle} (기존 연결 공고)`
+        : `기존 연결 공고 (ID: ${jobIdStr})`;
+  
+      $select.append(
+        $("<option>", {
+          value: jobIdStr,
+          text: label,
+          "data-temp": "true"
+        })
+      );
     }
-  });
+  }
   </script>
 </head>
-
-
 
 <body>
 <section class="dash">
 
-  <!-- Header -->
   <div class="of-head">
     <div>
       <h3 class="of-title">제안서 관리</h3>
@@ -630,10 +778,7 @@
     </button>
   </div>
 
-  <!-- Stats (상단 요약: API로 갱신) -->
   <div class="of-stats">
-  
-    <!-- 발송됨 -->
     <div class="panel of-stat">
       <div>
         <div class="label">발송됨</div>
@@ -646,8 +791,7 @@
         <i class="fa-regular fa-user"></i>
       </div>
     </div>
-  
-    <!-- 열람됨 -->
+
     <div class="panel of-stat">
       <div>
         <div class="label">열람됨</div>
@@ -660,8 +804,7 @@
         <i class="fa-regular fa-eye"></i>
       </div>
     </div>
-  
-    <!-- 수락됨 -->
+
     <div class="panel of-stat">
       <div>
         <div class="label">수락됨</div>
@@ -675,7 +818,6 @@
       </div>
     </div>
 
-    <!-- 거절됨 -->
     <div class="panel of-stat">
       <div>
         <div class="label">거절됨</div>
@@ -688,28 +830,21 @@
         <i class="fa-regular fa-circle-xmark"></i>
       </div>
     </div>
-
   </div>
 
-
-
-  <!-- Offer List(제안서 목록) -->
   <div class="panel">
     <div class="panel-head">
       <h3 th:text="|제안서 목록 (${#lists.size(offerList)}건)|">제안서 목록 (0건)</h3>
     </div>
 
     <div class="of-list">
-
-      <!-- 반복 -->
       <div class="of-item" th:each="offer : ${offerList}"
-      					   th:attr="data-offer-letter-id=${offer.offerLetterId}">
+           th:attr="data-offer-letter-id=${offer.offerLetterId}">
         <div class="of-item__row">
           <div>
             <p class="of-item__title" th:text="${offer.title}">제안서 제목</p>
             <div class="of-item__sub" th:text="|공고 ID: ${offer.jobId}|">공고 ID</div>
 
-            <!-- metrics -->
             <div class="of-metrics">
               <span>
                 <i class="fa-regular fa-circle-check" style="color:#16a34a;"></i>
@@ -734,54 +869,57 @@
                 <b class="m">미열람</b>
                 <span class="metric-unread" th:text="${offer.unreadCnt}">0</span>
               </span>
-              
+
               <span>
                 <i class="fa-regular fa-envelope" style="color:#6b7280;"></i>
                 <b class="m">총합</b>
-	            <span class="metric-total" th:text="${offer.totalSent}">0</span>
+                <span class="metric-total" th:text="${offer.totalSent}">0</span>
               </span>
             </div>
-
           </div>
 
           <div style="display:flex; flex-direction:row; align-items:flex-end; gap:10px; flex-wrap:wrap;">
-	        <button type="button" class="of-btn"
-	                th:attr="onclick=|showOfferRecipients(${offer.offerLetterId})|">
-	          상세보기
-	        </button>
-	      
-	        <button type="button" class="of-btn of-btn--dark"
-	                th:attr="onclick=|openOfferModalForSend(${offer.offerLetterId})|">
-	          발송하기
-	        </button>
-	      
-	        <button type="button" class="of-btn"
-	                th:attr="onclick=|openOfferModalForEdit(${offer.offerLetterId})|">
-	          수정
-	        </button>
-	      
-	        <button type="button" class="of-btn of-btn--danger"
-	                th:attr="onclick=|deleteOffer(${offer.offerLetterId})|">
-	          삭제
-	        </button>
-	      </div>
+            <button type="button" class="of-btn"
+                    th:attr="onclick=|showOfferRecipients(${offer.offerLetterId})|">
+              상세보기
+            </button>
+
+            <button type="button" class="of-btn of-btn--dark"
+                    th:attr="onclick=|openOfferModalForSend(${offer.offerLetterId})|">
+              발송하기
+            </button>
+
+            <button type="button" class="of-btn"
+                    th:attr="onclick=|openOfferModalForEdit(${offer.offerLetterId})|">
+              수정
+            </button>
+
+            <button type="button" class="of-btn of-btn--danger"
+                    th:attr="onclick=|deleteOffer(${offer.offerLetterId})|">
+              삭제
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- 비어있을 때 -->
       <div class="preview-empty" th:if="${#lists.isEmpty(offerList)}">
         등록된 제안서가 없습니다.
       </div>
-
     </div>
   </div>
 
-
-
-  <!-- Receiver Detail (현재는 더미 유지 - 나중에 offer_submit_id 선택 시 AJAX로 채우는 영역 추천) -->
-  <div class="panel">
+  <div class="panel" style="margin-top:20px;">
     <div class="panel-head">
-      <!-- <h3>제안서 수신자 상세</h3> -->
+      <h3>삭제된 제안서의 발송 내역</h3>
+    </div>
+
+    <div id="deletedOfferHistoryList" class="of-list">
+      <div class="preview-empty">불러오는 중...</div>
+    </div>
+  </div>
+
+  <div class="panel" id="recipientDetailSection">
+    <div class="panel-head">
       <h3 id="recipientDetailTitle">제안서 수신자 상세</h3>
     </div>
 
@@ -798,19 +936,16 @@
           </tr>
         </thead>
         <tbody id="recipientDetailBody">
-		  <tr>
-		    <td colspan="6" style="text-align:center; color:#6b7280;">
-		      제안서를 선택하면 수신자 상세가 표시됩니다.
-		    </td>
-		  </tr>
-		</tbody>
+          <tr>
+            <td colspan="6" style="text-align:center; color:#6b7280;">
+              제안서를 선택하면 수신자 상세가 표시됩니다.
+            </td>
+          </tr>
+        </tbody>
       </table>
     </div>
   </div>
 
-
-
-  <!-- 모달창 - 새 제안서 작성 -->
   <div id="offerModal" class="ofm" aria-hidden="true">
     <div class="ofm-backdrop" onclick="closeOfferModal()"></div>
 
@@ -823,15 +958,13 @@
       </div>
 
       <div class="ofm-body">
-
         <div class="ofm-field">
           <div class="ofm-label">연결할 공고 <span class="ofm-req">*</span></div>
           <select id="ofm_jobId" class="ofm-select">
             <option value="">공고 선택</option>
             <option th:each="job : ${jobList}"
                     th:value="${job.jobId}"
-                    th:text="${job.title}">공고 제목
-            </option>
+                    th:text="${job.title}">공고 제목</option>
           </select>
         </div>
 
@@ -850,69 +983,60 @@
           <input id="ofm_expire" class="ofm-input" type="date">
         </div>
 
-        <!-- 수신자 선택 박스 -->
         <div class="ofm-recvbox" id="sendSection" style="display:none;">
           <div class="ofm-label">수신자 선택 <span class="ofm-req">*</span></div>
 
-          <!-- receiverList가 없으면 이 부분은 빈 상태가 됨 -->
           <div class="ofm-recvlist">
-            <!-- 목록이 있을 때 -->
-		    <div th:if="${receiverList != null and !#lists.isEmpty(receiverList)}">
-		      <div th:each="rcv : ${receiverList}">
-		        <label>
-		          <input type="checkbox"
-		                 class="ofm-check"
-		                 th:value="${rcv.memberId}"
-		                 th:attr="data-member-id=${rcv.memberId}">
-		          <span th:text="${rcv.name}">이름</span>
-		          (<span th:text="${rcv.email}">email</span>)
-		          <span class="ofm-sent-badge" style="display:none;">발송완료</span>
-		        </label>
-		      </div>
-		    </div>
-		
-		    <!-- 목록이 없을 때 -->
-		    <div class="preview-empty"
-		         th:if="${receiverList == null or #lists.isEmpty(receiverList)}">
-		      수신자 목록이 없습니다.
-		    </div>
-            
+            <div th:if="${receiverList != null and !#lists.isEmpty(receiverList)}">
+              <div th:each="rcv : ${receiverList}">
+                <label>
+                  <input type="checkbox"
+                         class="ofm-check"
+                         th:value="${rcv.memberId}"
+                         th:attr="data-member-id=${rcv.memberId}">
+                  <span th:text="${rcv.name}">이름</span>
+                  (<span th:text="${rcv.email}">email</span>)
+                  <span class="ofm-sent-badge" style="display:none;">발송완료</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="preview-empty"
+                 th:if="${receiverList == null or #lists.isEmpty(receiverList)}">
+              수신자 목록이 없습니다.
+            </div>
           </div>
         </div>
-        
       </div>
 
       <div class="ofm-foot">
-	    <button type="button" class="ofm-btn" onclick="closeOfferModal()">취소</button>
-	  
-	    <!-- 작성모드 버튼 -->
-	    <button id="btnCreate" type="button"
-	            class="ofm-btn ofm-btn--dark"
-	            onclick="submitCreateOffer()">
-	      제안서 등록
-	    </button>
-	    
-	    <button id="btnUpdate" type="button"
-		        class="ofm-btn ofm-btn--dark"
-		        style="display:none;"
-		        onclick="submitUpdateOffer()">
-		  수정 저장
-		</button>
-	  
-	    <!-- 발송모드 버튼 -->
-	    <button id="btnSend" type="button"
-	            class="ofm-btn ofm-btn--dark"
-	            style="display:none;"
-	            onclick="submitSendOffer()">
-	      제안서 발송
-	    </button>
-	  </div>
+        <button type="button" class="ofm-btn" onclick="closeOfferModal()">취소</button>
 
+        <button id="btnCreate" type="button"
+                class="ofm-btn ofm-btn--dark"
+                onclick="submitCreateOffer()">
+          제안서 등록
+        </button>
+
+        <button id="btnUpdate" type="button"
+                class="ofm-btn ofm-btn--dark"
+                style="display:none;"
+                onclick="submitUpdateOffer()">
+          수정 저장
+        </button>
+
+        <button id="btnSend" type="button"
+                class="ofm-btn ofm-btn--dark"
+                style="display:none;"
+                onclick="submitSendOffer()">
+          제안서 발송
+        </button>
+      </div>
     </div>
-    
+
     <input type="hidden" id="hiddenOfferLetterId">
+    <input type="hidden" id="hiddenJobId">
   </div>
-  <!-- 모달창 - 새 제안서 작성 -->
 
 </section>
 </body>

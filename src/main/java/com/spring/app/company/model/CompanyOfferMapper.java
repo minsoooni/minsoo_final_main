@@ -6,6 +6,7 @@ import java.util.Map;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import com.spring.app.company.domain.DeletedOfferHistoryDTO;
 import com.spring.app.company.domain.MemberSimpleDTO;
 import com.spring.app.company.domain.OfferCreateRequestDTO;
 import com.spring.app.company.domain.OfferDetailDTO;
@@ -51,8 +52,9 @@ public interface CompanyOfferMapper {
 	int existsOfferLetterOwnedByCompany(@Param("offerLetterId") Long offerLetterId,
 	                                    @Param("companyMemberId") String companyMemberId);
 	
-	
-	// ===== 여기부터 추가 =====
+	// 발송 기록 권한 확인
+    int existsOfferHistoryOwnedByCompany(@Param("offerLetterId") Long offerLetterId,
+                                         @Param("companyMemberId") String companyMemberId);
 
     // 발송 검증용: 제안서 + 연결 공고 정보 조회
     OfferSendValidationDTO selectOfferSendValidationInfo(@Param("offerLetterId") Long offerLetterId);
@@ -64,9 +66,6 @@ public interface CompanyOfferMapper {
     List<String> selectAlreadySentReceiverIds(@Param("offerLetterId") Long offerLetterId,
                                               @Param("receiverMemberIds") List<String> receiverMemberIds);
 
-    // ===== 추가 끝 =====
-	
-	
 
 	// 스냅샷: selectKey 결과를 담기 위해 Map 사용
 	int insertOfferSubmitSnapshot(Map<String, Object> param);
@@ -78,10 +77,12 @@ public interface CompanyOfferMapper {
 	
 	//제안서를 발송한 회원(memberId) 목록 조회
 	List<String> selectSentMemberIdsByOfferLetterId(Long offerLetterId);
-
 	
 	// 제안서 수신자 상세 조회
 	List<OfferRecipientDetailDTO> selectOfferRecipientDetailsByOfferLetterId(Long offerLetterId);
+	
+	// 삭제된 원본 제안서 중 발송 이력이 있는 목록
+	List<DeletedOfferHistoryDTO> selectDeletedOfferHistoryList(String companyMemberId);
 	
     
 }
