@@ -136,6 +136,7 @@ public class AuthController {
 
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("grantType", jwtToken.getGrantType());
+            body.put("accessToken", jwtToken.getAccessToken());
             body.put("accessTokenExpiresIn", jwtToken.getAccessTokenExpiresIn());
 
             return ResponseEntity.ok()
