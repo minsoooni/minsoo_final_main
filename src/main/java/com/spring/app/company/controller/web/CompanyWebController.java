@@ -163,7 +163,6 @@ public class CompanyWebController {
         return "company/job/job_list";
     }
     */
-    
     //채용공고 리스트 조회(페이징처리)
     @GetMapping("/job/list")
     public String jobs(@RequestParam(value = "jobId", required = false) Long jobId,
@@ -218,9 +217,19 @@ public class CompanyWebController {
         model.addAttribute("totalPage", totalPage);
 
         // 선택된 공고 상세정보 조회
+        /*
         if (jobId != null) {
             JobPostingDTO selectedJob = service.getJobPostingOne(jobId);
             model.addAttribute("selectedJob", selectedJob);
+        }
+        */
+        // 선택된 공고 상세정보 조회(로그인 한 기업 계정까지 2차 체크)
+        if (jobId != null) {
+            JobPostingDTO selectedJob = service.getJobPostingOne(jobId);
+
+            if (selectedJob != null && memberId.equals(selectedJob.getMemberId())) {
+                model.addAttribute("selectedJob", selectedJob);
+            }
         }
 
         return "company/job/job_list";

@@ -77,6 +77,9 @@ public interface CompanyJobMapper {
     int updateJobStatusToOpen();     // 게시중 처리
     int updateJobStatusToWaiting();  // 대기 처리
 
+    
+    
+    
    
 
 }

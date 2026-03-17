@@ -386,7 +386,7 @@
 
   // ===== payload =====
   function buildCreatePayload(statusValue){
-    const isPublish = (statusValue === "진행중");
+    const isPublish = (statusValue === "게시중");
   
     if(!validateBasicRequiredFields()) return null;
     if(isPublish && !validatePublishRequiredFields()) return null;
@@ -473,7 +473,7 @@
   }
 
   function goPublish(){
-    submitCreate("진행중");
+    submitCreate("게시중");
   }
 
   function goReset(){

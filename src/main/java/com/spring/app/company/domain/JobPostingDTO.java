@@ -1,6 +1,7 @@
 package com.spring.app.company.domain;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 
 import lombok.Data;
@@ -27,6 +28,26 @@ public class JobPostingDTO {
     private Long viewCount;        // 조회수
     private Long scrapCount;       // 스크랩수
     //스크랩 수는 매핑테이블에서 count(*) 를 이용해 인원수 조회해오기
+    
+    
+ // 기존 공고 필드 외 신고 관련 추가
+    private Integer isHidden;              // 0: 정상, 1: 신고됨
+
+    private Long reportId;
+    private Long reportReasonId;
+    private String reportReasonName;       // ★ TBL_REPORT_REASON.REASON_NAME
+    private String reportContent;
+
+    private String reportProcessStatus;    // DB 원본값
+    private String reportProcessReason;
+
+    private Date reportCreatedAt;
+    private Date reportProcessedAt;
+
+    private Integer reportCount;           // 목록용 신고 건수
+    private String reportStatusText;       // 화면용 상태 문구
+    
+    
     
     private LocalDateTime deadlineAt;     // 마감일시
     private LocalDateTime openedAt;       // 공개게시일시

@@ -48,8 +48,10 @@
 	  delBtn.closest("tr")?.remove();
 	
 	  // 상세 미리보기에서 현재 선택된 공고를 보고 있었다면, 목록으로 이동
-	  // (간단히 새로고침)
-	  location.href = contextPath + "/company/job/list";
+	  const params = new URLSearchParams(window.location.search);
+	  const currentShowPageNo = params.get("currentShowPageNo") || "1";
+	  location.href = contextPath + "/company/job/list?currentShowPageNo=" + encodeURIComponent(currentShowPageNo);
+	  //location.href = contextPath + "/company/job/list";
 	  return;
    }
 
@@ -64,7 +66,7 @@
 	  document.querySelectorAll(".job-menu").forEach(m => m.hidden = true);
    });
 
-	
+  /*
   function selectJob(e, jobId){
     if(!jobId) return;
   
@@ -73,6 +75,24 @@
   
     const baseUrl = contextPath +  "/company/job/list";
     location.href = baseUrl + '?jobId=' + encodeURIComponent(jobId);
+  }
+  */
+  // 공고 선택 함수
+  function selectJob(e, jobId){
+    if (!jobId) return;
+  
+    // action 영역(⋮/메뉴) 클릭이면 무시
+    if (e && e.target && e.target.closest(".job-actions")) return;
+  
+    const baseUrl = contextPath + "/company/job/list";
+  
+    // 현재 URL의 페이지 번호 읽기
+    const params = new URLSearchParams(window.location.search);
+    const currentShowPageNo = params.get("currentShowPageNo") || "1";
+  
+    location.href = baseUrl
+        + "?currentShowPageNo=" + encodeURIComponent(currentShowPageNo)
+        + "&jobId=" + encodeURIComponent(jobId);
   }
   </script>
   
@@ -140,16 +160,23 @@
             
             <th style="min-width:70px;">채용인원</th>
             <th style="min-width:90px;">스크랩수</th>
+            <th style="min-width:90px;">신고상태</th>
             <th style="width:60px;"></th>
           </tr>
         </thead>
 
         <tbody>
           <!-- ✅ DB 연동 버전 -->
-          <tr th:each="job : ${jobList}"
+          <!-- <tr th:each="job : ${jobList}"
               th:onclick="|selectJob(event, ${job.jobId})|"
               class="job-row"
-              th:classappend="${selectedJob != null and selectedJob.jobId == job.jobId} ? ' is-selected' : ''">
+              th:classappend="${selectedJob != null and selectedJob.jobId == job.jobId} ? ' is-selected' : ''"> -->
+          
+          <tr th:each="job : ${jobList}"
+			  th:onclick="|selectJob(event, ${job.jobId})|"
+			  class="job-row"
+			  th:classappend="${selectedJob != null and selectedJob.jobId == job.jobId} ? ' is-selected' : ''"
+			  th:attrappend="class=${job.isHidden == 1} ? ' is-reported' : ''">
 
             <td><b th:text="${job.title}">공고제목</b></td>
 
@@ -192,6 +219,26 @@
             <td th:text="${job.scrapCount}"
 			    th:classappend="${job.scrapCount > 0} ? 'text-red' : ''">
 			</td>
+			
+			
+			<td>
+			  <th:block th:if="${job.isHidden == 1}">
+			    <span class="badge-report">신고됨</span>
+			    <div class="report-subtext">
+			      <span th:text="${job.reportReasonName != null ? job.reportReasonName : '사유 미확인'}">
+			        허위 / 과장 정보
+			      </span>
+			      <span th:if="${job.reportStatusText != null}">
+			        · <span th:text="${job.reportStatusText}">처리대기</span>
+			      </span>
+			    </div>
+			  </th:block>
+			
+			  <th:block th:unless="${job.isHidden == 1}">
+			    <span class="badge-normal">정상</span>
+			  </th:block>
+			</td>
+
 
 			<td>
 			  <div class="job-actions" th:attr="data-job-id=${job.jobId}">
@@ -210,14 +257,13 @@
                           onclick="return false;">삭제</button>
 			    </div>
 			  </div>
-			  
 			</td>
 			
           </tr>
 
           <!-- 목록이 비었을 때 -->
           <tr th:if="${#lists.isEmpty(jobList)}">
-            <td colspan="10" class="job-empty-td">
+            <td colspan="11" class="job-empty-td">
               등록된 공고가 없습니다.
             </td>
           </tr>
@@ -288,6 +334,48 @@
             <span th:text="${selectedJob.deadlineAt}">~ 2026.03.15</span>
           </div>
         </div>
+        
+        
+        <div class="job-report-box" th:if="${selectedJob.isHidden == 1}">
+		  <div class="job-report-title">
+		    <i class="fa-solid fa-triangle-exclamation"></i>
+		    신고 처리된 공고입니다
+		  </div>
+		
+		  <div class="job-report-meta">
+		    <span>
+		      신고 사유 :
+		      <b th:text="${selectedJob.reportReasonName != null ? selectedJob.reportReasonName : '사유 미확인'}">
+		        허위 / 과장 정보
+		      </b>
+		    </span>
+		
+		    <span th:if="${selectedJob.reportStatusText != null}">
+		      · 처리상태 :
+		      <b th:text="${selectedJob.reportStatusText}">처리대기</b>
+		    </span>
+		
+		    <span th:if="${selectedJob.reportCreatedAt != null}">
+		      · 신고일 :
+		      <b th:text="${#dates.format(selectedJob.reportCreatedAt, 'yyyy-MM-dd HH:mm')}">
+		        2026-03-17 13:00
+		      </b>
+		    </span>
+		  </div>
+		
+		  <div class="job-report-content"
+		       th:if="${selectedJob.reportContent != null and !#strings.isEmpty(selectedJob.reportContent)}">
+		    <div class="job-report-label">신고 내용</div>
+		    <div th:text="${selectedJob.reportContent}">허위 채용공고 의심</div>
+		  </div>
+		
+		  <div class="job-report-content"
+		       th:if="${selectedJob.reportProcessReason != null and !#strings.isEmpty(selectedJob.reportProcessReason)}">
+		    <div class="job-report-label">관리자 처리 사유</div>
+		    <div th:text="${selectedJob.reportProcessReason}">검토 후 숨김 처리되었습니다.</div>
+		  </div>
+		</div>
+        
 
         <hr class="jv-divider"/>
 

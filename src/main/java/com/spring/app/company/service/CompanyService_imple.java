@@ -108,6 +108,36 @@ public class CompanyService_imple implements CompanyService {
 	}
 	
 	
+	// 신고 처리 상태를 화면용으로 바꾸는 메서드
+	private String convertReportProcessStatusText(String status) {
+	    if (status == null || status.isBlank()) {
+	        return "신고 접수";
+	    }
+
+	    switch (status) {
+	        case "WAIT":
+	        case "PENDING":
+	        case "처리전":
+	            return "처리대기";
+
+	        case "DONE":
+	        case "COMPLETE":
+	        case "처리완료":
+	            return "처리완료";
+
+	        case "REJECT":
+	        case "반려":
+	            return "반려";
+
+	        default:
+	            return status;
+	    }
+	}
+	
+	
+	
+	
+	
 	//기업 상단바 조회(기업ID, 기업명, 이메일)
 	@Override
 	public CompanyTopbarDTO getCompanyTopbarInfo(String memberId) {
@@ -415,10 +445,26 @@ public class CompanyService_imple implements CompanyService {
 	
 	
 	//채용공고 리스트 조회하기(다른 메서드에서 사용)
+	/*
 	@Override
 	public List<JobPostingDTO> getJobPostingList(String memberId) {
 		//List<JobPostingDTO> jobList = dao.getJobPostingList();
 		return jobMapper.getJobPostingList(memberId);
+	}
+	*/
+	// 신고 처리를 위한 채용공고 리스트 조회
+	@Override
+	public List<JobPostingDTO> getJobPostingList(String memberId) {
+	    List<JobPostingDTO> jobList = jobMapper.getJobPostingList(memberId);
+
+	    if (jobList != null) {
+	        for (JobPostingDTO dto : jobList) {
+	            dto.setReportStatusText(
+	                convertReportProcessStatusText(dto.getReportProcessStatus())
+	            );
+	        }
+	    }
+	    return jobList;
 	}
 	
 
@@ -440,9 +486,23 @@ public class CompanyService_imple implements CompanyService {
 	
 	
 	// 2)선택된 공고 상세정보 조회하기
+	/*
 	@Override
 	public JobPostingDTO getJobPostingOne(Long jobId) {
 		return jobMapper.getJobPostingOne(jobId);
+	}
+	*/
+	@Override
+	public JobPostingDTO getJobPostingOne(Long jobId) {
+	    JobPostingDTO dto = jobMapper.getJobPostingOne(jobId);
+
+	    if (dto != null) {
+	        dto.setReportStatusText(
+	            convertReportProcessStatusText(dto.getReportProcessStatus())
+	        );
+	    }
+
+	    return dto;
 	}
 
 	

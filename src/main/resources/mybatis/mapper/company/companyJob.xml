@@ -51,7 +51,7 @@
 	        SELECT
 	            ROW_NUMBER() OVER (ORDER BY j.job_id DESC) AS rno,
 	            j.job_id           AS jobId,
-	            j.fk_memberId      AS memberId,
+	            j.fk_memberid      AS memberId,
 	            j.fk_category_id   AS categoryId,
 	            c.category_name    AS categoryName,
 	            j.title            AS title,
@@ -62,16 +62,50 @@
 	            j.status           AS status,
 	            j.view_count       AS viewCount,
 	            j.headcount        AS headcount,
+	            j.is_hidden        AS isHidden,
+	
 	            (
 	                SELECT COUNT(*)
 	                FROM tbl_job_scrap s
 	                WHERE s.fk_job_id = j.job_id
-	            ) AS scrapCount
+	            ) AS scrapCount,
+	
+	            (
+	                SELECT COUNT(*)
+	                FROM tbl_report r0
+	                WHERE r0.target_type = 1
+	                  AND r0.target_id = j.job_id
+	            ) AS reportCount,
+	
+	            r.report_id        AS reportId,
+	            r.fk_reason_id     AS reportReasonId,
+	            rr.reason_name     AS reportReasonName,
+	            r.process_status   AS reportProcessStatus,
+	            r.created_at       AS reportCreatedAt
+	
 	        FROM tbl_job_posting j
 	        LEFT JOIN tbl_job_category c
 	               ON c.category_id = j.fk_category_id
 	              AND c.depth = 1
-	        WHERE j.fk_memberId = #{memberId}
+	
+	        /* 최신 신고 1건 */
+	        LEFT JOIN (
+	            SELECT x.*
+	            FROM tbl_report x
+	            WHERE x.target_type = 1
+	              AND x.report_id IN (
+	                    SELECT MAX(r2.report_id)
+	                    FROM tbl_report r2
+	                    WHERE r2.target_type = 1
+	                    GROUP BY r2.target_id
+	              )
+	        ) r
+	               ON r.target_id = j.job_id
+	
+	        LEFT JOIN tbl_report_reason rr
+	               ON rr.reason_id = r.fk_reason_id
+	
+	        WHERE j.fk_memberid = #{memberId}
 	          AND j.status != '삭제됨'
 	    )
 	    WHERE rno BETWEEN #{startRow} AND #{endRow}
@@ -87,7 +121,7 @@
 	      j.job_id           AS jobId,
 	      j.fk_memberid      AS memberId,
 	      j.fk_category_id   AS categoryId,
-	      c.category_name    AS categoryName,  <!-- 직무명 추가 -->
+	      c.category_name    AS categoryName,
 	
 	      j.title            AS title,
 	      j.work_type        AS workType,
@@ -97,6 +131,7 @@
 	      j.status           AS status,
 	      j.view_count       AS viewCount,
 	      j.headcount        AS headcount,
+	      j.is_hidden        AS isHidden,
 	
 	      j.fk_region_code   AS regionCode,
 	      j.content          AS content,
@@ -106,7 +141,16 @@
 	      j.opened_at        AS openedAt,
 	      j.closed_at        AS closedAt,
 	      j.created_at       AS createdAt,
-	      j.updated_at       AS updatedAt
+	      j.updated_at       AS updatedAt,
+	
+	      r.report_id        AS reportId,
+	      r.fk_reason_id     AS reportReasonId,
+	      rr.reason_name     AS reportReasonName,
+	      r.report_content   AS reportContent,
+	      r.created_at       AS reportCreatedAt,
+	      r.process_status   AS reportProcessStatus,
+	      r.process_reason   AS reportProcessReason,
+	      r.process_at       AS reportProcessedAt
 	
 	  FROM tbl_job_posting j
 	  LEFT JOIN tbl_education_level e
@@ -114,6 +158,23 @@
 	  LEFT JOIN tbl_job_category c
 	         ON c.category_id = j.fk_category_id
 	        AND c.depth = 1
+	
+	  LEFT JOIN (
+	      SELECT rr1.*
+	      FROM tbl_report rr1
+	      WHERE rr1.target_type = 1
+	        AND rr1.report_id = (
+	            SELECT MAX(rr2.report_id)
+	            FROM tbl_report rr2
+	            WHERE rr2.target_type = 1
+	              AND rr2.target_id = rr1.target_id
+	        )
+	  ) r
+	         ON r.target_id = j.job_id
+	
+	  LEFT JOIN tbl_report_reason rr
+	         ON rr.reason_id = r.fk_reason_id
+	
 	  WHERE j.job_id = #{jobId}
 	</select>
 	
