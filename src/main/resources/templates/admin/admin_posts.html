@@ -77,7 +77,7 @@
       params.set('page', '1');
       if (search)        params.set('search', search);
       if (isHidden !== '') params.set('isHidden', isHidden);
-      window.location.href = '/finalProject/admin/posts?' + params.toString();
+      window.location.href = '/user-service/admin/posts?' + params.toString();
     };
 
     document.getElementById('searchInput').addEventListener('keydown', function(e) {
@@ -86,7 +86,7 @@
 
     window.togglePost = function(postId, currentHidden) {
       const newHidden = currentHidden === 0 ? 1 : 0;
-      fetch('/finalProject/admin/posts/' + postId + '/visibility', {
+      fetch('/user-service/admin/posts/' + postId + '/visibility', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isHidden: newHidden })
@@ -97,7 +97,7 @@
 
 	window.toggleComment = function(commentId, currentHidden) {
 	    const newHidden = currentHidden === 0 ? 1 : 0;
-	    fetch('/finalProject/admin/comments/' + commentId + '/visibility', {
+	    fetch('/user-service/admin/comments/' + commentId + '/visibility', {
 	        method: 'PATCH',
 	        headers: { 'Content-Type': 'application/json' },
 	        body: JSON.stringify({ isHidden: newHidden })
@@ -212,22 +212,22 @@
       </table>
 
       <div class="table-footer">
-        <span class="total-count">총 <span th:text="${totalCount}"></span>개의 게시글</span>
-        <div class="pagination">
-          <a th:href="@{/admin/posts(page=1,search=${param.search},isHidden=${param.isHidden})}"
-   th:classappend="${currentPage == 1} ? 'disabled'">«</a>
-          <a th:href="@{/admin/posts(page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search},isHidden=${param.isHidden})}"
-             th:classappend="${currentPage == 1} ? 'disabled'">이전</a>
-          <span th:each="i : ${#numbers.sequence(1, totalPages)}">
-            <a th:href="@{/admin/posts(page=${i},search=${param.search},isHidden=${param.isHidden})}"
-               th:text="${i}" th:classappend="${i == currentPage} ? 'active'"></a>
-          </span>
-          <a th:href="@{/admin/posts(page=${currentPage < totalPages ? currentPage+1 : totalPages},search=${param.search},isHidden=${param.isHidden})}"
-             th:classappend="${currentPage == totalPages} ? 'disabled'">다음</a>
-          <a th:href="@{/admin/posts(page=${totalPages},search=${param.search},isHidden=${param.isHidden})}"
-             th:classappend="${currentPage == totalPages} ? 'disabled'">»</a>
-        </div>
-      </div>
+		  <span class="total-count">총 <span th:text="${totalCount}"></span>개의 게시글</span>
+		  <div class="pagination">
+		    <a th:href="@{/admin/posts(page=1,search=${param.search},isHidden=${param.isHidden})}"
+		       th:classappend="${currentPage == 1} ? 'disabled'">«</a>
+		    <a th:href="@{/admin/posts(page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search},isHidden=${param.isHidden})}"
+		       th:classappend="${currentPage == 1} ? 'disabled'">이전</a>
+		    <span th:each="i : ${#numbers.sequence(1, totalPages)}">
+		      <a th:href="@{/admin/posts(page=${i},search=${param.search},isHidden=${param.isHidden})}"
+		         th:text="${i}" th:classappend="${i == currentPage} ? 'active'"></a>
+		    </span>
+		    <a th:href="@{/admin/posts(page=${currentPage < totalPages ? currentPage+1 : totalPages},search=${param.search},isHidden=${param.isHidden})}"
+		       th:classappend="${currentPage == totalPages} ? 'disabled'">다음</a>
+		    <a th:href="@{/admin/posts(page=${totalPages},search=${param.search},isHidden=${param.isHidden})}"
+		       th:classappend="${currentPage == totalPages} ? 'disabled'">»</a>
+		  </div>
+		</div>
     </div>
 
     <!-- 4. 댓글 탭 -->
@@ -290,22 +290,22 @@
       </table>
 
       <div class="table-footer">
-	  <span class="total-count">총 <span th:text="${commentTotal}"></span>개의 댓글</span>
-	  <div class="pagination">
-	    <a th:href="@{/admin/posts(tab='comment',page=1,search=${param.search},isHidden=${param.isHidden})}"
-	       th:classappend="${currentPage == 1} ? 'disabled'">«</a>
-	    <a th:href="@{/admin/posts(tab='comment',page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search},isHidden=${param.isHidden})}"
-	       th:classappend="${currentPage == 1} ? 'disabled'">이전</a>
-	    <span th:each="i : ${#numbers.sequence(1, commentPages)}">
-	      <a th:href="@{/admin/posts(tab='comment',page=${i},search=${param.search},isHidden=${param.isHidden})}"
-	         th:text="${i}" th:classappend="${i == currentPage} ? 'active'"></a>
-	    </span>
-	    <a th:href="@{/admin/posts(tab='comment',page=${currentPage < commentPages ? currentPage+1 : commentPages},search=${param.search},isHidden=${param.isHidden})}"
-	       th:classappend="${currentPage == commentPages} ? 'disabled'">다음</a>
-	    <a th:href="@{/admin/posts(tab='comment',page=${commentPages},search=${param.search},isHidden=${param.isHidden})}"
-	       th:classappend="${currentPage == commentPages} ? 'disabled'">»</a>
-	  </div>
-	 </div>
+		  <span class="total-count">총 <span th:text="${commentTotal}"></span>개의 댓글</span>
+		  <div class="pagination">
+		    <a th:href="@{/admin/posts(tab='comment',page=1,search=${param.search},isHidden=${param.isHidden})}"
+		       th:classappend="${currentPage == 1} ? 'disabled'">«</a>
+		    <a th:href="@{/admin/posts(tab='comment',page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search},isHidden=${param.isHidden})}"
+		       th:classappend="${currentPage == 1} ? 'disabled'">이전</a>
+		    <span th:each="i : ${#numbers.sequence(1, commentPages)}">
+		      <a th:href="@{/admin/posts(tab='comment',page=${i},search=${param.search},isHidden=${param.isHidden})}"
+		         th:text="${i}" th:classappend="${i == currentPage} ? 'active'"></a>
+		    </span>
+		    <a th:href="@{/admin/posts(tab='comment',page=${currentPage < commentPages ? currentPage+1 : commentPages},search=${param.search},isHidden=${param.isHidden})}"
+		       th:classappend="${currentPage == commentPages} ? 'disabled'">다음</a>
+		    <a th:href="@{/admin/posts(tab='comment',page=${commentPages},search=${param.search},isHidden=${param.isHidden})}"
+		       th:classappend="${currentPage == commentPages} ? 'disabled'">»</a>
+		  </div>
+		</div>
     </div>
 
   </div>

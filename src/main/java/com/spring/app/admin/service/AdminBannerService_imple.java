@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 public class AdminBannerService_imple implements AdminBannerService {
 
     private final AdminBannerDAO bannerAdminDao;
-    private final NotificationDAO notificationDAO; // 추가
+    private final NotificationDAO notificationDAO;
 
     @Override
     public List<AdminBannerDTO> getBannerList(int page, int limit) {
@@ -59,6 +59,20 @@ public class AdminBannerService_imple implements AdminBannerService {
 
         if (result > 0) {
             AdminBannerDTO banner = bannerAdminDao.selectBannerById(bannerId);
+
+            // 환불 처리
+            Long useAmount = bannerAdminDao.selectBannerUseAmount(bannerId);
+            if (useAmount != null && useAmount > 0) {
+                Long walletId = bannerAdminDao.selectWalletIdByMemberId(banner.getFkMemberId());
+                if (walletId != null) {
+                    // 환불 트랜잭션 기록
+                    bannerAdminDao.insertRefundTransaction(walletId, bannerId, useAmount);
+                    // 지갑 잔액 복구
+                    bannerAdminDao.updateWalletRefund(walletId, useAmount);
+                }
+            }
+
+            // 알림 발송
             NotificationDTO noti = new NotificationDTO();
             noti.setFkMemberId(banner.getFkMemberId());
             noti.setType("BANNER");
@@ -106,8 +120,7 @@ public class AdminBannerService_imple implements AdminBannerService {
         }
         return result;
     }
-    
- // 승인된 배너
+
     @Override
     public List<AdminBannerDTO> getActiveBanners() {
         return bannerAdminDao.selectActiveBannerList();

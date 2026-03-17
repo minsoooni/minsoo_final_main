@@ -217,7 +217,7 @@
           labels: jobLabels,
           datasets: [
             { label: '등록',    data: jobRegArr,    backgroundColor: '#2563EB', borderRadius: 3 },
-            { label: '마감예정', data: jobClosedArr, backgroundColor: '#94A3B8', borderRadius: 3 }
+            { label: '마감', data: jobClosedArr, backgroundColor: '#94A3B8', borderRadius: 3 }
           ]
         },
         options: chartOpts
@@ -258,10 +258,9 @@
         },
         options: chartOpts
       });
-
-      /* ─── 게시판별 비율 도넛 ─── */
+      
       const postByBoard = /*[[${postByBoard}]]*/ [];
-      const boardLabels = postByBoard.map(d => 'Board ' + d.boardId);
+      const boardLabels = postByBoard.map(d => d.boardTitle);
       const boardCounts = postByBoard.map(d => d.count);
       const boardColors = ['#111','#16A34A','#2563EB','#D97706','#7C3AED','#DC2626'];
 
@@ -277,7 +276,7 @@
           plugins: { legend: { display: true, position: 'bottom',
             labels: { font: { size: 12 }, padding: 12, usePointStyle: true } } }, cutout: '60%' }
       });
-
+     
       /* ─── 탭 전환 ─── */
       window.switchSection = function (el, sec) {
         document.querySelectorAll('.report-nav-tab').forEach(t => t.classList.remove('active'));
@@ -385,7 +384,7 @@
         <div class="kpi-sub">IS_HIDDEN 기준</div>
       </div>
     </div>
-    <div class="chart-row col-2">
+    <div class="chart-row">
       <div class="chart-card">
         <div class="chart-card-header">
           <div>
@@ -394,7 +393,7 @@
           </div>
           <div class="chart-legend">
             <span class="legend-item"><span class="legend-dot" style="background:#2563EB"></span>등록</span>
-            <span class="legend-item"><span class="legend-dot" style="background:#94A3B8"></span>마감예정</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#94A3B8"></span>마감</span>
           </div>
         </div>
         <div class="chart-wrap"><canvas id="jobTrendChart"></canvas></div>
@@ -431,12 +430,13 @@
         <div class="kpi-sub">IS_HIDDEN=1 기준</div>
       </div>
       <div class="kpi-card" style="--card-accent:#7C3AED">
-        <div class="kpi-label">게시판 수</div>
-        <div class="kpi-value" th:text="${#lists.size(postByBoard)}">0</div>
-        <div class="kpi-sub">활성 게시판 기준</div>
+       <div class="kpi-label">비활성 게시판</div>
+		<div class="kpi-value" th:text="${inactiveBoardCount}">0</div>
+		<div class="kpi-sub">이번 달 게시글 0건</div>
       </div>
     </div>
-    <div class="chart-row col-2">
+    
+    <div class="chart-row">
       <div class="chart-card">
         <div class="chart-card-header">
           <div>
@@ -447,20 +447,20 @@
             <span class="legend-item"><span class="legend-dot" style="background:#16A34A"></span>게시글</span>
           </div>
         </div>
-        <!-- ✅ 누락된 canvas 추가 -->
+        <!-- 누락된 canvas 추가 -->
         <div class="chart-wrap"><canvas id="boardTrendChart"></canvas></div>
+        </div>        
+        <div class="chart-card">
+		  <div class="chart-card-header">
+		    <div>
+		      <div class="chart-card-title">게시판별 활동 비율</div>
+		      <div class="chart-card-sub">전체 게시글 기준</div>
+		    </div>
+		  </div>
+		  <div class="chart-wrap center"><canvas id="boardTypeChart"></canvas></div>
+		</div>   
       </div>
-      <div class="chart-card">
-        <div class="chart-card-header">
-          <div>
-            <div class="chart-card-title">게시판별 활동 비율</div>
-            <div class="chart-card-sub">전체 게시글 기준</div>
-          </div>
-        </div>
-        <div class="chart-wrap center"><canvas id="boardTypeChart"></canvas></div>
-      </div>
-    </div>
-  </div>
+	</div>
 
 </section>
 </body>

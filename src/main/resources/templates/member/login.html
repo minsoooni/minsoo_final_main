@@ -83,21 +83,6 @@
           const data = contentType.includes('application/json') ? await response.json() : null;
 
           if (response.ok && data) {
-            if (data.accessToken) {
-              sessionStorage.setItem('accessToken', data.accessToken);
-            }
-
-
-            const loginUser = {
-            		  memberid: formData.get('memberid') || '',
-            		  name: formData.get('memberid') || '',
-            		  grantType: data.grantType || 'Bearer',
-            		  accessToken: data.accessToken || '',
-            		  accessTokenExpiresIn: data.accessTokenExpiresIn || ''
-            		};
-            
-            
-            localStorage.setItem('loginUser', JSON.stringify(loginUser));
 
             window.location.href = indexUrl;
             return;

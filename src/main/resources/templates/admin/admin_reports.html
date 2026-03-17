@@ -164,7 +164,7 @@
             if (reason) params.set('reason', reason);
             if (status) params.set('status', status);
 
-            window.location.href = '/finalProject/admin/reports?' + params.toString();
+            window.location.href = '/user-service/admin/reports?' + params.toString();
         };
 
         document.getElementById('searchInput').addEventListener('keydown', function (e) {
@@ -177,7 +177,9 @@
             const reason = document.getElementById('handleReason').value.trim();
             if (!reason) { alert('처리 사유를 입력해주세요.'); return; }
 
-            fetch('/finalProject/admin/reports/' + pendingReportId + '/status', {
+            if (!confirm(pendingStatus === '승인' ? '승인 처리하시겠습니까?' : '반려 처리하시겠습니까?')) return;
+            
+            fetch('/user-service/admin/reports/' + pendingReportId + '/status', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: pendingStatus, reason: reason })
@@ -416,23 +418,23 @@
 
         <!-- 페이지바 -->
         <div class="table-footer">
-            <span>총 <span th:text="${totalCount}">0</span>건</span>
-            <div class="pagination">
-                <a th:href="@{/admin/reports(page=1,search=${param.search},type=${param.type},reason=${param.reason},status=${param.status})}"
-                   th:classappend="${currentPage == 1} ? 'disabled'">«</a>
-                <a th:href="@{/admin/reports(page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search},type=${param.type},reason=${param.reason},status=${param.status})}"
-                   th:classappend="${currentPage == 1} ? 'disabled'">‹</a>
-                <span th:each="i : ${#numbers.sequence(1, totalPages)}">
-                    <a th:href="@{/admin/reports(page=${i},search=${param.search},type=${param.type},reason=${param.reason},status=${param.status})}"
-                       th:text="${i}"
-                       th:classappend="${i == currentPage} ? 'active'"></a>
-                </span>
-                <a th:href="@{/admin/reports(page=${currentPage < totalPages ? currentPage+1 : totalPages},search=${param.search},type=${param.type},reason=${param.reason},status=${param.status})}"
-                   th:classappend="${currentPage == totalPages} ? 'disabled'">›</a>
-                <a th:href="@{/admin/reports(page=${totalPages},search=${param.search},type=${param.type},reason=${param.reason},status=${param.status})}"
-                   th:classappend="${currentPage == totalPages} ? 'disabled'">»</a>
-            </div>
-        </div>
+		    <span>총 <span th:text="${totalCount}">0</span>건</span>
+		    <div class="pagination">
+		        <a th:href="@{/admin/reports(page=1,search=${param.search},type=${param.type},reason=${param.reason},status=${param.status})}"
+		           th:classappend="${currentPage == 1} ? 'disabled'">«</a>
+		        <a th:href="@{/admin/reports(page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search},type=${param.type},reason=${param.reason},status=${param.status})}"
+		           th:classappend="${currentPage == 1} ? 'disabled'">‹</a>
+		        <span th:each="i : ${#numbers.sequence(1, totalPages)}">
+		            <a th:href="@{/admin/reports(page=${i},search=${param.search},type=${param.type},reason=${param.reason},status=${param.status})}"
+		               th:text="${i}"
+		               th:classappend="${i == currentPage} ? 'active'"></a>
+		        </span>
+		        <a th:href="@{/admin/reports(page=${currentPage < totalPages ? currentPage+1 : totalPages},search=${param.search},type=${param.type},reason=${param.reason},status=${param.status})}"
+		           th:classappend="${currentPage == totalPages} ? 'disabled'">›</a>
+		        <a th:href="@{/admin/reports(page=${totalPages},search=${param.search},type=${param.type},reason=${param.reason},status=${param.status})}"
+		           th:classappend="${currentPage == totalPages} ? 'disabled'">»</a>
+		    </div>
+		</div>
     </div>
 	
 	<!-- 처리 확인 모달 -->

@@ -41,7 +41,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/admin")
 public class AdminController {
 	//private final 
-	
+	/* 확 */
 	private final AdminCompanyService companyAdminService;
 	private final AdminMemberService memberAdminService;
 	private final AdminJobPostService adminJobPostService;
@@ -410,7 +410,8 @@ public class AdminController {
 	    model.addAttribute("hiddenPostCount",    adminStatsService.getHiddenPostCount());
 	    model.addAttribute("dailyPost",          adminStatsService.getDailyPostLast30());
 	    model.addAttribute("postByBoard",        adminStatsService.getPostCountByBoard());
-
+	    model.addAttribute("inactiveBoardCount", adminStatsService.getInactiveBoardCount());
+	    
 	    model.addAttribute("activeMenu", menu);
 	    return "admin/admin_stats";
 	}

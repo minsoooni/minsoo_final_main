@@ -99,7 +99,7 @@
     		    if (search) params.set('search', search);
     		    if (status) params.set('status', status);
 
-    		    window.location.href = '/finalProject/admin/job-posts?' + params.toString();
+    		    window.location.href = '/user-service/admin/job-posts?' + params.toString();
     			 };
 
     		  /* ── 검색창 Enter 키 이벤트 연결 (누락되어 있던 부분) ── */
@@ -115,7 +115,7 @@
 
    			    const newHidden = currentHidden === 0 ? 1 : 0;
 
-   			    fetch('/finalProject/admin/job-posts/' + jobId + '/visibility', {
+   			 fetch('/user-service/admin/job-posts/' + jobId + '/visibility', {
    			        method: 'PATCH',
    			        headers: { 'Content-Type': 'application/json' },
    			        body: JSON.stringify({
@@ -258,40 +258,40 @@
     </table>
 
     <!-- 페이지바 (회원/기업 관리와 동일한 구조) -->
-    <div class="table-footer">
-
-      <span class="total-count">
-        총 <span th:text="${totalCount}"></span>개의 채용공고
-      </span>
-
-      <div class="pagination">
-
-        <!-- « 맨 처음 -->
-        <a th:href="@{/admin/job-posts(page=1,search=${param.search},status=${param.status})}"
-           th:classappend="${currentPage == 1} ? 'disabled'">«</a>
-
-        <!-- 이전 -->
-        <a th:href="@{/admin/job-posts(page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search},status=${param.status})}"
-           th:classappend="${currentPage == 1} ? 'disabled'">이전</a>
-
-        <!-- 숫자 -->
-        <span th:each="i : ${#numbers.sequence(1, totalPages)}">
-          <a th:href="@{/admin/job-posts(page=${i},search=${param.search},status=${param.status})}"
-             th:text="${i}"
-             th:classappend="${i == currentPage} ? 'active'">
-          </a>
-        </span>
-
-        <!-- 다음 -->
-        <a th:href="@{/admin/job-posts(page=${currentPage < totalPages ? currentPage+1 : totalPages},search=${param.search},status=${param.status})}"
-           th:classappend="${currentPage == totalPages} ? 'disabled'">다음</a>
-
-        <!-- » 맨 마지막 -->
-        <a th:href="@{/admin/job-posts(page=${totalPages},search=${param.search},status=${param.status})}"
-           th:classappend="${currentPage == totalPages} ? 'disabled'">»</a>
-
-      </div>
-    </div>
+	<div class="table-footer">
+	
+	  <span class="total-count">
+	    총 <span th:text="${totalCount}"></span>개의 채용공고
+	  </span>
+	
+	  <div class="pagination">
+	
+	    <!-- « 맨 처음 -->
+	    <a th:href="@{/user-service/admin/job-posts(page=1,search=${param.search},status=${param.status})}"
+	       th:classappend="${currentPage == 1} ? 'disabled'">«</a>
+	
+	    <!-- 이전 -->
+	    <a th:href="@{/user-service/admin/job-posts(page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search},status=${param.status})}"
+	       th:classappend="${currentPage == 1} ? 'disabled'">이전</a>
+	
+	    <!-- 숫자 -->
+	    <span th:each="i : ${#numbers.sequence(1, totalPages)}">
+	      <a th:href="@{/user-service/admin/job-posts(page=${i},search=${param.search},status=${param.status})}"
+	         th:text="${i}"
+	         th:classappend="${i == currentPage} ? 'active'">
+	      </a>
+	    </span>
+	
+	    <!-- 다음 -->
+	    <a th:href="@{/user-service/admin/job-posts(page=${currentPage < totalPages ? currentPage+1 : totalPages},search=${param.search},status=${param.status})}"
+	       th:classappend="${currentPage == totalPages} ? 'disabled'">다음</a>
+	
+	    <!-- » 맨 마지막 -->
+	    <a th:href="@{/user-service/admin/job-posts(page=${totalPages},search=${param.search},status=${param.status})}"
+	       th:classappend="${currentPage == totalPages} ? 'disabled'">»</a>
+	
+	  </div>
+	</div>
 
   </div>
 </section>

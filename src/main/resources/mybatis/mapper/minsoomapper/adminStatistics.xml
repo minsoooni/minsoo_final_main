@@ -136,30 +136,31 @@
          채용공고 마감 추이
     ──────────────────────────────────────── -->
     <select id="selectJobClosedTrend" resultType="map">
-        SELECT
-            <choose>
-                <when test="period == 'monthly'">TO_CHAR(TRUNC(CLOSED_AT,'MM'),'YYYY.MM')</when>
-                <when test="period == 'weekly'"> TO_CHAR(TRUNC(CLOSED_AT,'IW'),'MM/DD')</when>
-                <otherwise>                      TO_CHAR(TRUNC(CLOSED_AT,'DD'),'MM/DD')</otherwise>
-            </choose>
-            AS DT, COUNT(*) AS CNT
-        FROM TBL_JOB_POSTING
-        WHERE CLOSED_AT IS NOT NULL
-          AND CLOSED_AT &gt;= TO_DATE(#{from},'YYYY-MM-DD')
-          AND CLOSED_AT  &lt;  TO_DATE(#{to},  'YYYY-MM-DD') + 1
-        GROUP BY
-            <choose>
-                <when test="period == 'monthly'">TRUNC(CLOSED_AT,'MM')</when>
-                <when test="period == 'weekly'"> TRUNC(CLOSED_AT,'IW')</when>
-                <otherwise>                      TRUNC(CLOSED_AT,'DD')</otherwise>
-            </choose>
-        ORDER BY
-            <choose>
-                <when test="period == 'monthly'">TRUNC(CLOSED_AT,'MM')</when>
-                <when test="period == 'weekly'"> TRUNC(CLOSED_AT,'IW')</when>
-                <otherwise>                      TRUNC(CLOSED_AT,'DD')</otherwise>
-            </choose>
-    </select>
+	    SELECT
+        <choose>
+            <when test="period == 'monthly'">TO_CHAR(TRUNC(DEADLINE_AT,'MM'),'YYYY.MM')</when>
+            <when test="period == 'weekly'"> TO_CHAR(TRUNC(DEADLINE_AT,'IW'),'MM/DD')</when>
+            <otherwise>                      TO_CHAR(TRUNC(DEADLINE_AT,'DD'),'MM/DD')</otherwise>
+        </choose>
+        AS DT, COUNT(*) AS CNT
+	    FROM TBL_JOB_POSTING
+	    WHERE STATUS = '마감'
+	      AND DEADLINE_AT IS NOT NULL
+	      AND DEADLINE_AT  &gt;= TO_DATE(#{from},'YYYY-MM-DD')
+	      AND DEADLINE_AT  &lt;  TO_DATE(#{to},  'YYYY-MM-DD') + 1
+	    GROUP BY
+        <choose>
+            <when test="period == 'monthly'">TRUNC(DEADLINE_AT,'MM')</when>
+            <when test="period == 'weekly'"> TRUNC(DEADLINE_AT,'IW')</when>
+            <otherwise>                      TRUNC(DEADLINE_AT,'DD')</otherwise>
+        </choose>
+   		 ORDER BY
+        <choose>
+            <when test="period == 'monthly'">TRUNC(DEADLINE_AT,'MM')</when>
+            <when test="period == 'weekly'"> TRUNC(DEADLINE_AT,'IW')</when>
+            <otherwise>                      TRUNC(DEADLINE_AT,'DD')</otherwise>
+        </choose>
+	</select>
 
     <!-- ────────────────────────────────────────
          급여 구간 분포
@@ -199,7 +200,8 @@
             AS DT, COUNT(*) AS CNT
         FROM TBL_POST
         WHERE POST_STATUS = 'ACTIVE'
-          AND CREATED_AT &gt;= TO_DATE(#{from},'YYYY-MM-DD')
+		  AND IS_HIDDEN = 0
+		  AND CREATED_AT &gt;= TO_DATE(#{from},'YYYY-MM-DD')
           AND CREATED_AT  &lt;  TO_DATE(#{to},  'YYYY-MM-DD') + 1
         GROUP BY
             <choose>

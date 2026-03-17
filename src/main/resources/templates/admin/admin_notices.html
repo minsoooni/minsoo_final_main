@@ -5,7 +5,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+
   <title>공지사항 관리</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -57,7 +57,6 @@
     .btn-delete { background: #ef4444; color: white; }
     .btn-delete:hover { background: #dc2626; }
 
-    /* ── 페이지바 ── */
     .table-footer { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 16px 0; margin-top: 8px; }
     .total-count { font-size: 14px; color: #6b7280; }
     .pagination { display: flex; gap: 4px; }
@@ -66,7 +65,6 @@
     .pagination a.active { background: #06b6d4; color: white; border-color: #06b6d4; }
     .pagination a.disabled { color: #d1d5db; background: #f9fafb; cursor: not-allowed; pointer-events: none; }
 
-    /* ── 모달 ── */
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
     .modal.active { display: flex; }
     .modal-content { background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
@@ -118,25 +116,25 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-   	  
-		const today = new Date().toISOString().split('T')[0];
-		
-		document.getElementById('noticeEndDate').min = today;
-		document.getElementById('popupStartDate').min = today;
-		document.getElementById('popupEndDate').min = today;
-		
-      let editingId       = null;
-      let previewTargetId = null;
-      let pendingPopupId  = null;
+
+      var today = new Date().toISOString().split('T')[0];
+      document.getElementById('noticeEndDate').min  = today;
+      document.getElementById('popupStartDate').min = today;
+      document.getElementById('popupEndDate').min   = today;
+
+      var editingId       = null;
+      var previewTargetId = null;
+      var pendingPopupId  = null;
 
       /* ── 검색 (서버사이드) ── */
       window.applyFilters = function () {
-        const search = document.getElementById('searchInput').value;
-        const params = new URLSearchParams();
-        if (search) params.append('search', search);
-        location.href = '/finalProject/admin/notices?' + params.toString();
+        var search = document.getElementById('searchInput').value.trim();
+        var params = new URLSearchParams();
+        if (search) params.set('search', search);
+        params.set('page', '1');
+        window.location.href = '/user-service/admin/notices?' + params.toString();
       };
-      document.getElementById('searchInput').addEventListener('keydown', e => {
+      document.getElementById('searchInput').addEventListener('keydown', function (e) {
         if (e.key === 'Enter') applyFilters();
       });
 
@@ -148,7 +146,7 @@
         document.getElementById('noticeContent').value = '';
         document.getElementById('noticeStatus').value  = '1';
         document.querySelector('input[name="noticeType"][value="N"]').checked = true;
-        document.getElementById('noticeEndDate').value  = '';          // ← 추가
+        document.getElementById('noticeEndDate').value  = '';
         document.getElementById('popupYnCheck').checked = false;
         document.getElementById('popupDateArea').style.display = 'none';
         document.getElementById('popupStartDate').value = '';
@@ -158,24 +156,24 @@
 
       /* ── 수정 모달 ── */
       window.editNotice = function (id) {
-        fetch('/finalProject/admin/notices/' + id + '/detail')
-          .then(res => res.json())
-          .then(data => {
+        fetch('/user-service/admin/notices/' + id + '/detail')
+          .then(function (res) { return res.json(); })
+          .then(function (data) {
             editingId = id;
-            document.getElementById('modalTitle').textContent      = '공지사항 수정';
-            document.getElementById('noticeTitle').value           = data.title;
-            document.getElementById('noticeContent').value         = data.content;
-            document.getElementById('noticeStatus').value          = String(data.status);
-            document.querySelector(`input[name="noticeType"][value="${data.pinnedYn}"]`).checked = true;
-            document.getElementById('noticeEndDate').value         = data.endDate ? data.endDate.substring(0,10) : '';  // ← 추가
-            const isPopup = data.popupYn === 'Y';
+            document.getElementById('modalTitle').textContent  = '공지사항 수정';
+            document.getElementById('noticeTitle').value       = data.title;
+            document.getElementById('noticeContent').value     = data.content;
+            document.getElementById('noticeStatus').value      = String(data.status);
+            document.querySelector('input[name="noticeType"][value="' + data.pinnedYn + '"]').checked = true;
+            document.getElementById('noticeEndDate').value     = data.endDate     ? data.endDate.substring(0, 10)     : '';
+            var isPopup = data.popupYn === 'Y';
             document.getElementById('popupYnCheck').checked = isPopup;
             document.getElementById('popupDateArea').style.display = isPopup ? 'block' : 'none';
-            document.getElementById('popupStartDate').value = data.popupStartAt ? data.popupStartAt.substring(0,10) : '';
-            document.getElementById('popupEndDate').value   = data.popupEndAt   ? data.popupEndAt.substring(0,10)   : '';
+            document.getElementById('popupStartDate').value = data.popupStartAt ? data.popupStartAt.substring(0, 10) : '';
+            document.getElementById('popupEndDate').value   = data.popupEndAt   ? data.popupEndAt.substring(0, 10)   : '';
             document.getElementById('noticeModal').classList.add('active');
           })
-          .catch(() => showToast('데이터를 불러오는 데 실패했습니다.', 'warning'));
+          .catch(function () { showToast('데이터를 불러오는 데 실패했습니다.', 'warning'); });
       };
 
       /* ── 팝업 체크박스 토글 ── */
@@ -183,96 +181,72 @@
         document.getElementById('popupDateArea').style.display = this.checked ? 'block' : 'none';
       });
 
-      /* ── 종료일 min 동기화 ── */
+      /* ── 팝업 종료일 min 동기화 ── */
       document.getElementById('popupStartDate').addEventListener('change', function () {
-        const endEl = document.getElementById('popupEndDate');
+        var endEl = document.getElementById('popupEndDate');
         endEl.min = this.value;
         if (endEl.value && endEl.value < this.value) endEl.value = '';
       });
 
       /* ── 저장 ── */
       window.saveNotice = function () {
-        const title     = document.getElementById('noticeTitle').value.trim();
-        const content   = document.getElementById('noticeContent').value.trim();
-        const status = 1;
-        const pinnedYn  = document.querySelector('input[name="noticeType"]:checked').value;   
-		const endDate   = document.getElementById('noticeEndDate').value;          // ← 추가
-        const popupYn   = document.getElementById('popupYnCheck').checked ? 'Y' : 'N';
-        const popupStart = document.getElementById('popupStartDate').value;
-        const popupEnd   = document.getElementById('popupEndDate').value;
-	
-		
-		// ── 기본 입력 검증
-		  if (!title)   { alert('제목을 입력해주세요.'); return; }
-		  if (!content) { alert('내용을 입력해주세요.'); return; }
+        var title      = document.getElementById('noticeTitle').value.trim();
+        var content    = document.getElementById('noticeContent').value.trim();
+        var status     = 1;
+        var pinnedYn   = document.querySelector('input[name="noticeType"]:checked').value;
+        var endDate    = document.getElementById('noticeEndDate').value;
+        var popupYn    = document.getElementById('popupYnCheck').checked ? 'Y' : 'N';
+        var popupStart = document.getElementById('popupStartDate').value;
+        var popupEnd   = document.getElementById('popupEndDate').value;
 
-		  // ── 마감일 검증
-		  if (endDate && endDate < today) {
-		    alert('마감일은 오늘 이후 날짜로 설정해주세요.');
-		    return;
-		  }
+        if (!title)   { alert('제목을 입력해주세요.');  return; }
+        if (!content) { alert('내용을 입력해주세요.');  return; }
 
-		  // ── 게시중인데 마감일이 오늘보다 이전인 경우 (수정 시 방어)
-		  if (status === 1 && endDate && endDate < today) {
-		    alert('마감일이 지난 공지는 게시중으로 설정할 수 없습니다.');
-		    return;
-		  }
+        if (endDate && endDate < today) {
+          alert('마감일은 오늘 이후 날짜로 설정해주세요.');
+          return;
+        }
+        if (popupYn === 'Y') {
+          if (!popupStart) { alert('팝업 시작일을 입력해주세요.'); return; }
+          if (popupStart < today) { alert('팝업 시작일은 오늘 이후로 설정해주세요.'); return; }
+          if (popupEnd) {
+            if (popupEnd < today)      { alert('팝업 종료일은 오늘 이후로 설정해주세요.');   return; }
+            if (popupEnd < popupStart) { alert('팝업 종료일은 시작일 이후로 설정해주세요.'); return; }
+          }
+          if (endDate && popupEnd && popupEnd > endDate) {
+            alert('팝업 종료일은 공지 마감일(' + endDate + ')을 초과할 수 없습니다.');
+            return;
+          }
+        }
 
-		  // ── 팝업 날짜 검증
-		  if (popupYn === 'Y') {
-		    if (!popupStart) {
-		      alert('팝업 시작일을 입력해주세요.');
-		      return;
-		    }
-		    if (popupStart < today) {
-		      alert('팝업 시작일은 오늘 이후로 설정해주세요.');
-		      return;
-		    }
-		    if (popupEnd) {
-		      if (popupEnd < today) {
-		        alert('팝업 종료일은 오늘 이후로 설정해주세요.');
-		        return;
-		      }
-		      if (popupEnd < popupStart) {
-		        alert('팝업 종료일은 시작일 이후로 설정해주세요.');
-		        return;
-		      }
-		    }
-		    // ── 마감일과 팝업 종료일 충돌 검증
-		    if (endDate && popupEnd && popupEnd > endDate) {
-		      alert('팝업 종료일은 공지 마감일(' + endDate + ')을 초과할 수 없습니다.');
-		      return;
-		    }
-		  }
+        var body   = { title: title, content: content, status: status, pinnedYn: pinnedYn,
+                       endDate: endDate, popupYn: popupYn, popupStartAt: popupStart, popupEndAt: popupEnd };
+        var url    = editingId ? '/user-service/admin/notices/' + editingId : '/user-service/admin/notices';
+        var method = editingId ? 'PUT' : 'POST';
 
-		  const body = { title, content, status, pinnedYn, endDate,
-		                 popupYn, popupStartAt: popupStart, popupEndAt: popupEnd };
-		  const url    = editingId ? '/finalProject/admin/notices/' + editingId : '/finalProject/admin/notices';
-		  const method = editingId ? 'PUT' : 'POST';
-
-		  fetch(url, {
-		    method,
-		    headers: { 'Content-Type': 'application/json' },
-		    body: JSON.stringify(body)
-		  }).then(res => {
-		    if (res.ok) {
-		      closeModal();
-		      showToast(editingId ? '수정됐습니다.' : '등록됐습니다.', 'success');
-		      setTimeout(() => location.href = location.pathname + location.search, 1000);
-		    } else {
-		      showToast('처리 중 오류가 발생했습니다.', 'warning');
-		    }
-		  });
-		};
+        fetch(url, {
+          method: method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        }).then(function (res) {
+          if (res.ok) {
+            closeModal();
+            showToast(editingId ? '수정됐습니다.' : '등록됐습니다.', 'success');
+            setTimeout(function () { location.href = location.pathname + location.search; }, 1000);
+          } else {
+            showToast('처리 중 오류가 발생했습니다.', 'warning');
+          }
+        });
+      };
 
       /* ── 삭제 ── */
       window.deleteNotice = function (id, title) {
         if (!confirm('정말 삭제하시겠습니까?\n\n제목: ' + title)) return;
-        fetch('/finalProject/admin/notices/' + id, { method: 'DELETE' })
-          .then(res => {
+        fetch('/user-service/admin/notices/' + id, { method: 'DELETE' })
+          .then(function (res) {
             if (res.ok) {
               showToast('삭제됐습니다.', 'warning');
-              setTimeout(() => location.href = location.pathname + location.search, 1000);
+              setTimeout(function () { location.href = location.pathname + location.search; }, 1000);
             } else {
               showToast('처리 중 오류가 발생했습니다.', 'warning');
             }
@@ -281,8 +255,8 @@
 
       /* ── 중요/일반 토글 ── */
       window.toggleType = function (id) {
-        fetch('/finalProject/admin/notices/' + id + '/type', { method: 'PATCH' })
-          .then(res => {
+        fetch('/user-service/admin/notices/' + id + '/type', { method: 'PATCH' })
+          .then(function (res) {
             if (res.ok) location.href = location.pathname + location.search;
             else showToast('처리 중 오류가 발생했습니다.', 'warning');
           });
@@ -291,17 +265,18 @@
       /* ── 팝업 버튼 클릭 → 미리보기 모달 ── */
       window.handlePopupBtn = function (id, popupYn) {
         previewTargetId = id;
-        fetch('/finalProject/admin/notices/' + id + '/detail')
-          .then(res => res.json())
-          .then(data => {
+        fetch('/user-service/admin/notices/' + id + '/detail')
+          .then(function (res) { return res.json(); })
+          .then(function (data) {
             document.getElementById('popupPreviewTitle').textContent   = data.title;
             document.getElementById('popupPreviewContent').textContent = data.content;
             document.getElementById('popupPeriod').textContent =
-              data.popupStartAt ? ('팝업 기간: ' + data.popupStartAt.substring(0,10)
-                + (data.popupEndAt ? ' ~ ' + data.popupEndAt.substring(0,10) : '')) : '';
-
-            const activateBtn   = document.getElementById('popupActivateBtn');
-            const deactivateBtn = document.getElementById('popupDeactivateBtn');
+              data.popupStartAt
+                ? ('팝업 기간: ' + data.popupStartAt.substring(0, 10)
+                    + (data.popupEndAt ? ' ~ ' + data.popupEndAt.substring(0, 10) : ''))
+                : '';
+            var activateBtn   = document.getElementById('popupActivateBtn');
+            var deactivateBtn = document.getElementById('popupDeactivateBtn');
             if (popupYn === 'Y') {
               activateBtn.style.display   = 'none';
               deactivateBtn.style.display = 'inline-block';
@@ -313,46 +288,47 @@
           });
       };
 
-	  /* ── 팝업 활성화 (1개만 허용, 중복 시 alert) ── */
-	  window.activatePopupFromPreview = function () {
-	    const activeBtn = document.querySelector('.btn-popup.popup-active');
-
-	    // 이미 다른 공지에 팝업이 활성화돼 있으면 alert 후 중단
-	    if (activeBtn && activeBtn.dataset.id != previewTargetId) {
-	      alert('이미 팝업으로 지정된 공지가 있습니다.\n\n현재 팝업: ' + activeBtn.dataset.title + '\n\n기존 팝업을 먼저 해제한 뒤 다시 시도해주세요.');
-	      closePopupPreview();
-	      return;
-	    }
-
-	    doActivatePopup(previewTargetId);
-	    closePopupPreview();
-	  };
+      /* ── 팝업 활성화 (1개만 허용) ── */
+      window.activatePopupFromPreview = function () {
+        var activeBtn = document.querySelector('.btn-popup.popup-active');
+        if (activeBtn && activeBtn.dataset.id != previewTargetId) {
+          alert('이미 팝업으로 지정된 공지가 있습니다.\n\n현재 팝업: ' + activeBtn.dataset.title + '\n\n기존 팝업을 먼저 해제한 뒤 다시 시도해주세요.');
+          closePopupPreview();
+          return;
+        }
+        doActivatePopup(previewTargetId);
+        closePopupPreview();
+      };
 
       /* ── 팝업 해제 ── */
       window.deactivatePopupFromPreview = function () {
-        fetch('/finalProject/admin/notices/' + previewTargetId + '/popup', {
+        fetch('/user-service/admin/notices/' + previewTargetId + '/popup', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'deactivate' })
-        }).then(res => {
+        }).then(function (res) {
           if (res.ok) {
             showToast('팝업이 해제됐습니다.', 'warning');
             closePopupPreview();
-            setTimeout(() => location.href = location.pathname + location.search, 1000);
-          } else showToast('처리 중 오류가 발생했습니다.', 'warning');
+            setTimeout(function () { location.href = location.pathname + location.search; }, 1000);
+          } else {
+            showToast('처리 중 오류가 발생했습니다.', 'warning');
+          }
         });
       };
 
       function doActivatePopup(id) {
-        fetch('/finalProject/admin/notices/' + id + '/popup', {
+        fetch('/user-service/admin/notices/' + id + '/popup', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'activate' })
-        }).then(res => {
+        }).then(function (res) {
           if (res.ok) {
             showToast('팝업이 활성화됐습니다.', 'success');
-            setTimeout(() => location.href = location.pathname + location.search, 1000);
-          } else showToast('처리 중 오류가 발생했습니다.', 'warning');
+            setTimeout(function () { location.href = location.pathname + location.search; }, 1000);
+          } else {
+            showToast('처리 중 오류가 발생했습니다.', 'warning');
+          }
         });
       }
 
@@ -364,23 +340,37 @@
       };
 
       /* ── 모달 닫기 ── */
-      window.closeModal        = function () { document.getElementById('noticeModal').classList.remove('active'); editingId = null; };
+      window.closeModal        = function () { document.getElementById('noticeModal').classList.remove('active');       editingId = null; };
       window.closePopupPreview = function () { document.getElementById('popupPreviewModal').classList.remove('active'); previewTargetId = null; };
       window.closeReplaceModal = function () { document.getElementById('popupReplaceModal').classList.remove('active'); pendingPopupId = null; };
 
-      document.querySelectorAll('.modal').forEach(modal => {
-        modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('active'); });
+      document.querySelectorAll('.modal').forEach(function (modal) {
+        modal.addEventListener('click', function (e) { if (e.target === modal) modal.classList.remove('active'); });
       });
 
-      /* ── 토스트 ── */
-      window.showToast = function (msg, type = 'success') {
-        const toast = document.getElementById('toast');
-        toast.textContent = msg;
-        toast.className = 'toast ' + type;
-        setTimeout(() => toast.classList.add('show'), 10);
-        setTimeout(() => toast.classList.remove('show'), 3000);
-      };
-    });
+    }); // DOMContentLoaded 끝
+
+    /* ── 토스트 (전역 — DOM에 없어도 동적 생성) ── */
+    function showToast(msg, type) {
+      var toast = document.getElementById('toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast';
+        toast.style.cssText = 'position:fixed;bottom:24px;right:24px;padding:14px 20px;border-radius:8px;font-size:14px;font-weight:500;color:white;z-index:9999;opacity:0;transform:translateY(10px);transition:all 0.3s ease;pointer-events:none;';
+        document.body.appendChild(toast);
+      }
+      toast.textContent = msg;
+      toast.style.background = (type === 'success') ? '#10b981' : '#f59e0b';
+      if (toast._hideTimer) clearTimeout(toast._hideTimer);
+      setTimeout(function () {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateY(0)';
+      }, 10);
+      toast._hideTimer = setTimeout(function () {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+      }, 3000);
+    }
   </script>
 </head>
 
@@ -414,9 +404,9 @@
           <th class="center" style="width:70px;">구분</th>
           <th>제목</th>
           <th class="center" style="width:100px;">작성일</th>
-          <th class="center" style="width:100px;">마감일</th> 
+          <th class="center" style="width:100px;">마감일</th>
           <th class="center" style="width:110px;">팝업 시작일</th>
-		  <th class="center" style="width:110px;">팝업 종료일</th>
+          <th class="center" style="width:110px;">팝업 종료일</th>
           <th class="center" style="width:80px;">조회수</th>
           <th class="center" style="width:70px;">상태</th>
           <th class="center" style="width:180px;">관리</th>
@@ -426,10 +416,8 @@
         <tr th:each="notice, stat : ${notices}"
             th:classappend="${notice.pinnedYn == 'Y'} ? 'important'">
 
-          <!-- 번호 -->
           <td class="center" th:text="${(currentPage - 1) * 10 + stat.count}"></td>
 
-          <!-- 구분 -->
           <td class="center">
             <span class="badge type-badge"
                   th:classappend="${notice.pinnedYn == 'Y'} ? 'important' : 'normal'"
@@ -438,34 +426,24 @@
             </span>
           </td>
 
-          <!-- 제목 -->
           <td th:text="${notice.title}"></td>
 
-          <!-- 작성일 -->
           <td class="center" th:text="${#dates.format(notice.createdAt, 'yyyy-MM-dd')}"></td>
 
-		  <!-- 마감일 -->
-			<td class="center"
-			    th:text="${notice.endDate != null} ? ${#dates.format(notice.endDate, 'yyyy-MM-dd')} : '상시'"
-			    th:style="'color:#1f2937;'">
-			</td>
-			
-			<!-- 팝업 시작일 -->
-			<td class="center"
-			    th:text="${notice.popupStartAt != null} ? ${#dates.format(notice.popupStartAt, 'yyyy-MM-dd')} : '상시'"
-			    th:style="'color:#1f2937;'">
-			</td>
-			
-			<!-- 팝업 종료일 -->
-			<td class="center"
-			    th:text="${notice.popupEndAt != null} ? ${#dates.format(notice.popupEndAt, 'yyyy-MM-dd')} : '상시'"
-			    th:style="'color:#1f2937;'">
-			</td>
+          <td class="center"
+              th:text="${notice.endDate != null} ? ${#dates.format(notice.endDate, 'yyyy-MM-dd')} : '상시'">
+          </td>
 
-          <!-- 조회수 -->
+          <td class="center"
+              th:text="${notice.popupStartAt != null} ? ${#dates.format(notice.popupStartAt, 'yyyy-MM-dd')} : '-'">
+          </td>
+
+          <td class="center"
+              th:text="${notice.popupEndAt != null} ? ${#dates.format(notice.popupEndAt, 'yyyy-MM-dd')} : '-'">
+          </td>
+
           <td class="center" th:text="${#numbers.formatInteger(notice.viewCount, 0, 'COMMA')}"></td>
 
-          <!-- 상태 -->
           <td class="center">
             <span class="badge"
                   th:classappend="${notice.status == 1} ? 'active' : 'inactive'"
@@ -473,7 +451,6 @@
             </span>
           </td>
 
-          <!-- 관리 버튼 -->
           <td class="center">
             <div class="action-buttons">
               <th:block th:if="${notice.status == 1}">
@@ -485,10 +462,8 @@
                   <span th:text="${notice.popupYn == 'Y'} ? '팝업 ON' : '팝업'"></span>
                 </button>
               </th:block>
-
               <button type="button" class="btn-action btn-edit"
                       th:attr="onclick='editNotice(' + ${notice.noticeId} + ')'">수정</button>
-
               <button type="button" class="btn-action btn-delete"
                       th:attr="data-id=${notice.noticeId}, data-title=${notice.title}"
                       onclick="deleteNotice(this.dataset.id, this.dataset.title)">삭제</button>
@@ -497,13 +472,12 @@
         </tr>
 
         <tr th:if="${#lists.isEmpty(notices)}">
-          <td colspan="10" style="text-align:center; padding:40px; color:#9ca3af;"> <!-- ← 7→8 -->
+          <td colspan="10" style="text-align:center; padding:40px; color:#9ca3af;">
             공지사항이 없습니다.
           </td>
         </tr>
       </tbody>
     </table>
-
 
     <!-- 페이지바 -->
     <div class="table-footer">
@@ -525,7 +499,6 @@
       </div>
     </div>
   </div>
-
 
   <!-- 등록/수정 모달 -->
   <div class="modal" id="noticeModal">
@@ -552,7 +525,6 @@
         <label>내용 *</label>
         <textarea id="noticeContent" placeholder="공지사항 내용을 입력하세요"></textarea>
       </div>
-      <!-- ── 마감일 ← 추가 ── -->
       <div class="form-group">
         <label>마감일 <span style="color:#9ca3af; font-weight:400;">(선택)</span></label>
         <input type="date" id="noticeEndDate">
@@ -618,7 +590,10 @@
     </div>
   </div>
 
-  <div class="toast" id="toast"></div>
 </section>
+
+<!-- 토스트 -->
+<div class="toast" id="toast"></div>
+
 </body>
 </html>

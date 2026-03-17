@@ -40,5 +40,6 @@ public interface AdminStatsService {
     int getHiddenPostCount();
     List<Map<String, Object>> getDailyPostLast30();
     List<Map<String, Object>> getPostCountByBoard();
+    int getInactiveBoardCount();
 
 }
