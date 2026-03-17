@@ -180,7 +180,7 @@ public class SecurityConfig {
                     }
                 })
                 .deleteCookies("accessToken", "refreshToken", "JSESSIONID")
-                .logoutSuccessUrl("/user-service/index")
+                .logoutSuccessUrl("/index")
         );
 
         http.exceptionHandling(ex -> ex
