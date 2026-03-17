@@ -281,15 +281,7 @@
         </div>
         <div class="chart-wrap tall"><canvas id="jobTrendChart"></canvas></div>
       </div>
-      <div class="chart-card">
-        <div class="chart-card-header">
-          <div>
-            <div class="chart-card-title">급여 구간 분포</div>
-            <div class="chart-card-sub">salary 기준 (만원)</div>
-          </div>
-        </div>
-        <div class="chart-wrap tall"><canvas id="salaryChart"></canvas></div>
-      </div>
+      
     </div>
   </div>
 
@@ -312,8 +304,11 @@
     </div>
   </div>
 
-  <script>
+  <script th:inline="javascript">
   (function() {
+	  
+	const contextPath = /*[[@{/}]]*/ "";
+	  
     let currentPeriod  = 'daily';
     let charts         = {};
     let lastData       = null;
@@ -478,7 +473,7 @@
       btn.textContent = '조회 중...'; btn.disabled = true;
       document.getElementById('loadingOverlay').classList.add('show');
 
-      fetch(`/user-service/admin/stats/chart-data?from=${from}&to=${to}&period=${currentPeriod}`)
+      fetch(`${contextPath}admin/stats/chart-data?from=${from}&to=${to}&period=${currentPeriod}`)
         .then(res => { if (!res.ok) throw new Error('서버 오류'); return res.json(); })
         .then(data => {
           lastData = data; lastFrom = from; lastTo = to;
