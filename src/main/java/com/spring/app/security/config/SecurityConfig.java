@@ -194,7 +194,7 @@ public class SecurityConfig {
                     jsessionCookie.setMaxAge(0);
                     response.addCookie(jsessionCookie);
                 })
-                .logoutSuccessUrl("/user-service/index")
+                .logoutSuccessUrl("/index")
         );
 
         http.exceptionHandling(ex -> ex
