@@ -179,8 +179,8 @@ public class SecurityConfig {
                         session.invalidate();
                     }
                 })
-                .logoutSuccessUrl("/index")
-                /* 필요 시 쿠키 삭제 등 추가 가능 -> .deleteCookies("remember-me") */
+                .deleteCookies("accessToken", "refreshToken", "JSESSIONID")
+                .logoutSuccessUrl("/user-service/index")
         );
 
         http.exceptionHandling(ex -> ex
