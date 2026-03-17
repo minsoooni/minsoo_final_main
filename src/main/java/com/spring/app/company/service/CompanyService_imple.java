@@ -34,6 +34,7 @@ import com.spring.app.company.domain.CompanyProfileDTO;
 import com.spring.app.company.domain.CompanyProfileUpdateDTO;
 import com.spring.app.company.domain.CompanyProfileUpdateResponseDTO;
 import com.spring.app.company.domain.CompanyTopbarDTO;
+import com.spring.app.company.domain.DeletedOfferHistoryDTO;
 import com.spring.app.company.domain.ImageFileDTO;
 import com.spring.app.company.domain.JobPostingDTO;
 import com.spring.app.company.domain.JobPostingEditResponseDTO;
@@ -194,7 +195,7 @@ public class CompanyService_imple implements CompanyService {
 	    try {
 	        // 1. 설립연도 문자열 정리
 	        String openYear = dto.getOpenYear();
-	        System.out.println("openYear = " + dto.getOpenYear());
+	        //System.out.println("openYear = " + dto.getOpenYear());
 	        //openYear = 2018
 
 	        if (openYear != null) {
@@ -367,7 +368,7 @@ public class CompanyService_imple implements CompanyService {
 
 	        // 4. 기존 로고 조회
 	        ImageFileDTO oldLogo = profileMapper.selectCompanyLogo(companyIntroId);
-	        System.out.println(oldLogo);
+	        //System.out.println(oldLogo);
 
 	        int n;
 	        if (oldLogo != null) {
@@ -763,19 +764,11 @@ public class CompanyService_imple implements CompanyService {
 		return offerMapper.selectOfferDetail(id);
 	}
 	
+	
 	//제안서 등록하기
-	/*
     @Override
     @Transactional
     public Long createOfferLetter(OfferCreateRequestDTO req) {
-    	offerMapper.insertOfferLetter(req);          // req.offerLetterId 세팅됨
-        return req.getOfferLetterId();
-    }
-    */
-    @Override
-    @Transactional
-    public Long createOfferLetter(OfferCreateRequestDTO req) {
-
         validateOfferLetterCommon(
                 req.getJobId(),
                 req.getTitle(),
@@ -796,20 +789,22 @@ public class CompanyService_imple implements CompanyService {
     @Override
     @Transactional
     public int updateOfferLetter(OfferUpdateRequestDTO req) {
-
+        if (req.getOfferLetterId() == null) {
+            throw new IllegalArgumentException("제안서 번호가 없습니다.");
+        }
+        
         validateOfferLetterCommon(
                 req.getJobId(),
                 req.getTitle(),
                 req.getMessage()
         );
 
-        // 발송 이력이 있으면 수정 금지
-        int historyCnt = offerMapper.existsOfferSendHistory(req.getOfferLetterId());
-        if (historyCnt > 0) {
-            throw new IllegalStateException("이미 발송 이력이 있는 제안서는 수정할 수 없습니다.");
+        int n = offerMapper.updateOfferLetter(req);
+        if (n == 0) {
+            throw new IllegalStateException("삭제되었거나 존재하지 않는 제안서입니다.");
         }
 
-        return offerMapper.updateOfferLetter(req);
+        return n;
     }
 	
     
@@ -822,11 +817,13 @@ public class CompanyService_imple implements CompanyService {
         if(owns != 1) return 0;
 
         // 2) 발송 이력 존재 여부(있으면 삭제 막기)
+        /*
         int hasHistory = offerMapper.existsOfferSendHistory(offerLetterId);
         if(hasHistory == 1){
             // 여기서 예외를 던지면 컨트롤러에서 409로 처리 가능
             throw new IllegalStateException("발송 이력이 있는 제안서는 삭제할 수 없습니다.");
         }
+        */
 
         // 3) 제안서 삭제
         return offerMapper.deleteOfferLetter(offerLetterId);
@@ -959,6 +956,7 @@ public class CompanyService_imple implements CompanyService {
     
     //제안서 생성/수정에 대한 검사
     private void validateOfferLetterCommon(Long jobId, String title, String message) {
+    	//System.out.println(jobId);
         if (jobId == null) {
             throw new IllegalArgumentException("연결할 공고는 필수입니다.");
         }
@@ -978,7 +976,14 @@ public class CompanyService_imple implements CompanyService {
     
     //제안서를 발송한 회원(memberId) 목록 조회
     @Override
-    public List<String> selectSentMemberIdsByOfferLetterId(Long offerLetterId) {
+    public List<String> selectSentMemberIdsByOfferLetterId(Long offerLetterId, String companyMemberId) {
+        int ownsTemplate = offerMapper.existsOfferLetterOwnedByCompany(offerLetterId, companyMemberId);
+        int ownsHistory  = offerMapper.existsOfferHistoryOwnedByCompany(offerLetterId, companyMemberId);
+
+        if (ownsTemplate != 1 && ownsHistory != 1) {
+            throw new IllegalStateException("권한이 없거나 존재하지 않는 제안서입니다.");
+        }
+
         return offerMapper.selectSentMemberIdsByOfferLetterId(offerLetterId);
     }
     
@@ -988,7 +993,7 @@ public class CompanyService_imple implements CompanyService {
     public List<OfferRecipientDetailDTO> selectOfferRecipientDetailsByOfferLetterId(Long offerLetterId, String companyMemberId) {
 
         // 소유권 확인
-        int owns = offerMapper.existsOfferLetterOwnedByCompany(offerLetterId, companyMemberId);
+        int owns = offerMapper.existsOfferHistoryOwnedByCompany(offerLetterId, companyMemberId);
         if (owns != 1) {
             throw new IllegalStateException("권한이 없거나 존재하지 않는 제안서입니다.");
         }
@@ -1016,6 +1021,14 @@ public class CompanyService_imple implements CompanyService {
             }
         }
         return list;
+    }
+    
+    
+    
+ // 삭제된 원본 제안서 중 발송 이력이 있는 목록
+    @Override
+    public List<DeletedOfferHistoryDTO> selectDeletedOfferHistoryList(String companyMemberId) {
+        return offerMapper.selectDeletedOfferHistoryList(companyMemberId);
     }
     
     //========================= [제안서] =========================//

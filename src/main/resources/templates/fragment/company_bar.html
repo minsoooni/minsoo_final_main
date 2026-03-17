@@ -8,16 +8,23 @@
   <!-- 상단 -->
   <header class="company-topbar">
     <div class="topbar-left">
-      <a th:href="@{/index}" class="topbar-brand">
-        <span class="topbar-brand-icon">
-          <i class="fa-solid fa-briefcase"></i>
-        </span>
-        <span class="topbar-brand-text">
-          <span class="logo">JobKorea</span>
-          <span class="sub">기업 서비스</span>
-        </span>
-      </a>
-    </div>
+	  <!-- 로고 클릭 시 기업 대시보드 이동 -->
+	  <!-- <a th:href="@{/company/company_dashboard(menu='company_dashboard')}" class="topbar-brand"> -->
+	  <a th:href="@{/company}" class="topbar-brand">
+	    <span class="topbar-brand-icon">
+	      <i class="fa-solid fa-magnifying-glass"></i>
+	    </span>
+	    <span class="topbar-brand-text">
+	      <span class="logo">잡파인더</span>
+	      <span class="sub">기업 서비스</span>
+	    </span>
+	  </a>
+	
+	  <!-- 메인페이지 링크 별도 -->
+	  <a th:href="@{/index}" class="topbar-main-link">
+	    메인페이지
+	  </a>
+	</div>
   
     <div class="topbar-right">
       <div class="profile">

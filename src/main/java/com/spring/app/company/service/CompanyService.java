@@ -20,6 +20,7 @@ import com.spring.app.company.domain.CompanyProfileDTO;
 import com.spring.app.company.domain.CompanyProfileUpdateDTO;
 import com.spring.app.company.domain.CompanyProfileUpdateResponseDTO;
 import com.spring.app.company.domain.CompanyTopbarDTO;
+import com.spring.app.company.domain.DeletedOfferHistoryDTO;
 import com.spring.app.company.domain.ImageFileDTO;
 import com.spring.app.company.domain.JobPostingDTO;
 import com.spring.app.company.domain.JobPostingEditResponseDTO;
@@ -168,12 +169,13 @@ public interface CompanyService {
 	Long sendOffer(OfferSendRequestDTO req, String companyMemberId);
 
 	//제안서를 발송한 회원(memberId) 목록 조회
-	List<String> selectSentMemberIdsByOfferLetterId(Long offerLetterId);
+	List<String> selectSentMemberIdsByOfferLetterId(Long offerLetterId, String companyMemberId);
 	
 	//제안서 수신자 상세 조회
 	List<OfferRecipientDetailDTO> selectOfferRecipientDetailsByOfferLetterId(Long offerLetterId, String companyMemberId);
 	
-	
+	// 삭제된 원본 제안서 중 발송 이력이 있는 목록
+	List<DeletedOfferHistoryDTO> selectDeletedOfferHistoryList(String companyMemberId);
 	
 	
 	
