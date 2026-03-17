@@ -170,7 +170,7 @@ public class SecurityConfig {
     	http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
     	http.addFilterAfter(dormantAccountFilter, JwtAuthenticationFilter.class);
     	
-        http.logout(logout -> logout
+    	http.logout(logout -> logout
                 /* 로그아웃 처리 -> /security/logout 호출 시 로그아웃 수행, 세션 무효화 후 /index로 이동 */
                 .logoutUrl("/security/logout")
                 .addLogoutHandler((request, response, authentication) -> {
@@ -179,7 +179,7 @@ public class SecurityConfig {
                         session.invalidate();
                     }
                 })
-                .logoutSuccessUrl("http://localhost:8000/user-service/index")
+                .logoutSuccessUrl("/user-service/index")
                 /* 필요 시 쿠키 삭제 등 추가 가능 -> .deleteCookies("remember-me") */
         );
 
