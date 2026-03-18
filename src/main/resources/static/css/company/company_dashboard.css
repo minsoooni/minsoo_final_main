@@ -1,10 +1,6 @@
 @charset "UTF-8";
 
 /* ===== 공통 레이아웃 ===== */
-/* .dash{
-  padding: 24px;
-} */
-
 .dash-head{
   display: flex;
   justify-content: space-between;
@@ -30,7 +26,7 @@
   background: #fff;
   border-radius: 16px;
   padding: 18px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
 }
 
 .card-box{
@@ -67,19 +63,36 @@
   color: #111827;
 }
 
-/* ===== KPI 카드 ===== */
+/* ===== KPI 카드 영역 ===== */
 .dash-grid{
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 18px;
   margin-bottom: 18px;
+  align-items: start;
 }
 
 .kpi{
   background: #fff;
   border-radius: 16px;
   padding: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.kpi-job-status{
+  grid-column: span 2;
+}
+
+.kpi-offer-status{
+  grid-column: span 2;
+}
+
+.kpi-wide{
+  grid-column: span 4;
 }
 
 .kpi-top{
@@ -88,92 +101,224 @@
   align-items: center;
   color: #6b7280;
   font-size: 13px;
+  margin-bottom: 14px;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 .kpi-label{
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .kpi-top i{
   font-size: 16px;
+  color: #64748b;
+  flex-shrink: 0;
 }
 
 .kpi-val{
   margin-top: 10px;
   font-size: 24px;
-  font-weight: 700;
+  font-weight: 800;
   color: #111827;
   line-height: 1.2;
 }
 
 .kpi-val > span:last-child{
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   color: #6b7280;
   margin-left: 4px;
 }
 
-.kpi-blue{
-  color: #2563eb;
+/* ===== 합쳐진 KPI 카드 ===== */
+.kpi-combined{
+  min-width: 0;
 }
 
-.kpi-neg{
-  color: #111827;
-}
-
-/* ===== 최근 채용 공고 ===== */
-.job-row{
-  border: 1px solid #efefef;
-  border-radius: 12px;
-  padding: 14px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.kpi-combined-body{
+  margin-top: 4px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.15fr);
   gap: 16px;
-  margin-top: 10px;
-}
-
-.job-left{
-  flex: 1;
+  align-items: stretch;
   min-width: 0;
 }
 
-.job-title{
+.kpi-main-block{
+  border: 1px solid #eef2f7;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  padding: 18px;
   display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  font-weight: 700;
-  color: #111827;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
 }
 
-.job-title > span:first-child{
-  min-width: 0;
+.kpi-main-title{
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.kpi-main-value{
+  margin-top: 6px;
+  font-size: 32px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.1;
   word-break: break-word;
 }
 
-.job-meta{
-  color: #6b7280;
-  font-size: 13px;
-  margin-top: 6px;
+.kpi-main-value > span:last-child{
+  font-size: 15px;
+  font-weight: 700;
+  color: #64748b;
+  margin-left: 4px;
 }
 
-.job-right{
+.kpi-main-desc{
+  margin-top: 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #94a3b8;
+  word-break: keep-all;
+}
+
+.kpi-side-block{
   display: flex;
-  gap: 14px;
-  color: #6b7280;
-  font-size: 13px;
-  flex-shrink: 0;
+  flex-direction: column;
+  min-width: 0;
 }
 
-.job-right span{
+.kpi-side-title{
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 10px;
+  padding-left: 2px;
+}
+
+.kpi-side-grid{
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.kpi-side-grid.cols-2{
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.kpi-side-grid.cols-3{
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* ===== 공통 상태 소카드 ===== */
+.kpi-stat-card{
+  background: #f8fafc;
+  border: 1px solid #eef2f7;
+  border-radius: 12px;
+  padding: 14px 10px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+}
+
+.kpi-stat-label{
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  justify-content: center;
+  align-self: center;
+  min-height: 24px;
+  max-width: 100%;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  line-height: 1;
+  white-space: nowrap;
 }
 
-/* ===== 배지 ===== */
-.badge{
+.kpi-stat-count{
+  font-size: 18px;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1.2;
+}
+
+.kpi-stat-count .unit{
+  font-size: 13px;
+  font-weight: 700;
+  color: #6b7280;
+  margin-left: 2px;
+}
+
+/* 3칸짜리 등록 배너 카드 안에서는 칩을 약간 작게 */
+.kpi-side-grid.cols-3 .kpi-stat-label{
+  font-size: 11px;
+  padding: 0 8px;
+}
+
+.kpi-side-grid.cols-3 .kpi-stat-count{
+  font-size: 17px;
+}
+
+/* ===== 상태 컬러 시스템 ===== */
+/* 대기/처리중/미응답 */
+.status-pending{
+  background: #fef3c7;
+  color: #b45309;
+}
+
+/* 게시중/미열람 */
+.status-primary{
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+/* 면접요청 */
+.status-accent{
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+/* 승인/수락/합격 */
+.status-success{
+  background: #dcfce7;
+  color: #15803d;
+}
+
+/* 반려/거절/불합격 */
+.status-danger{
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* 마감/열람/서류탈락 */
+.status-muted{
+  background: #e5e7eb;
+  color: #475569;
+}
+
+/* ===== 상단 단독 KPI 내부 grid ===== */
+.job-kpi-grid,
+.offer-kpi-grid{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 6px;
+  min-width: 0;
+}
+
+/* ===== 배지 / pill ===== */
+.badge,
+.pill{
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -183,16 +328,123 @@
   font-size: 12px;
   font-weight: 700;
   line-height: 1;
+  max-width: 100%;
 }
 
-.badge-dark{
-  background: #111827;
-  color: #fff;
+.badge-pending{
+  background: #fef3c7;
+  color: #b45309;
 }
 
-.badge-light{
-  background: #f3f4f6;
-  color: #4b5563;
+.badge-primary{
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.badge-muted{
+  background: #e5e7eb;
+  color: #475569;
+}
+
+.pill-primary{
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.pill-muted{
+  background: #e2e8f0;
+  color: #64748b;
+}
+
+.pill-muted-strong{
+  background: #e5e7eb;
+  color: #475569;
+}
+
+.pill-accent{
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.pill-success{
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.pill-danger{
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* ===== 최근 채용 공고 ===== */
+.job-card{
+  border: 1px solid #efefef;
+  border-radius: 14px;
+  padding: 14px;
+  margin-top: 10px;
+  background: #fff;
+}
+
+.job-card-top{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.job-title-row{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.job-title{
+  font-size: 15px;
+  font-weight: 800;
+  color: #111827;
+  word-break: break-word;
+}
+
+.job-sub-line{
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.job-card-body{
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.job-info-grid{
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.job-info-item{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  min-width: 0;
+}
+
+.job-info-label{
+  min-width: 50px;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.job-info-value{
+  color: #334155;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
 }
 
 /* ===== 2단 영역 ===== */
@@ -203,96 +455,103 @@
 }
 
 /* ===== 최근 지원자 ===== */
-.app-row{
+.app-card{
   border: 1px solid #efefef;
-  border-radius: 12px;
-  padding: 12px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  border-radius: 14px;
+  padding: 14px;
   margin-top: 10px;
+  background: #fff;
 }
 
-.app-left{
+.app-card-top{
   display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 1;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.app-user{
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
   min-width: 0;
 }
 
 .app-avatar{
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f3f4f6;
-  color: #6b7280;
+  background: #f1f5f9;
+  color: #64748b;
   flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.app-user-info{
+  flex: 1;
+  min-width: 0;
+}
+
+.app-name-row{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .app-name{
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 800;
   color: #111827;
   word-break: break-word;
 }
 
-.app-desc{
-  color: #6b7280;
-  font-size: 13px;
-  margin-top: 4px;
-  word-break: break-word;
-}
-
-.app-right{
-  text-align: right;
-  min-width: 160px;
-  flex-shrink: 0;
-}
-
-.app-job{
+.app-job-line{
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   color: #374151;
   font-size: 13px;
   font-weight: 600;
   word-break: break-word;
 }
 
-.app-meta{
+.app-job-line i{
   color: #9ca3af;
-  font-size: 12px;
-  margin-top: 4px;
-}
-
-/* ===== 상태 pill ===== */
-.pill{
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 56px;
-  min-height: 28px;
-  padding: 0 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1;
   flex-shrink: 0;
 }
 
-.pill-dark{
-  background: #111827;
-  color: #fff;
+.app-card-body{
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f3f4f6;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.pill-gray{
-  background: #e5e7eb;
-  color: #374151;
+.app-info-row{
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
 }
 
-.pill-light{
-  background: #f3f4f6;
-  color: #6b7280;
+.app-info-label{
+  min-width: 48px;
+  color: #94a3b8;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.app-info-value{
+  color: #4b5563;
+  word-break: break-word;
 }
 
 /* ===== 최근 제안서 ===== */
@@ -301,6 +560,7 @@
   border-radius: 12px;
   padding: 14px;
   margin-top: 10px;
+  background: #fff;
 }
 
 .offer-title{
@@ -324,18 +584,28 @@
   flex-wrap: wrap;
 }
 
-.offer-stats .ok{
-  color: #16a34a;
+.offer-stats .pending,
+.offer-stats .ok,
+.offer-stats .no{
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
   font-weight: 700;
+}
+
+.offer-stats .pending{
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.offer-stats .ok{
+  background: #dcfce7;
+  color: #15803d;
 }
 
 .offer-stats .no{
-  color: #ef4444;
-  font-weight: 700;
-}
-
-.offer-stats .muted{
-  color: #9ca3af;
+  background: #fee2e2;
+  color: #dc2626;
 }
 
 .offer-right{
@@ -349,7 +619,7 @@
 }
 
 .offer-right .muted{
-  color: #9ca3af;
+  color: #94a3b8;
   font-size: 12px;
   text-align: right;
 }
@@ -365,67 +635,3 @@
   background: #fafafa;
   margin-top: 10px;
 }
-
-/* ===== 반응형 ===== */
-/*
-@media (max-width: 1200px){
-  .dash-grid{
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .two-col{
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px){
-  .dash{
-    padding: 16px;
-  }
-
-  .dash-grid{
-    grid-template-columns: 1fr;
-    gap: 14px;
-  }
-
-  .job-row{
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .job-right{
-    width: 100%;
-    justify-content: flex-start;
-  }
-
-  .app-row{
-    flex-wrap: wrap;
-    align-items: flex-start;
-  }
-
-  .app-right{
-    min-width: auto;
-    width: 100%;
-    text-align: left;
-    margin-left: 50px;
-  }
-
-  .pill{
-    margin-left: 50px;
-  }
-
-  .offer-right{
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .offer-right .muted{
-    text-align: left;
-  }
-
-  .panel-head{
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-*/

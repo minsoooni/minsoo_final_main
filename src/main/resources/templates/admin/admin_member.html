@@ -76,7 +76,10 @@
 		.detail-value { color: #1f2937; flex: 1; word-break: break-all; }
    	 </style>
 
-    <script>
+    <script th:inline="javascript">
+    
+    const contextPath = /*[[@{/}]]*/ "";
+    
         document.addEventListener('DOMContentLoaded', function () {
 
             let targetId   = null;
@@ -90,7 +93,7 @@
             };
             window.confirmSuspend = function() {
                 const id = targetId; const name = targetName;
-                fetch('/user-service/admin/members/' + id + '/suspend', { method: 'POST' })
+                fetch(contextPath + 'admin/members/' + id + '/suspend', { method: 'POST' })
                     .then(res => {
                         closeModal('suspendModal');
                         if (res.ok) { showToast(name + ' 정지 완료.', 'warning'); setTimeout(() => location.reload(), 1500); }
@@ -106,7 +109,7 @@
             };
             window.confirmUnsuspend = function() {
                 const id = targetId; const name = targetName;
-                fetch('/user-service/admin/members/' + id + '/unsuspend', { method: 'POST' })
+                fetch(contextPath + 'admin/members/' + id + '/unsuspend', { method: 'POST' })
                     .then(res => {
                         closeModal('unsuspendModal');
                         if (res.ok) { showToast(name + ' 정지 해제.', 'success'); setTimeout(() => location.reload(), 1500); }
@@ -135,7 +138,7 @@
             
             /* ── 회원 상세 ── */
             window.openMemberDetail = function(id) {
-                fetch('/user-service/admin/members/' + id + '/detail')
+            	fetch(contextPath + 'admin/members/' + id + '/detail')
                     .then(res => res.json())
                     .then(data => {
                         const statusMap = { 0: '정지', 1: '활성', 2: '탈퇴', 3: '휴면' };
@@ -167,7 +170,7 @@
 			    if (search) params.append('search', search);
 			    if (status) params.append('status', status);
 			
-			    location.href = '/user-service/admin/members?' + params.toString();
+			    location.href = contextPath + 'admin/members?' + params.toString();
 			};
             document.getElementById('searchInput').addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') applyFilters();
@@ -269,23 +272,23 @@
 		        총 <span th:text="${totalCount}">0</span>명 회원
 		    </span>
 		    <div class="pagination">
-		        <a th:href="@{/admin/members(page=1,search=${param.search},status=${param.status})}"
+		        <a th:href="@{members(page=1,search=${param.search},status=${param.status})}"
 		           th:classappend="${currentPage == 1} ? 'disabled'">«</a>
 		
-		        <a th:href="@{/admin/members(page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search},status=${param.status})}"
+		        <a th:href="@{members(page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search},status=${param.status})}"
 		           th:classappend="${currentPage == 1} ? 'disabled'">이전</a>
 		
 		        <span th:each="i : ${#numbers.sequence(1, totalPages)}">
-		            <a th:href="@{/admin/members(page=${i},search=${param.search},status=${param.status})}"
+		            <a th:href="@{members(page=${i},search=${param.search},status=${param.status})}"
 		               th:text="${i}"
 		               th:classappend="${i == currentPage} ? 'active'">
 		            </a>
 		        </span>
 		
-		        <a th:href="@{/admin/members(page=${currentPage < totalPages ? currentPage+1 : totalPages},search=${param.search},status=${param.status})}"
+		        <a th:href="@{members(page=${currentPage < totalPages ? currentPage+1 : totalPages},search=${param.search},status=${param.status})}"
 		           th:classappend="${currentPage == totalPages} ? 'disabled'">다음</a>
 		
-		        <a th:href="@{/admin/members(page=${totalPages},search=${param.search},status=${param.status})}"
+		        <a th:href="@{members(page=${totalPages},search=${param.search},status=${param.status})}"
 		           th:classappend="${currentPage == totalPages} ? 'disabled'">»</a>
 		    </div>
 		</div>

@@ -82,10 +82,10 @@ eureka:
     prefer-ip-address: true
 
 file:
-  upload-dir: file_upload
-  photoupload-dir: file_photoupload
-  emailattachfile-dir: file_emailattachfile
-  images-dir: file_images
+  upload-dir: /app/data/file_upload
+  photoupload-dir: /app/data/file_photoupload
+  emailattachfile-dir: /app/data/file_emailattachfile
+  images-dir: /app/data/file_images
 
 portone:
   impCode: imp13783325

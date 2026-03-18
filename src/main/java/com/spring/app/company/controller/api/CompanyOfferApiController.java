@@ -54,6 +54,10 @@ public class CompanyOfferApiController {
     @GetMapping("/{offerLetterId}")
     public ResponseEntity<OfferDetailDTO> offerDetail(@PathVariable("offerLetterId") Long offerLetterId) {
         OfferDetailDTO dto = service.selectOfferDetail(offerLetterId);
+        System.out.println(dto);
+        /*
+        OfferDetailDTO(offerLetterId=23, jobId=1023, title=수정일자 수정 후 테스트제안서 1, message=지원자 전달 멧지, expireAt=2026-03-22T00:00)
+        */        
         if (dto == null) {
             return ResponseEntity.notFound().build();
         }
@@ -75,6 +79,12 @@ public class CompanyOfferApiController {
             			  @PathVariable("offerLetterId") Long offerLetterId,
             			  @RequestBody OfferUpdateRequestDTO req) {
 
+    	//System.out.println("offerLetterId: " +offerLetterId);
+    	//System.out.println("req:" + req);
+    	//offerLetterId: 23
+    	//req:OfferUpdateRequestDTO(offerLetterId=23, jobId=null, title=수정일자 수정 후 테스트제안서 1, message=테스트111111111)
+    	
+    	
         req.setOfferLetterId(offerLetterId);
         int n = service.updateOfferLetter(req);
         return ResponseEntity.ok(Map.of("result", n == 1 ? "ok" : "fail"));
@@ -139,11 +149,14 @@ public class CompanyOfferApiController {
     @Operation(summary = "제안서 발송 수신자 조회", description = "해당 제안서(offerLetterId)를 이미 발송한 수신자(memberId) 목록을 조회")
     @GetMapping("/{offerLetterId}/sent-recipients")
     public ResponseEntity<Map<String, Object>> sentRecipients(
-            @PathVariable("offerLetterId") Long offerLetterId
+            @PathVariable("offerLetterId") Long offerLetterId,
+            Authentication authentication
     ) {
+    	String companyMemberId = authentication.getName();
+    	
         return ResponseEntity.ok(Map.of(
                 "result", "ok",
-                "sentMemberIds", service.selectSentMemberIdsByOfferLetterId(offerLetterId)
+                "sentMemberIds", service.selectSentMemberIdsByOfferLetterId(offerLetterId, companyMemberId)
         ));
     }
     
@@ -166,4 +179,17 @@ public class CompanyOfferApiController {
     }
     
     
+    
+    
+    // 삭제된 원본 제안서 중 발송 이력이 있는 목록
+    @Operation(summary = "삭제한 제안서에 대한 발송내역 조회", description = "삭제한 제안서의 수신자별 발송/열람/응답 상태를 조회")
+    @GetMapping("/deleted-history")
+    public ResponseEntity<Map<String, Object>> deletedOfferHistory(Authentication authentication) {
+        String companyMemberId = authentication.getName();
+
+        return ResponseEntity.ok(Map.of(
+            "result", "ok",
+            "items", service.selectDeletedOfferHistoryList(companyMemberId)
+        ));
+    }
 }

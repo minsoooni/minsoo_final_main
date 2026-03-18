@@ -48,13 +48,13 @@ public class AdminReportService_imple implements AdminReportService {
 
             if (report.getTargetType() == 1) {
                 targetTitle = "채용공고";
-                linkUrl = "/job/detail/" + report.getTargetId();
+                linkUrl = "/user-service/job/detail/" + report.getTargetId(); // user-service
             } else if (report.getTargetType() == 2) {
                 targetTitle = "게시글";
-                linkUrl = "/community/view?postId=" + report.getTargetId();
+                linkUrl = "/board-service/community/view?postId=" + report.getTargetId(); // board-service ✅
             } else {
                 targetTitle = "댓글";
-                linkUrl = "/community/view?postId=" + report.getCommentPostId();
+                linkUrl = "/board-service/community/view?postId=" + report.getCommentPostId(); // board-service ✅
             }
 
             NotificationDTO noti = new NotificationDTO();

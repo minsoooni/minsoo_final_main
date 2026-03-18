@@ -5,13 +5,17 @@ import org.apache.ibatis.annotations.Param;
 
 import com.spring.app.company.domain.CompanyProfileDTO;
 import com.spring.app.company.domain.CompanyProfileUpdateDTO;
+import com.spring.app.company.domain.CompanyTopbarDTO;
 import com.spring.app.company.domain.ImageFileDTO;
 
 @Mapper
 //기업 프로필 매퍼파일
 public interface CompanyProfileMapper {
 	
+	//기업 상단바 조회(기업ID, 기업명, 이메일)
+	CompanyTopbarDTO selectCompanyTopbarInfo(String memberId);
 
+	
 	// 기업 프로필 조회
     CompanyProfileDTO selectCompanyProfile(@Param("memberId") String memberId);
     

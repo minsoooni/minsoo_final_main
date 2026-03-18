@@ -14,5 +14,7 @@ public class DashboardJobDTO {
     private String statusText;    // 공고 상태 표시값
     private Date deadlineAt;      // 마감일
     private int viewCount;        // 조회수
+    private int headcount;		  // 채용인원
     private int applicantCount;   // 지원자 수
+    private int scrapCount;       // 스크랩 수
 }

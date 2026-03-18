@@ -1,17 +1,9 @@
 (function () {
-  const reissueUrl = 'http://localhost:8000/user-service/auth/reissue';
+  const reissueUrl = '/user-service/auth/reissue';
 
-  function getAccessToken() {
-    return sessionStorage.getItem('accessToken');
-  }
 
-  function setAccessToken(token) {
-    if (!token) return;
-    sessionStorage.setItem('accessToken', token);
-  }
 
   function clearAccessToken() {
-    sessionStorage.removeItem('accessToken');
     localStorage.removeItem('loginUser');
     localStorage.removeItem('JWT');
   }
@@ -30,51 +22,42 @@
      const contentType = response.headers.get('content-type') || '';
      const data = contentType.includes('application/json') ? await response.json() : null;
 
-     if (!response.ok || !data || !data.accessToken) {
-       console.warn('[JPAuth] accessToken 재발급 실패', data);
-       clearAccessToken();
-       throw new Error((data && data.error) ? data.error : 'REISSUE_FAILED');
-     }
+	 if (!response.ok || !data || !data.accessToken) {
+	   console.warn('[JPAuth] accessToken 재발급 실패', data);
+	   clearAccessToken();
+	   throw new Error((data && data.error) ? data.error : 'REISSUE_FAILED');
+	 }
 
-     setAccessToken(data.accessToken);
+	 console.log('[JPAuth] accessToken 재발급 성공');
 
-     console.log('[JPAuth] accessToken 재발급 성공');
-
-     return data.accessToken;
+	 return data.accessToken;
    }
 
-  async function authFetch(url, options = {}) {
-    const originalOptions = { ...options };
-    const originalHeaders = { ...(options.headers || {}) };
+   async function authFetch(url, options = {}) {
+     const originalOptions = { ...options };
+     const originalHeaders = { ...(options.headers || {}) };
 
-    let token = getAccessToken();
+     const attemptRequest = async () => {
+       return fetch(url, {
+         ...originalOptions,
+         headers: originalHeaders,
+         credentials: 'include'
+       });
+     };
 
-    const attemptRequest = async (accessToken) => {
-      const headers = { ...originalHeaders };
+     let response = await attemptRequest();
 
-      if (accessToken) {
-        headers['Authorization'] = 'Bearer ' + accessToken;
-      }
+     if (response.status !== 401) {
+       return response;
+     }
 
-      return fetch(url, {
-        ...originalOptions,
-        headers
-      });
-    };
+     console.warn('[JPAuth] 401 감지 - 재발급 시도');
 
-    let response = await attemptRequest(token);
+     await reissueAccessToken();
+     response = await attemptRequest();
 
-    if (response.status !== 401) {
-      return response;
-    }
-
-    console.warn('[JPAuth] 401 감지 - 재발급 시도');
-
-    token = await reissueAccessToken();
-    response = await attemptRequest(token);
-
-    return response;
-  }
+     return response;
+   }
 
   async function moveWithAuthCheck(event, url, checkUrl) {
     event.preventDefault();
@@ -90,21 +73,15 @@
       throw new Error('AUTH_CHECK_FAILED');
     }
 
-    const token = getAccessToken();
-
-    const redirectUrl = url + '?token=' + encodeURIComponent(token);
-
-    window.location.href = redirectUrl;
+    window.location.href = url;
 
     return false;
   }
 
-    window.JPAuth = {
-      getAccessToken,
-      setAccessToken,
-      clearAccessToken,
-      reissueAccessToken,
-      authFetch,
-      moveWithAuthCheck
-    };
+  window.JPAuth = {
+        clearAccessToken,
+        reissueAccessToken,
+        authFetch,
+        moveWithAuthCheck
+      };
   })();
