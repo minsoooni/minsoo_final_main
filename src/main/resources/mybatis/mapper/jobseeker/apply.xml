@@ -275,4 +275,12 @@
         ORDER BY changed_at ASC
     </select>
 
+    <!-- 알림용 공고 정보 조회 (공고 제목 + 기업 회원 ID) -->
+    <select id="selectJobPostingForNoti" parameterType="long" resultType="map">
+        SELECT JP.title AS "postTitle",
+               JP.fk_memberid AS "companyMemberId"
+        FROM tbl_job_posting JP
+        WHERE JP.job_id = #{jobId}
+    </select>
+
 </mapper>
