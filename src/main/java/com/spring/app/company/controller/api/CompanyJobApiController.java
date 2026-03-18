@@ -78,6 +78,7 @@ public class CompanyJobApiController {
     	String loginMemberId = authentication.getName();
     	dto.setMemberId(loginMemberId);
     	
+    	//직무 및 기술스택 매핑테이블에 트랜잭션 처리하여 채용공고 등록하기
     	int n = service.insertJobPosting(dto, req.getSkillIds());
     	
     	// 성공이면 보통 jobId도 내려주는 게 좋음 (리다이렉트/상세이동용)
