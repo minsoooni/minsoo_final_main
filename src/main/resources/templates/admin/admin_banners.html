@@ -91,11 +91,16 @@
     .toast.error   { background: #ef4444; }
   </style>
 
-  <script>
+  <!-- th:inline="javascript" 추가 -->
+  <script th:inline="javascript">
+
+    /* 2번 파일과 동일한 방식으로 contextPath 선언 */
+    const contextPath = /*[[@{/}]]*/ "";
+
     document.addEventListener('DOMContentLoaded', function () {
 
-      /* ── fetch 기본 경로 (게이트웨이 경유) ── */
-      var API = '/user-service/admin/banners';
+      /* ── fetch 기본 경로: contextPath 기반 상대경로 ── */
+      var API = contextPath + 'admin/banners';
 
       var targetId   = null;
       var targetName = null;
@@ -116,9 +121,9 @@
         document.getElementById('approveModal').classList.add('open');
       };
       window.confirmApprove = function() {
-    	  
-    	if(!confirm("정말 이 배너를 승인하시겠습니까?")) return;  
-    	  
+
+        if(!confirm("정말 이 배너를 승인하시겠습니까?")) return;
+
         var id = targetId;
         fetch(API + '/' + id + '/approve', { method: 'POST' })
           .then(function(res) {
@@ -138,9 +143,9 @@
         document.getElementById('rejectModal').classList.add('open');
       };
       window.confirmReject = function() {
-    	  
-    	if(!confirm("정말 이 배너를 반려하시겠습니까?")) return;  
-    	  
+
+        if(!confirm("정말 이 배너를 반려하시겠습니까?")) return;
+
         var reason = document.getElementById('rejectReason').value.trim();
         if (!reason) {
           document.getElementById('rejectReason').classList.add('error');
@@ -209,7 +214,7 @@
         }
       });
 
-      /* ── 토스트 (DOM에 없어도 동적 생성) ── */
+      /* ── 토스트 ── */
       window.showToast = function(msg, type) {
         var toast = document.getElementById('toast');
         if (!toast) {
@@ -265,11 +270,9 @@
            th:classappend="${banner.status}"
            th:attr="data-status=${banner.status}">
 
-        <div class="banner-thumb"> <!-- 삼항연산자로 -->
+        <div class="banner-thumb">
           <img th:if="${banner.imageFileUrl != null}"
-		     th:src="${banner.imageFileUrl.startsWith('/') 
-		              ? banner.imageFileUrl 
-		              : '/' + banner.imageFileUrl}"
+		     th:src="@{${'/' + banner.imageFileUrl.replaceAll('^/', '')}}"
 		     alt="배너 이미지">
           <span th:if="${banner.imageFileUrl == null}">이미지 없음</span>
         </div>
@@ -279,8 +282,8 @@
             <span class="banner-title" th:text="${banner.title}"></span>
             <span class="status-badge"
                   th:classappend="${banner.status}"
-                  th:text="${banner.status == '처리중'}  ? '승인 대기' :
-                            (${banner.status == '승인완료'}   ? '승인 완료' :
+                  th:text="${banner.status == '처리중'} ? '승인 대기' :
+                            (${banner.status == '승인완료'} ? '승인 완료' :
                             (${banner.status == '반려'} ? '반려' : '정지'))">
             </span>
           </div>
@@ -337,19 +340,18 @@
         총 <span th:text="${totalCount}"></span>개의 배너
       </span>
       <div class="pagination">
-        <!-- ↓ 수정: /admin/banners -> /user-service/admin/banners -->
-        <a th:href="@{/admin/banners(page=1)}"
+        <a th:href="@{banners(page=1)}"
            th:classappend="${currentPage == 1} ? 'disabled'">«</a>
-        <a th:href="@{/admin/banners(page=${currentPage > 1 ? currentPage-1 : 1})}"
+        <a th:href="@{banners(page=${currentPage > 1 ? currentPage-1 : 1})}"
            th:classappend="${currentPage == 1} ? 'disabled'">이전</a>
         <span th:each="i : ${#numbers.sequence(1, totalPages)}">
-          <a th:href="@{/admin/banners(page=${i})}"
+          <a th:href="@{banners(page=${i})}"
              th:text="${i}"
              th:classappend="${i == currentPage} ? 'active'"></a>
         </span>
-        <a th:href="@{/admin/banners(page=${currentPage < totalPages ? currentPage+1 : totalPages})}"
+        <a th:href="@{banners(page=${currentPage < totalPages ? currentPage+1 : totalPages})}"
            th:classappend="${currentPage == totalPages} ? 'disabled'">다음</a>
-        <a th:href="@{/admin/banners(page=${totalPages})}"
+        <a th:href="@{banners(page=${totalPages})}"
            th:classappend="${currentPage == totalPages} ? 'disabled'">»</a>
       </div>
     </div>
