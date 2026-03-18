@@ -13,4 +13,6 @@ public interface IndexDAO {
 	// 핫한 기업 조회
 	List<Map<String, Object>> selectHotCompanies();
 	
+	// 메인 스폰서 배너 목록 조회
+    List<Map<String, Object>> selectMainBannerList();
 }

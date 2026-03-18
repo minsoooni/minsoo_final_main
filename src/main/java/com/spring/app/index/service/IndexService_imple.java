@@ -35,4 +35,8 @@ public class IndexService_imple implements IndexService {
         return indexDAO.selectHotCompanies();
     }
 
+    @Override
+	public List<Map<String, Object>> getMainBannerList() {
+		return indexDAO.selectMainBannerList();
+	}
 }
