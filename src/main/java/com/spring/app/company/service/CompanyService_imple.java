@@ -1087,34 +1087,38 @@ public class CompanyService_imple implements CompanyService {
     @Override
     public List<OfferRecipientDetailDTO> selectOfferRecipientDetailsByOfferLetterId(Long offerLetterId, String companyMemberId) {
 
-        // 소유권 확인
-        int owns = offerMapper.existsOfferHistoryOwnedByCompany(offerLetterId, companyMemberId);
-        if (owns != 1) {
+        int ownsTemplate = offerMapper.existsOfferLetterOwnedByCompany(offerLetterId, companyMemberId);
+        int ownsHistory  = offerMapper.existsOfferHistoryOwnedByCompany(offerLetterId, companyMemberId);
+
+        // 원본도 없고 발송 이력도 없으면 진짜 권한 없음 / 존재하지 않음
+        if (ownsTemplate != 1 && ownsHistory != 1) {
             throw new IllegalStateException("권한이 없거나 존재하지 않는 제안서입니다.");
         }
 
         List<OfferRecipientDetailDTO> list = offerMapper.selectOfferRecipientDetailsByOfferLetterId(offerLetterId);
 
-        if (list != null) {
-            for (OfferRecipientDetailDTO dto : list) {
-                // 화면용 상태문구를 조금 더 자연스럽게 보정
-                if (dto.getResponseStatus() != null) {
-                    switch (dto.getResponseStatus()) {
-                        case 1:
-                            dto.setResponseStatusText("수락");
-                            break;
-                        case 2:
-                            dto.setResponseStatusText("거절");
-                            break;
-                        default:
-                            dto.setResponseStatusText("미응답");
-                            break;
-                    }
-                } else {
-                    dto.setResponseStatusText("미응답");
+        if (list == null) {
+            return Collections.emptyList();
+        }
+
+        for (OfferRecipientDetailDTO dto : list) {
+            if (dto.getResponseStatus() != null) {
+                switch (dto.getResponseStatus()) {
+                    case 1:
+                        dto.setResponseStatusText("수락");
+                        break;
+                    case 2:
+                        dto.setResponseStatusText("거절");
+                        break;
+                    default:
+                        dto.setResponseStatusText("미응답");
+                        break;
                 }
+            } else {
+                dto.setResponseStatusText("미응답");
             }
         }
+
         return list;
     }
     
