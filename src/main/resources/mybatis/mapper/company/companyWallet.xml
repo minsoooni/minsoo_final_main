@@ -7,6 +7,7 @@
 
   <!-- ===================== payment ===================== -->
 
+  <!-- 지갑 생성(첫 결제 시) -->
   <insert id="insertPayment">
     INSERT INTO TBL_PAYMENT
       (PAYMENT_ID, FK_MEMBERID, ORDER_ID, CHARGE_AMOUNT, STATUS, REQUESTED_AT, CREATED_AT, UPDATED_AT)
@@ -47,6 +48,8 @@
     WHERE ORDER_ID = #{orderId}
   </update>
 
+
+
   <!-- ===================== point_wallet ===================== -->
 
   <select id="selectPointWalletId" resultType="long">
@@ -75,6 +78,8 @@
     WHERE FK_MEMBERID = #{memberId}
   </select>
 
+
+
   <!-- ===================== point_transaction ===================== -->
 
   <insert id="insertPointTransactionCharge">
@@ -92,6 +97,8 @@
        0,
        SYSDATE)
   </insert>
+
+
 
   <!-- ===================== payment summary/list ===================== -->
 

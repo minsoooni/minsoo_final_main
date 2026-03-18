@@ -158,18 +158,23 @@
           .replace(/"/g,'&quot;');
       }
     });
+    
+    
+    function goBackToList() {
+      history.back();
+    }
   </script>
 </head>
 
 <body>
 <section class="dash">
   <div class="detail-container">
+    <button type="button" class="btn btn-outline-secondary back-btn" onclick="goBackToList()">
+	  <i class="fas fa-arrow-left"></i> 뒤로가기
+	</button>
 
     <!-- 상단 헤더 -->
     <div class="apply-header">
-      <a th:href="@{/company/applicant/api/list}" class="back-link">
-        <i class="fas fa-arrow-left"></i> 뒤로가기
-      </a>
 
       <div class="header-body">
         <div class="header-left">
