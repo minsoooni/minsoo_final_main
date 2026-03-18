@@ -19,6 +19,7 @@
                 ROW_NUMBER() OVER (ORDER BY p.CREATED_AT DESC) AS rn
             FROM TBL_POST p
             <where>
+            	AND p.POST_STATUS != 'DELETED'
                 <if test="search != null and search != ''">
                     AND (p.TITLE LIKE '%' || #{search} || '%'
                     OR p.FK_MEMBERID LIKE '%' || #{search} || '%')
@@ -31,10 +32,12 @@
         WHERE rn BETWEEN #{offset}+1 AND #{offset}+#{limit}
     </select>
 
-    <!-- 게시글 전체 건수 -->
+    <!-- 게시글 전체 건수 (삭제됨 포함) -->
     <select id="selectPostCount" resultType="int">
         SELECT COUNT(*) FROM TBL_POST p
         <where>
+       		 AND p.POST_STATUS != 'DELETED'
+       		 
             <if test="search != null and search != ''">
                 AND (p.TITLE LIKE '%' || #{search} || '%'
                 OR p.FK_MEMBERID LIKE '%' || #{search} || '%')
@@ -45,9 +48,16 @@
         </where>
     </select>
 
-    <!-- 게시글 상태별 건수 -->
+    <!-- 활성/숨김 카운트 (삭제됨 제외) -->
     <select id="selectPostCountByHidden" resultType="int">
-        SELECT COUNT(*) FROM TBL_POST WHERE IS_HIDDEN = #{isHidden}
+        SELECT COUNT(*) FROM TBL_POST
+        WHERE IS_HIDDEN = #{isHidden}
+        AND POST_STATUS != 'DELETED'
+    </select>
+
+    <!-- 게시글 삭제 건수 -->
+    <select id="selectDeletedPostCount" resultType="int">
+        SELECT COUNT(*) FROM TBL_POST WHERE POST_STATUS = 'DELETED'
     </select>
 
     <!-- 게시글 숨김 토글 -->
@@ -74,6 +84,9 @@
                 ROW_NUMBER() OVER (ORDER BY c.CREATED_AT DESC) AS rn
             FROM TBL_COMMENT c
             <where>
+            
+            	AND c.STATUS != 'DELETED'
+            
                 <if test="search != null and search != ''">
                     AND (c.CONTENT LIKE '%' || #{search} || '%'
                     OR c.FK_MEMBERID LIKE '%' || #{search} || '%')
@@ -89,7 +102,8 @@
     <!-- 댓글 전체 건수 -->
     <select id="selectCommentCount" resultType="int">
         SELECT COUNT(*) FROM TBL_COMMENT c
-        <where>
+        <where>       	
+        	AND c.STATUS != 'DELETED'      
             <if test="search != null and search != ''">
                 AND (c.CONTENT LIKE '%' || #{search} || '%'
                 OR c.FK_MEMBERID LIKE '%' || #{search} || '%')
@@ -100,9 +114,16 @@
         </where>
     </select>
 
-    <!-- 댓글 상태별 건수 -->
+    <!-- 댓글 활성/숨김 카운트 (IS_HIDDEN 기준) -->
     <select id="selectCommentCountByHidden" resultType="int">
-        SELECT COUNT(*) FROM TBL_COMMENT WHERE IS_HIDDEN = #{isHidden}
+        SELECT COUNT(*) FROM TBL_COMMENT
+        WHERE IS_HIDDEN = #{isHidden}
+        AND STATUS != 'DELETED'
+    </select>
+
+    <!-- 댓글 삭제 건수 -->
+    <select id="selectDeletedCommentCount" resultType="int">
+        SELECT COUNT(*) FROM TBL_COMMENT WHERE STATUS = 'DELETED'
     </select>
 
     <!-- 댓글 숨김 토글 -->
@@ -112,5 +133,32 @@
             UPDATED_AT = SYSDATE
         WHERE COMMENT_ID = #{commentId}
     </update>
+
+	<select id="selectDeletedPagedPosts" resultType="com.spring.app.admin.domain.AdminPostDTO">
+	    SELECT * FROM (
+	        SELECT
+	            p.POST_ID       AS postId,
+	            p.FK_MEMBERID   AS memberId,
+	            p.FK_BOARD_ID   AS boardId,
+	            p.TITLE         AS title,
+	            p.POST_STATUS   AS postStatus,
+	            p.VIEW_COUNT    AS viewCount,
+	            p.CREATED_AT    AS createdAt,
+	            p.UPDATED_AT    AS updatedAt,
+	            p.IS_HIDDEN     AS isHidden,
+	            ROW_NUMBER() OVER (ORDER BY p.CREATED_AT DESC) AS rn
+	        FROM TBL_POST p
+	        <where>
+	            AND p.POST_STATUS = 'DELETED'
+	            <if test="search != null and search != ''">
+	                AND (p.TITLE LIKE '%' || #{search} || '%'
+	                OR p.FK_MEMBERID LIKE '%' || #{search} || '%')
+	            </if>
+	        </where>
+	    )
+	    WHERE rn BETWEEN #{offset}+1 AND #{offset}+#{limit}
+	    
+	</select>
+	
 
 </mapper>

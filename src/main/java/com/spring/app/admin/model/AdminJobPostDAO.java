@@ -29,7 +29,5 @@ public interface AdminJobPostDAO {
     int updateJobHidden(
     	    @Param("jobId") Long jobId,
     	    @Param("isHidden") Integer isHidden
-    );
-    
-    void updateExpiredJobsClosed();
+    );   
 }

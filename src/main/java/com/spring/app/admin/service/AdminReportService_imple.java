@@ -43,6 +43,25 @@ public class AdminReportService_imple implements AdminReportService {
         if (result > 0) {
             AdminReportDTO report = adminReportDAO.selectReportById(reportId);
 
+            if ("승인".equals(status)) {
+
+                Long targetId = report.getTargetId();
+
+                switch (report.getTargetType()) {
+                    case 1: // 채용공고
+                        adminReportDAO.updateJobHidden(targetId);
+                        break;
+
+                    case 2: // 게시글
+                        adminReportDAO.updatePostHidden(targetId);
+                        break;
+
+                    case 3: // 댓글
+                        adminReportDAO.updateCommentHidden(targetId);
+                        break;
+                }
+            }           
+            
             String targetTitle;
             String linkUrl;
 

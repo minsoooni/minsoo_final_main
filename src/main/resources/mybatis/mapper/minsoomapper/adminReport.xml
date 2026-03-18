@@ -147,6 +147,23 @@
     WHERE r.REPORT_ID = #{reportId}
 </select>
     
+    <update id="updateJobHidden">
+	    UPDATE TBL_JOB_POSTING
+	    SET IS_HIDDEN = 1
+	    WHERE JOB_ID = #{jobId}
+	</update>
+	
+	<update id="updatePostHidden">
+	    UPDATE TBL_POST
+	    SET IS_HIDDEN = 1
+	    WHERE POST_ID = #{postId}
+	</update>
+	
+	<update id="updateCommentHidden">
+	    UPDATE TBL_COMMENT
+	    SET IS_HIDDEN = 1
+	    WHERE COMMENT_ID = #{commentId}
+	</update>
     
 
 </mapper>

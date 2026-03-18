@@ -36,4 +36,12 @@ public interface AdminPostDAO {
     );
     int selectCommentCountByHidden(@Param("isHidden") int isHidden);
     int updateCommentHidden(@Param("commentId") Long commentId, @Param("isHidden") int isHidden);
+	int selectDeletedPostCount();
+	int selectDeletedCommentCount();
+	
+	List<AdminPostDTO> selectDeletedPagedPosts(
+		    @Param("search") String search,
+		    @Param("offset") int offset,
+		    @Param("limit") int limit
+		);
 }
