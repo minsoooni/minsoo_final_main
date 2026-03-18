@@ -120,10 +120,16 @@
     document.addEventListener('DOMContentLoaded', function () {
 
       var today = new Date().toISOString().split('T')[0];
-      document.getElementById('noticeEndDate').min  = today;
-      document.getElementById('popupStartDate').min = today;
-      document.getElementById('popupEndDate').min   = today;
-
+	  var maxDate = '2099-12-31';
+	  
+	  
+	  document.getElementById('noticeEndDate').min  = today;
+	  document.getElementById('noticeEndDate').max  = maxDate;
+	  document.getElementById('popupStartDate').min = today;
+	  document.getElementById('popupStartDate').max = maxDate;  
+	  document.getElementById('popupEndDate').min   = today;
+	  document.getElementById('popupEndDate').max   = maxDate;  
+	  
       var editingId       = null;
       var previewTargetId = null;
       var pendingPopupId  = null;
@@ -191,58 +197,69 @@
       });
 
       /* ── 저장 ── */
-      window.saveNotice = function () {
-        var title      = document.getElementById('noticeTitle').value.trim();
-        var content    = document.getElementById('noticeContent').value.trim();
-        var status     = 1;
-        var pinnedYn   = document.querySelector('input[name="noticeType"]:checked').value;
-        var endDate    = document.getElementById('noticeEndDate').value;
-        var popupYn    = document.getElementById('popupYnCheck').checked ? 'Y' : 'N';
-        var popupStart = document.getElementById('popupStartDate').value;
-        var popupEnd   = document.getElementById('popupEndDate').value;
+	  window.saveNotice = function () {
+	    var MAX_DATE = '2099-12-31';
 
-        if (!title)   { alert('제목을 입력해주세요.');  return; }
-        if (!content) { alert('내용을 입력해주세요.');  return; }
+	    // ── 변수 선언을 먼저 ──
+	    var title      = document.getElementById('noticeTitle').value.trim();
+	    var content    = document.getElementById('noticeContent').value.trim();
+	    var status     = 1;
+	    var pinnedYn   = document.querySelector('input[name="noticeType"]:checked').value;
+	    var endDate    = document.getElementById('noticeEndDate').value;
+	    var popupYn    = document.getElementById('popupYnCheck').checked ? 'Y' : 'N';
+	    var popupStart = document.getElementById('popupStartDate').value;
+	    var popupEnd   = document.getElementById('popupEndDate').value;
 
-        if (endDate && endDate < today) {
-          alert('마감일은 오늘 이후 날짜로 설정해주세요.');
-          return;
-        }
-        if (popupYn === 'Y') {
-          if (!popupStart) { alert('팝업 시작일을 입력해주세요.'); return; }
-          if (popupStart < today) { alert('팝업 시작일은 오늘 이후로 설정해주세요.'); return; }
-          if (popupEnd) {
-            if (popupEnd < today)      { alert('팝업 종료일은 오늘 이후로 설정해주세요.');   return; }
-            if (popupEnd < popupStart) { alert('팝업 종료일은 시작일 이후로 설정해주세요.'); return; }
-          }
-          if (endDate && popupEnd && popupEnd > endDate) {
-            alert('팝업 종료일은 공지 마감일(' + endDate + ')을 초과할 수 없습니다.');
-            return;
-          }
-        }
+	    if (!title)   { alert('제목을 입력해주세요.');  return; }
+	    if (!content) { alert('내용을 입력해주세요.');  return; }
 
-        var body   = { title: title, content: content, status: status, pinnedYn: pinnedYn,
-                       endDate: endDate, popupYn: popupYn, popupStartAt: popupStart, popupEndAt: popupEnd };
-        var url    = editingId
-        ? contextPath + 'admin/notices/' + editingId
-        : contextPath + 'admin/notices';
-        
-        var method = editingId ? 'PUT' : 'POST';
+	    // ── max 날짜 검증 ──
+	    if (endDate && endDate > MAX_DATE) {
+	      alert('마감일은 2099년 이전으로 설정해주세요.');
+	      return;
+	    }
 
-        fetch(url, {
-          method: method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        }).then(function (res) {
-          if (res.ok) {
-            closeModal();
-            showToast(editingId ? '수정됐습니다.' : '등록됐습니다.', 'success');
-            setTimeout(function () { location.href = location.pathname + location.search; }, 1000);
-          } else {
-            showToast('처리 중 오류가 발생했습니다.', 'warning');
-          }
-        });
-      };
+	    if (endDate && endDate < today) {
+	      alert('마감일은 오늘 이후 날짜로 설정해주세요.');
+	      return;
+	    }
+
+	    if (popupYn === 'Y') {
+	      if (!popupStart) { alert('팝업 시작일을 입력해주세요.'); return; }
+	      if (popupStart < today) { alert('팝업 시작일은 오늘 이후로 설정해주세요.'); return; }
+	      if (popupStart > MAX_DATE) { alert('팝업 시작일은 2099년 이전으로 설정해주세요.'); return; }
+	      if (popupEnd) {
+	        if (popupEnd < today)       { alert('팝업 종료일은 오늘 이후로 설정해주세요.');   return; }
+	        if (popupEnd < popupStart)  { alert('팝업 종료일은 시작일 이후로 설정해주세요.'); return; }
+	        if (popupEnd > MAX_DATE)    { alert('팝업 종료일은 2099년 이전으로 설정해주세요.'); return; }
+	      }
+	      if (endDate && popupEnd && popupEnd > endDate) {
+	        alert('팝업 종료일은 공지 마감일(' + endDate + ')을 초과할 수 없습니다.');
+	        return;
+	      }
+	    }
+
+	    var body   = { title: title, content: content, status: status, pinnedYn: pinnedYn,
+	                   endDate: endDate, popupYn: popupYn, popupStartAt: popupStart, popupEndAt: popupEnd };
+	    var url    = editingId
+	      ? contextPath + 'admin/notices/' + editingId
+	      : contextPath + 'admin/notices';
+	    var method = editingId ? 'PUT' : 'POST';
+
+	    fetch(url, {
+	      method: method,
+	      headers: { 'Content-Type': 'application/json' },
+	      body: JSON.stringify(body)
+	    }).then(function (res) {
+	      if (res.ok) {
+	        closeModal();
+	        showToast(editingId ? '수정됐습니다.' : '등록됐습니다.', 'success');
+	        setTimeout(function () { location.href = location.pathname + location.search; }, 1000);
+	      } else {
+	        showToast('처리 중 오류가 발생했습니다.', 'warning');
+	      }
+	    });
+	  };
 
       /* ── 삭제 ── */
       window.deleteNotice = function (id, title) {
