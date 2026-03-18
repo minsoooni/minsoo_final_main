@@ -108,6 +108,36 @@ public class CompanyService_imple implements CompanyService {
 	}
 	
 	
+	// 신고 처리 상태를 화면용으로 바꾸는 메서드
+	private String convertReportProcessStatusText(String status) {
+	    if (status == null || status.isBlank()) {
+	        return "신고 접수";
+	    }
+
+	    switch (status) {
+	        case "WAIT":
+	        case "PENDING":
+	        case "처리전":
+	            return "처리대기";
+
+	        case "DONE":
+	        case "COMPLETE":
+	        case "처리완료":
+	            return "처리완료";
+
+	        case "REJECT":
+	        case "반려":
+	            return "반려";
+
+	        default:
+	            return status;
+	    }
+	}
+	
+	
+	
+	
+	
 	//기업 상단바 조회(기업ID, 기업명, 이메일)
 	@Override
 	public CompanyTopbarDTO getCompanyTopbarInfo(String memberId) {
@@ -415,10 +445,26 @@ public class CompanyService_imple implements CompanyService {
 	
 	
 	//채용공고 리스트 조회하기(다른 메서드에서 사용)
+	/*
 	@Override
 	public List<JobPostingDTO> getJobPostingList(String memberId) {
 		//List<JobPostingDTO> jobList = dao.getJobPostingList();
 		return jobMapper.getJobPostingList(memberId);
+	}
+	*/
+	// 신고 처리를 위한 채용공고 리스트 조회
+	@Override
+	public List<JobPostingDTO> getJobPostingList(String memberId) {
+	    List<JobPostingDTO> jobList = jobMapper.getJobPostingList(memberId);
+
+	    if (jobList != null) {
+	        for (JobPostingDTO dto : jobList) {
+	            dto.setReportStatusText(
+	                convertReportProcessStatusText(dto.getReportProcessStatus())
+	            );
+	        }
+	    }
+	    return jobList;
 	}
 	
 
@@ -440,9 +486,44 @@ public class CompanyService_imple implements CompanyService {
 	
 	
 	// 2)선택된 공고 상세정보 조회하기
+	/*
 	@Override
 	public JobPostingDTO getJobPostingOne(Long jobId) {
 		return jobMapper.getJobPostingOne(jobId);
+	}
+	*/
+	/*
+	@Override
+	public JobPostingDTO getJobPostingOne(Long jobId) {
+	    JobPostingDTO dto = jobMapper.getJobPostingOne(jobId);
+
+	    if (dto != null) {
+	        dto.setReportStatusText(
+	            convertReportProcessStatusText(dto.getReportProcessStatus())
+	        );
+	    }
+
+	    return dto;
+	}
+	*/
+	@Override
+	public JobPostingDTO getJobPostingOne(Long jobId) {
+	    JobPostingDTO dto = jobMapper.getJobPostingOne(jobId);
+
+	    if (dto != null) {
+	        dto.setReportStatusText(
+	            convertReportProcessStatusText(dto.getReportProcessStatus())
+	        );
+
+	        dto.setSkillList(jobMapper.getSkillNamesByJobId(jobId));
+
+	        // 혹시 템플릿에서 educationLevelName 을 쓰는데 값이 비어 있으면 보정
+	        if (dto.getEducationLevelName() == null) {
+	            dto.setEducationLevelName(dto.getEduLevelName());
+	        }
+	    }
+
+	    return dto;
 	}
 
 	
@@ -490,10 +571,24 @@ public class CompanyService_imple implements CompanyService {
     }
 
 	
-	//4)직무 및 기술스택 매핑테이블에 트랜잭션 처리하여 등록하기
+	//4)직무 및 기술스택 매핑테이블에 트랜잭션 처리하여 채용공고 등록하기
 	@Override
 	@Transactional
 	public int insertJobPosting(JobPostingDTO dto, List<Long> skillIds) {
+		System.out.println("dto:" + dto);
+		System.out.println("skillIds" + skillIds);
+		/*
+		dto:JobPostingDTO(jobId=null, memberId=TESTC, categoryId=18, categoryName=null, 
+						  regionCode=GG_SEONGNAM, title=임시저장 에러테스트, content=null, workType=정규직, 
+						  careerType=무관, eduCode=EDU_NONE, eduLevelName=null, salary=null, headcount=1, 
+						  status=임시저장, deadlineType=always, viewCount=null, scrapCount=null, isHidden=null, 
+						  reportId=null, reportReasonId=null, reportReasonName=null, reportContent=null, 
+						  reportProcessStatus=null, reportProcessReason=null, reportCreatedAt=null, reportProcessedAt=null, 
+						  reportCount=null, reportStatusText=null, deadlineAt=null, openedAt=null, 
+						  closedAt=null, createdAt=null, updatedAt=null, skillIds=null)
+		skillIds[]
+		*/
+		
 		//불러온 memberId 가 null 이라면 막아주기
 		if(dto.getMemberId() == null){
 		    throw new RuntimeException("로그인 정보가 없습니다.");

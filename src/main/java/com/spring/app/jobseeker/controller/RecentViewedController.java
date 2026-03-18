@@ -25,10 +25,9 @@ public class RecentViewedController {
         this.recentViewedService = recentViewedService;
     }
 
-    // ====================================================
+   
     // 최근 본 공고 목록 페이지
     // GET /jobseeker/job/recent
-    // ====================================================
     @GetMapping("job/recent")
     public ModelAndView recentViewedList(
             @RequestParam(value = "keyword",  required = false, defaultValue = "") String keyword,

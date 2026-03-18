@@ -87,7 +87,7 @@ public interface CompanyService {
 	int updateJobPosting(JobPostingDTO dto, List<Long> skillIds);
 	
 	
-	//직무 및 기술스택 매핑테이블에 트랜잭션 처리하여 등록하기
+	//직무 및 기술스택 매핑테이블에 트랜잭션 처리하여 채용공고 등록하기
 	int insertJobPosting(JobPostingDTO dto, List<Long> skillIds);
 	
 	//상태 동기화(마감/게시일 종료에 따른 변경)

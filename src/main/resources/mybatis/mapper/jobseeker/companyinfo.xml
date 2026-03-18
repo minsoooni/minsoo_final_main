@@ -5,9 +5,7 @@
 <mapper namespace="com.spring.app.jobseeker.model.CompanyInfoDAO">
 
 
-    <!-- ======================================================
-         1. 기업 목록 조회 (검색/필터/정렬/페이징)
-    ====================================================== -->
+    <!-- ======= 기업 목록 조회 (검색/필터/정렬/페이징) ======= -->
     <select id="selectCompanyList" parameterType="map"
             resultType="com.spring.app.jobseeker.domain.CompanyInfoDTO">
         SELECT *
@@ -127,9 +125,7 @@
     </select>
 
 
-    <!-- ======================================================
-         2. 기업 목록 총 건수
-    ====================================================== -->
+    <!-- ======= 기업 목록 총 건수 ======= -->
     <select id="selectCompanyListTotalCount" parameterType="map" resultType="int">
         SELECT COUNT(*)
         FROM tbl_company C
@@ -189,9 +185,7 @@
     </select>
 
 
-    <!-- ======================================================
-         3. 기업 상세 조회
-    ====================================================== -->
+    <!-- ======= 기업 상세 조회 ======= -->
     <select id="selectCompanyDetail" resultType="com.spring.app.jobseeker.domain.CompanyInfoDTO">
         SELECT C.fk_memberid           AS memberId,
                C.company_name          AS companyName,
@@ -262,9 +256,7 @@
     </select>
 
 
-    <!-- ======================================================
-         4. 해당 기업의 게시중 채용공고 목록
-    ====================================================== -->
+    <!-- ======= 해당 기업의 게시중 채용공고 목록 ======= -->
     <select id="selectCompanyJobPostings" parameterType="string"
             resultType="com.spring.app.jobseeker.domain.JobPostingListDTO">
         SELECT JP.job_id             AS jobId,
@@ -317,9 +309,7 @@
     </select>
 
 
-    <!-- ======================================================
-         5. 유사 기업 목록 (같은 업종, 최대 5건)
-    ====================================================== -->
+    <!-- ======= 유사 기업 목록 (같은 업종, 최대 5건) ======= -->
     <select id="selectSimilarCompanies"
             resultType="com.spring.app.jobseeker.domain.CompanyInfoDTO">
         SELECT *
@@ -352,9 +342,7 @@
     </select>
 
 
-    <!-- ======================================================
-         6. 팔로우 여부 확인
-    ====================================================== -->
+    <!-- ======= 팔로우 여부 확인 ======= -->
     <select id="selectFollowStatus" resultType="int">
         SELECT COUNT(*)
         FROM tbl_company_follow
@@ -363,18 +351,14 @@
     </select>
 
 
-    <!-- ======================================================
-         7. 팔로우 등록
-    ====================================================== -->
+    <!-- ======= 팔로우 등록 ======== -->
     <insert id="insertFollow">
         INSERT INTO tbl_company_follow (fk_company_memberid, fk_memberid, followed_at)
         VALUES (#{companyMemberId}, #{memberId}, SYSDATE)
     </insert>
 
 
-    <!-- ======================================================
-         8. 팔로우 해제
-    ====================================================== -->
+    <!-- ======= 팔로우 해제 ======= -->
     <delete id="deleteFollow">
         DELETE FROM tbl_company_follow
         WHERE fk_company_memberid = #{companyMemberId}
@@ -382,9 +366,7 @@
     </delete>
 
 
-    <!-- ======================================================
-         9. 팔로워 수 조회
-    ====================================================== -->
+    <!-- ======= 팔로워 수 조회 ======= -->
     <select id="selectFollowerCount" resultType="int">
         SELECT COUNT(*)
         FROM tbl_company_follow
@@ -392,9 +374,7 @@
     </select>
 
 
-    <!-- ======================================================
-         10. 팔로우한 기업 목록 조회 (관심기업 페이지용)
-    ====================================================== -->
+    <!-- ======= 팔로우한 기업 목록 조회 (관심기업 페이지용) ======= -->
     <select id="selectFollowedCompanyList" parameterType="map"
             resultType="com.spring.app.jobseeker.domain.CompanyInfoDTO">
         SELECT *
@@ -470,9 +450,7 @@
     </select>
 
 
-    <!-- ======================================================
-         11. 팔로우한 기업 총 건수
-    ====================================================== -->
+    <!-- ======= 팔로우한 기업 총 건수 ======= -->
     <select id="selectFollowedCompanyCount" parameterType="map" resultType="int">
         SELECT COUNT(*)
         FROM tbl_company_follow F
@@ -501,9 +479,7 @@
     </select>
 
 
-    <!-- ======================================================
-         진행중 채용공고 목록 (페이징)
-    ====================================================== -->
+    <!-- ======= 진행중 채용공고 목록 (페이징) ======= -->
     <select id="selectCompanyJobPostingsPaged" parameterType="map"
             resultType="com.spring.app.jobseeker.domain.JobPostingListDTO">
         SELECT *
@@ -559,9 +535,7 @@
     </select>
 
 
-    <!-- ======================================================
-         진행중 채용공고 총 건수
-    ====================================================== -->
+    <!-- ======= 진행중 채용공고 총 건수 ======= -->
     <select id="selectCompanyJobPostingsCount" parameterType="string" resultType="int">
         SELECT COUNT(*)
         FROM tbl_job_posting JP

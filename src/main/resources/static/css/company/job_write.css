@@ -349,3 +349,43 @@
 }
 
 
+
+
+.jp-guide{
+  margin-top: 16px;
+}
+
+.jp-guide-box{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fafafa;
+}
+
+.jp-guide-item{
+  padding-bottom: 10px;
+  border-bottom: 1px dashed #e5e7eb;
+}
+
+.jp-guide-item:last-child{
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.jp-guide-item strong{
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.jp-guide-item p{
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #4b5563;
+}

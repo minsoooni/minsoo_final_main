@@ -21,11 +21,11 @@ public class ResumeService_imple implements ResumeService {
     @Transactional
     public int insertResume(ResumeDTO dto) {
 
-        // 1. 이력서 기본 정보 등록 (selectKey로 resumeId 세팅됨)
+        // 이력서 기본 정보 등록
         int result = dao.insertResume(dto);
         long resumeId = dto.getResumeId();
 
-        // 2. 학력
+        // 학력
         if (dto.getEducationList() != null) {
             for (ResumeEducationDTO edu : dto.getEducationList()) {
                 edu.setResumeId(resumeId);
@@ -33,7 +33,7 @@ public class ResumeService_imple implements ResumeService {
             }
         }
 
-        // 3. 경력
+        // 경력
         if (dto.getCareerList() != null) {
             for (ResumeCareerDTO career : dto.getCareerList()) {
                 career.setResumeId(resumeId);
@@ -41,7 +41,7 @@ public class ResumeService_imple implements ResumeService {
             }
         }
 
-        // 4. 어학
+        // 어학
         if (dto.getLanguageList() != null) {
             for (ResumeLanguageDTO lang : dto.getLanguageList()) {
                 lang.setResumeId(resumeId);
@@ -49,7 +49,7 @@ public class ResumeService_imple implements ResumeService {
             }
         }
 
-        // 5. 자격증
+        // 자격증
         if (dto.getCertificateList() != null) {
             for (ResumeCertificateDTO cert : dto.getCertificateList()) {
                 cert.setResumeId(resumeId);
@@ -57,7 +57,7 @@ public class ResumeService_imple implements ResumeService {
             }
         }
 
-        // 6. 포트폴리오
+        // 포트폴리오
         if (dto.getPortfolioList() != null) {
             for (ResumePortfolioDTO port : dto.getPortfolioList()) {
                 port.setResumeId(resumeId);
@@ -65,7 +65,7 @@ public class ResumeService_imple implements ResumeService {
             }
         }
 
-        // 7. 수상
+        // 수상
         if (dto.getAwardList() != null) {
             for (ResumeAwardDTO award : dto.getAwardList()) {
                 award.setResumeId(resumeId);
@@ -73,7 +73,7 @@ public class ResumeService_imple implements ResumeService {
             }
         }
 
-        // 8. 기술스택
+        // 기술스택
         if (dto.getTechstackList() != null) {
             for (ResumeTechstackDTO tech : dto.getTechstackList()) {
                 tech.setResumeId(resumeId);
@@ -150,6 +150,7 @@ public class ResumeService_imple implements ResumeService {
         return result;
     }
 
+    // 이력서 삭제 (소프트 삭제)
     @Override
     public int deleteResume(long resumeId, String memberid) {
         return dao.deleteResume(resumeId, memberid);
@@ -171,21 +172,25 @@ public class ResumeService_imple implements ResumeService {
         return resume;
     }
 
+    // 특정 회원의 이력서 목록 조회
     @Override
     public List<ResumeDTO> selectResumeListByMember(String memberid) {
         return dao.selectResumeListByMember(memberid);
     }
 
+    // 특정 회원의 이력서 개수 조회
     @Override
     public int selectResumeCountByMember(String memberid) {
         return dao.selectResumeCountByMember(memberid);
     }
 
+    // 이력서 작성용 회원 프로필 조회
     @Override
     public java.util.Map<String, Object> selectMemberProfile(String memberid) {
         return dao.selectMemberProfile(memberid);
     }
 
+    // 대표 이력서 설정
     @Override
     @Transactional
     public int setPrimaryResume(long resumeId, String memberid, int allowScout) {
@@ -197,26 +202,31 @@ public class ResumeService_imple implements ResumeService {
         return result;
     }
 
+    // 제안 허용 설정
     @Override
     public int updateAllowScout(long resumeId, String memberid, int allowScout) {
         return dao.updateAllowScout(resumeId, memberid, allowScout);
     }
 
+    // 자격증 마스터 검색 (자동완성)
     @Override
     public List<CertificateDTO> searchCertificateMaster(String keyword) {
         return dao.searchCertificateMaster(keyword);
     }
 
+    // 직무 카테고리 목록
     @Override
     public List<JobCategoryDTO> selectJobCategoryList() {
         return dao.selectJobCategoryList();
     }
 
+    // 지역 목록
     @Override
     public List<RegionDTO> selectRegionList() {
         return dao.selectRegionList();
     }
 
+    // 기술스택 검색 (자동완성)
     @Override
     public List<ResumeTechstackDTO> searchSkill(String keyword) {
         return dao.searchSkill(keyword);

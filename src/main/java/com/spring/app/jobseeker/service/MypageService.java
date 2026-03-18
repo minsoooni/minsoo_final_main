@@ -26,10 +26,12 @@ public interface MypageService {
     // 커뮤니티 인증 직장명 등록/변경/취소
     int updateCommunityCompanyName(String memberId, String companyName);
 
-    // === 대시보드 통계 === //
+    // 대시보드 통계
     Map<String, Integer> getDashboardStats(String memberId);
 
-    // === 대시보드 목록 === //
+    // 최근 지원 내역 조회
     List<Map<String, Object>> getRecentApplications(String memberId);
+    
+    // 최근 본 공고 조회
     List<Map<String, Object>> getRecentViewedPosts(String memberId);
 }

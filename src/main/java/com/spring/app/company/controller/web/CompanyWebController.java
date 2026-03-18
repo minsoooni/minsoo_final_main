@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -163,7 +164,6 @@ public class CompanyWebController {
         return "company/job/job_list";
     }
     */
-    
     //채용공고 리스트 조회(페이징처리)
     @GetMapping("/job/list")
     public String jobs(@RequestParam(value = "jobId", required = false) Long jobId,
@@ -218,13 +218,26 @@ public class CompanyWebController {
         model.addAttribute("totalPage", totalPage);
 
         // 선택된 공고 상세정보 조회
+        /*
         if (jobId != null) {
             JobPostingDTO selectedJob = service.getJobPostingOne(jobId);
             model.addAttribute("selectedJob", selectedJob);
         }
+        */
+        // 선택된 공고 상세정보 조회(로그인 한 기업 계정까지 2차 체크)
+        if (jobId != null) {
+            JobPostingDTO selectedJob = service.getJobPostingOne(jobId);
+
+            if (selectedJob != null && memberId.equals(selectedJob.getMemberId())) {
+                model.addAttribute("selectedJob", selectedJob);
+            }
+        }
 
         return "company/job/job_list";
     }
+    
+    
+    
 
     // 채용공고 등록 페이지
     @GetMapping("/job/job_write")
@@ -263,9 +276,52 @@ public class CompanyWebController {
 	
 	    return "company/job/job_update";
 	}
+	
+	//공고상세 팝업창 열기
+	@GetMapping("/job/detail/{jobId}")
+	public String jobDetailPopup(@PathVariable("jobId") Long jobId,
+	                             Model model,
+	                             Authentication authentication) {
+
+	    model.addAttribute("activeMenu", "job");
+
+	    if (authentication == null || authentication.getName() == null) {
+	        return "redirect:/login";
+	    }
+
+	    String memberId = authentication.getName();
+	    service.refreshJobPostingStatuses();
+
+	    JobPostingDTO post = service.getJobPostingOne(jobId);
+	    //System.out.println(post);
+	    /*
+	    JobPostingDTO(jobId=1036, memberId=TESTC, categoryId=22, categoryName=그래픽, regionCode=SEOUL_GWANGJIN, regionName=광진구, 
+	    parentRegionCode=null, parentRegionName=서울특별시, title=인재, content=인재를 찾습니다, workType=정규직, careerType=무관, 
+	    eduCode=EDU_COLLEGE_4, eduLevelName=대학교(4년), educationLevelName=대학교(4년), salary=4000, headcount=1, status=게시중, 
+	    deadlineType=always, viewCount=16, scrapCount=null, companyName=테스트수정회사, companyType=중소기업, ceoName=안태훈, 
+	    industryCode=FIN, openDate=2019-01-01, companyAddr=강남구 테헤란로 H빌딩 9층, homepageUrl=https://www.naver.com, 
+	    logoUrl=images/Logo/20260310144859_707ad72e491b4482ab933fee2d2e0ff1.jpg, isHidden=0, reportId=61, reportReasonId=8, 
+	    reportReasonName=기타, reportContent=제목, 내용이 성의없습니다., reportProcessStatus=승인, 
+	    reportProcessReason=확인했습니다.! 이 공고는 1분뒤에 가려집니다.!, reportCreatedAt=Tue Mar 17 19:27:45 GMT+09:00 2026, 
+	    reportProcessedAt=Tue Mar 17 19:49:30 GMT+09:00 2026, reportCount=null, reportStatusText=승인, deadlineAt=null, 
+	    openedAt=null, closedAt=2027-01-01T12:00, createdAt=2026-03-08T23:07:09, updatedAt=2026-03-17T20:38, 
+	    skillIds=null, skillList=[Azure, C, C++, FastAPI, Figma, Flutter, GCP, Kotlin, Kubernetes, MongoDB, Node.js, PostgreSQL, Redis, Slack, Vue])
+	    */
+
+	    // 공고가 없거나, 로그인한 기업의 공고가 아니면 목록으로
+	    if (post == null || !memberId.equals(post.getMemberId())) {
+	        return "redirect:/company/job/list";
+	    }
+
+	    model.addAttribute("post", post);
+	    return "company/job/job_detail_popup";
+	}
+	
     // ============================== 채용공고 ============================== //
 
     
+	
+	
     
     
 	// ============================== 지원자 관리 ============================== //

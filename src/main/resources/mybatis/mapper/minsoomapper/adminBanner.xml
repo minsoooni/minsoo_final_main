@@ -25,6 +25,7 @@
                 FROM TBL_POINT_TRANSACTION
                 GROUP BY FK_BANNER_ID
             ) pt ON pt.FK_BANNER_ID = b.BANNER_ID
+            WHERE b.STATUS != '임시저장'
             ORDER BY b.BANNER_ID DESC
         ) a WHERE ROWNUM &lt;= #{offset} + #{limit}
     ) WHERE rn > #{offset}
@@ -32,6 +33,7 @@
 
   <select id="selectBannerCount" resultType="int">
     SELECT COUNT(*) FROM TBL_BANNER
+    WHERE STATUS != '임시저장'
   </select>
 
   <update id="updateBannerApprove">
