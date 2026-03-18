@@ -14,7 +14,7 @@
     .content-container { background: white; border-radius: 8px; border: 1px solid #e5e7eb; padding: 24px; }
     .page-title { font-size: 18px; font-weight: 600; color: #1f2937; margin-bottom: 24px; }
 
-    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid #e5e7eb; }
+    .stats-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid #e5e7eb; }
     .stat-card .label { font-size: 13px; color: #6b7280; margin-bottom: 8px; }
     .stat-card .value { font-size: 28px; font-weight: 700; color: #1f2937; }
     .stat-card .value.green { color: #10b981; }
@@ -173,6 +173,11 @@
         <div class="label">마감 공고</div>
         <div class="value gray" th:text="${closedCount}">0</div>
       </div>
+	  <div class="stat-card">
+	      <div class="label">삭제 공고</div>
+	      <div class="value" style="color:#ef4444;" th:text="${deletedCount}">0</div>
+	    </div>
+	  </div>
     </div>
 
     <!-- 검색 & 필터 (회원/기업과 동일한 서버사이드 방식) -->
@@ -185,7 +190,9 @@
         <option value="active" th:selected="${param.status != null and param.status[0] == 'active'}">활성</option>
         <option value="hidden" th:selected="${param.status != null and param.status[0] == 'hidden'}">숨김</option>
         <option value="closed" th:selected="${param.status != null and param.status[0] == 'closed'}">마감</option>
-      </select>
+		<option value="deleted" th:selected="${param.status != null and param.status[0] == 'deleted'}">삭제됨</option>
+		<option value="temp" th:selected="${param.status != null and param.status[0] == 'temp'}">임시저장</option>
+	  </select>
     </div>
 
     <!-- 테이블 -->
@@ -224,29 +231,37 @@
 		  <td class="center" th:text="${job.updatedAt != null} ? ${#strings.substring(job.updatedAt.toString(), 0, 10)} : '-'"></td>
           
 		  <td class="center">
-		    <span th:if="${job.status == '마감'}"
-		          class="status-badge closed">마감</span>
-		
-		    <span th:if="${job.status != '마감' and job.isHidden == 0}"
-		          class="status-badge active">활성</span>
-		
-		    <span th:if="${job.status != '마감' and job.isHidden == 1}"
-		          class="status-badge hidden">숨김</span>
+		      <!-- 마감 -->
+		      <span th:if="${job.status == '마감'}"
+		            class="status-badge closed">마감</span>
+
+		      <!-- 삭제됨 → 별도 배지 -->
+			  <span th:if="${job.status == '삭제됨'}"
+			        class="status-badge" style="background:#fee2e2; color:#991b1b; font-size:10px;">삭제됨</span>
+
+		      <!-- 활성 -->
+		      <span th:if="${job.status != '마감' and job.status != '삭제됨' and job.isHidden == 0}"
+		            class="status-badge active">활성</span>
+
+		      <!-- 숨김 -->
+		      <span th:if="${job.status != '마감' and job.status != '삭제됨' and job.isHidden == 1}"
+		            class="status-badge hidden">숨김</span>
 		  </td>
 		  
-          <td class="center">
-			    <div th:if="${job.status != '마감'}" class="toggle-wrapper">
-			        <div class="toggle-switch"
-			             th:classappend="${job.isHidden == 0} ? 'on'"
-			             th:attr="onclick='toggleVisibility(' + ${job.jobId} + ', ' + ${job.isHidden} + ', \'' + ${job.status} + '\')'">
-			        </div>
-			        <span class="visibility-icon"
-			              th:classappend="${job.isHidden == 0} ? 'visible'"
-			              th:text="${job.isHidden == 0} ? '👁' : '🚫'">
-			        </span>
-			    </div>
-			    <span th:if="${job.status == '마감'}" style="color:#d1d5db; font-size:12px;">-</span>
-			</td>
+		  <td class="center">
+		      <div th:if="${job.status != '마감' and job.status != '삭제됨'}" class="toggle-wrapper">
+		          <div class="toggle-switch"
+		               th:classappend="${job.isHidden == 0} ? 'on'"
+		               th:attr="onclick='toggleVisibility(' + ${job.jobId} + ', ' + ${job.isHidden} + ', \'' + ${job.status} + '\')'">
+		          </div>
+		          <span class="visibility-icon"
+		                th:classappend="${job.isHidden == 0} ? 'visible'"
+		                th:text="${job.isHidden == 0} ? '👁' : '🚫'">
+		          </span>
+		      </div>
+		      <span th:if="${job.status == '마감' or job.status == '삭제됨'}"
+		            style="color:#d1d5db; font-size:12px;">-</span>
+		  </td>
           
         </tr>
 

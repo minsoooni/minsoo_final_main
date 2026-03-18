@@ -283,7 +283,9 @@ public class AdminController {
 	    model.addAttribute("activeCount",  adminJobPostService.getJobCountByStatus("active"));
 	    model.addAttribute("hiddenCount",  adminJobPostService.getJobCountByStatus("hidden"));
 	    model.addAttribute("closedCount",  adminJobPostService.getJobCountByStatus("closed"));
-
+	    model.addAttribute("deletedCount",  adminJobPostService.getJobCountByStatus("deleted")); 
+	    model.addAttribute("tempCount",     adminJobPostService.getJobCountByStatus("temp"));
+	    
 	    return "admin/admin_job_posts";
 	}
 	

@@ -104,6 +104,10 @@
         <when test="status == 'closed'">
             WHERE STATUS = '마감'
         </when>
+         <!-- 추가 -->
+        <when test="status == 'deleted'">
+            WHERE STATUS = '삭제됨'
+        </when>     
     </choose>
   </select>
 
@@ -124,5 +128,7 @@
       AND DEADLINE_AT &lt; SYSDATE
       AND STATUS != '마감'
   </update>
+  
+  
 
 </mapper>
