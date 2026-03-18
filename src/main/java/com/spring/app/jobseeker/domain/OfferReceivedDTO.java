@@ -64,18 +64,18 @@ public class OfferReceivedDTO {
      * viewedAt != null && responseStatus == 0 → "PENDING"
      */
     public String getStatus() {
-        if (responseStatus == 1) return "ACCEPTED";
-        if (responseStatus == 2) return "REJECTED";
-        // 만료일 체크: 미응답(0) 상태에서 만료일이 지났으면 EXPIRED
-        if (responseStatus == 0 && expireAt != null && !expireAt.isEmpty()) {
+        if (responseStatus == 1) return "ACCEPTED"; // 수락시 ACCEPTED(수락)
+        if (responseStatus == 2) return "REJECTED"; // 거절시 REJECTED(거절)
+        
+        if (responseStatus == 0 && expireAt != null && !expireAt.isEmpty()) {// 만료일 체크: 미응답(0) 상태에서 만료일이 지났으면 EXPIRED(기간만료)
             try {
                 java.time.LocalDate expire = java.time.LocalDate.parse(expireAt.substring(0, 10),
                         java.time.format.DateTimeFormatter.ofPattern("yyyy.MM.dd"));
                 if (expire.isBefore(java.time.LocalDate.now())) return "EXPIRED";
-            } catch (Exception e) { /* 파싱 실패 시 무시 */ }
+            } catch (Exception e) { /* 실패 시 무시 */ }
         }
-        if (viewedAt == null) return "UNREAD";
-        return "PENDING";
+        if (viewedAt == null) return "UNREAD"; // 미응답 + 만료 안 됨 + 열람 안 함 → UNREAD(미열람)
+        return "PENDING"; // 그외 나머지 PENDING(검토중)
     }
 
     /**

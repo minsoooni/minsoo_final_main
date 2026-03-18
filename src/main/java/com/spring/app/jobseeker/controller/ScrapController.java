@@ -23,10 +23,9 @@ public class ScrapController {
         this.scrapService = scrapService;
     }
 
-    // ====================================================
+   
     // 스크랩한 공고 목록 페이지
     // GET /jobseeker/job/scrapped
-    // ====================================================
     @GetMapping("job/scrapped")
     public ModelAndView scrappedList(
             @RequestParam(value = "keyword", required = false, defaultValue = "") String keyword,

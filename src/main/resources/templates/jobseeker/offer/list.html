@@ -12,7 +12,7 @@
 
 <style>
 
-  /* ── 상단 요약 카드 ── */
+  /* 상단 요약 카드 */
   .os-card {
     border-radius: 12px;
     padding: 18px 20px;
@@ -43,7 +43,7 @@
   .os-num-green   { color: #059669; }
   .os-num-gray    { color: #6B7280; }
 
-  /* ── 탭 ── */
+  /* 탭 */
   .of-tabs { border-bottom: 2px solid #e9ecef; margin-bottom: 20px; }
   .of-tabs .nav-link {
     color: #6c757d;
@@ -65,7 +65,7 @@
     margin-left: 2px;
   }
 
-  /* ── 검색바 ── */
+  /* 검색바 */
   .of-search {
     background: #fff;
     border: 1px solid #e9ecef;
@@ -96,7 +96,7 @@
     width: auto;
   }
 
-  /* ── 제안 카드 (공통 값에 맞춤) ── */
+  /* 제안 카드 (공통 값에 맞춤) */
   .of-card {
     background: #fff;
     border: 1px solid #e9ecef;
@@ -226,7 +226,7 @@
   .of-status.st-accepted { background: #D1FAE5; color: #065F46; }
   .of-status.st-rejected { background: #F3F4F6; color: #6B7280; }
 
-  /* ── 카드 하단 버튼 영역 (공통 패딩) ── */
+  /* 카드 하단 버튼 영역 (공통 패딩) */
   .of-card-footer {
     padding: 14px 24px;
     border-top: 1px solid #f1f3f5;
@@ -271,7 +271,7 @@
     color: #6c757d;
   }
 
-  /* ── 상세보기 패널 (기본 숨김) ── */
+  /* 상세보기 패널 (기본 숨김) */
   .of-detail-panel {
     display: none;
     border-top: 1px solid #e9ecef;
@@ -323,14 +323,14 @@
   }
   .accept-info-box ul li { margin-bottom: 2px; }
 
-  /* ── 빈 상태 ── */
+  /* 빈 상태 */
   .of-empty {
     text-align: center;
     padding: 60px 0;
     color: #adb5bd;
   }
 
-  /* ── 거절 모달 ── */
+  /* 거절 모달 */
   .reject-modal .modal-content {
     border-radius: 14px;
     border: none;
@@ -521,7 +521,7 @@
         </div>
       </div>
 
-      <!-- ── 상세보기 패널 (토글) ── -->
+      <!-- 상세보기 패널 (토글) -->
       <div th:id="'detail-' + ${offer.offerSubmitId}" class="of-detail-panel">
         <div class="row">
           <!-- 좌측: 제안 정보 -->
@@ -578,7 +578,7 @@
         </div>
       </div>
 
-      <!-- ── 카드 하단 ── -->
+      <!-- 카드 하단 -->
       <div class="of-card-footer">
         <div class="d-flex" style="gap:8px;">
           <button type="button"
@@ -626,7 +626,7 @@
       </div>
     </div>
 
-    <!-- ── 거절 확인 모달 ── -->
+    <!-- 거절 확인 모달 -->
     <div th:each="offer : ${offers}"
          th:if="${offer.status == 'PENDING' or offer.status == 'UNREAD'}"
          class="modal fade reject-modal"

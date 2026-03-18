@@ -280,7 +280,7 @@ public class ResumeApiController {
     }
 
   
-    // 자격증 자동완성 검색
+    // 자격증 검색 (자동완성)
     @Operation(summary = "자격증 검색 (자동완성)", description = "자격증 마스터 테이블에서 키워드로 자격증을 검색한다.")
     @ApiResponses({
         @ApiResponse(

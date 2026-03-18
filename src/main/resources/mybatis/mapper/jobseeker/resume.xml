@@ -5,9 +5,8 @@
 <!-- namespace 는 @Mapper 인터페이스의 full path 와 일치시킨다 -->
 <mapper namespace="com.spring.app.jobseeker.model.ResumeDAO">
 
-    <!-- ================================================================ -->
-    <!--  이력서 기본 CRUD                                                  -->
-    <!-- ================================================================ -->
+
+    <!-- ======= 이력서 기본 CRUD ======= -->
 
     <!-- 이력서 등록 (selectKey로 시퀀스 값을 resumeId에 세팅) -->
     <insert id="insertResume" parameterType="com.spring.app.jobseeker.domain.ResumeDTO">
@@ -191,9 +190,8 @@
         WHERE memberid = #{memberid}
     </select>
 
-    <!-- ================================================================ -->
-    <!--  학력                                                              -->
-    <!-- ================================================================ -->
+
+    <!-- ======= 학력 ======= -->
 
     <insert id="insertEducation" parameterType="com.spring.app.jobseeker.domain.ResumeEducationDTO">
         INSERT INTO tbl_resume_education
@@ -226,10 +224,9 @@
         ORDER BY E.sort ASC, E.enrolldate DESC NULLS LAST
     </select>
 
-    <!-- ================================================================ -->
-    <!--  경력                                                              -->
-    <!-- ================================================================ -->
 
+    <!-- ======= 경력 ======= -->
+    
     <insert id="insertCareer" parameterType="com.spring.app.jobseeker.domain.ResumeCareerDTO">
         INSERT INTO tbl_resume_career
             (career_id, fk_resume_id, companyname, fk_category_id, jobname_custom,
@@ -262,9 +259,8 @@
         ORDER BY C.sort ASC, C.joindate DESC
     </select>
 
-    <!-- ================================================================ -->
-    <!--  어학                                                              -->
-    <!-- ================================================================ -->
+
+    <!-- ======= 어학 ======= -->
 
     <insert id="insertLanguage" parameterType="com.spring.app.jobseeker.domain.ResumeLanguageDTO">
         INSERT INTO tbl_resume_language
@@ -290,9 +286,8 @@
         ORDER BY acquired_date DESC
     </select>
 
-    <!-- ================================================================ -->
-    <!--  자격증                                                            -->
-    <!-- ================================================================ -->
+
+    <!-- ======= 자격증 ======= -->
 
     <insert id="insertCertificate" parameterType="com.spring.app.jobseeker.domain.ResumeCertificateDTO">
         INSERT INTO tbl_resume_certificate
@@ -319,9 +314,8 @@
         ORDER BY RC.acquired_date DESC
     </select>
 
-    <!-- ================================================================ -->
-    <!--  포트폴리오                                                        -->
-    <!-- ================================================================ -->
+ 
+    <!-- ======= 포트폴리오 ======= -->
 
     <insert id="insertPortfolio" parameterType="com.spring.app.jobseeker.domain.ResumePortfolioDTO">
         INSERT INTO tbl_resume_portfolio
@@ -348,9 +342,8 @@
         ORDER BY created_at DESC
     </select>
 
-    <!-- ================================================================ -->
-    <!--  수상                                                              -->
-    <!-- ================================================================ -->
+
+    <!-- ======= 수상 ======= -->
 
     <insert id="insertAward" parameterType="com.spring.app.jobseeker.domain.ResumeAwardDTO">
         INSERT INTO tbl_resume_award
@@ -376,9 +369,8 @@
         ORDER BY award_date DESC
     </select>
 
-    <!-- ================================================================ -->
-    <!--  기술스택                                                          -->
-    <!-- ================================================================ -->
+
+    <!-- ======= 기술스택 ======= -->
 
     <insert id="insertTechstack" parameterType="com.spring.app.jobseeker.domain.ResumeTechstackDTO">
         INSERT INTO tbl_resume_techstack
@@ -405,9 +397,8 @@
         ORDER BY SC.skill_category_id ASC, S.skill_name ASC
     </select>
 
-    <!-- ================================================================ -->
-    <!--  자격증 마스터 검색 (자동완성용)                                      -->
-    <!-- ================================================================ -->
+
+    <!-- ======= 자격증 마스터 검색 (자동완성용) ======= -->
 
     <select id="searchCertificateMaster" parameterType="String"
             resultType="com.spring.app.jobseeker.domain.CertificateDTO">
@@ -420,9 +411,8 @@
         FETCH FIRST 20 ROWS ONLY
     </select>
 
-    <!-- ================================================================ -->
-    <!--  직무 카테고리 목록                                                 -->
-    <!-- ================================================================ -->
+ 
+    <!-- ======= 직무 카테고리 목록 ======= -->
 
     <select id="selectJobCategoryList"
             resultType="com.spring.app.jobseeker.domain.JobCategoryDTO">
@@ -434,9 +424,8 @@
         ORDER BY category_id ASC
     </select>
 
-    <!-- ================================================================ -->
-    <!--  지역 목록 (시/구 단위까지)                                          -->
-    <!-- ================================================================ -->
+
+    <!-- ======= 지역 목록 (시/구 단위까지) ======= -->
 
     <select id="selectRegionList"
             resultType="com.spring.app.jobseeker.domain.RegionDTO">
@@ -449,9 +438,8 @@
         ORDER BY sort ASC, region_name ASC
     </select>
 
-    <!-- ================================================================ -->
-    <!--  기술스택 검색 (자동완성)                                          -->
-    <!-- ================================================================ -->
+
+    <!-- ======= 기술스택 검색 (자동완성) ======= -->
 
     <select id="searchSkill" parameterType="String"
             resultType="com.spring.app.jobseeker.domain.ResumeTechstackDTO">

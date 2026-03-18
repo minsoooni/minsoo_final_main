@@ -20,27 +20,32 @@ public class MypageService_imple implements MypageService {
         this.mypageDAO = mypageDAO;
     }
 
+    // 회원 정보 조회
     @Override
     public MemberDTO getMemberInfo(String memberId) {
         return mypageDAO.selectMemberById(memberId);
     }
 
+    // 대표이력서 조회
     @Override
     public ResumeDTO getPrimaryResume(String memberId) {
         return mypageDAO.selectPrimaryResume(memberId);
     }
 
+    // 프로필 수정
     @Transactional
     @Override
     public int updateProfile(MemberDTO dto) {
         return mypageDAO.updateProfile(dto);
     }
 
+    // 비밀번호 조회
     @Override
     public String getPassword(String memberId) {
         return mypageDAO.selectPassword(memberId);
     }
 
+    // 비밀번호 수정
     @Transactional
     @Override
     public int updatePassword(String memberId, String encodedPassword) {
@@ -54,6 +59,7 @@ public class MypageService_imple implements MypageService {
         return mypageDAO.updateCommunityCompanyName(memberId, companyName);
     }
 
+    // 대시보드 통계
     @Override
     public Map<String, Integer> getDashboardStats(String memberId) {
         Map<String, Integer> stats = new HashMap<>();
@@ -66,11 +72,13 @@ public class MypageService_imple implements MypageService {
         return stats;
     }
 
+    // 최근 지원 내역 조회
     @Override
     public List<Map<String, Object>> getRecentApplications(String memberId) {
         return mypageDAO.selectRecentApplications(memberId);
     }
 
+    // 최근 본 공고 조회
     @Override
     public List<Map<String, Object>> getRecentViewedPosts(String memberId) {
         return mypageDAO.selectRecentViewedPosts(memberId);
