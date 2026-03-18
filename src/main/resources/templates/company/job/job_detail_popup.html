@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title th:text="${post.title} + ' | 공고 상세'">채용공고 상세</title>
+  <link rel="stylesheet" th:href="@{/bootstrap-4.6.2-dist/css/bootstrap.min.css}">
+  <style>
+    * { box-sizing: border-box; }
+    body { background:#f4f6fb; font-family:Arial,Helvetica,sans-serif; font-size:14px; color:#222; margin:0; }
+
+    .d-topbar {
+      background:#fff; border-bottom:1px solid #e5e7eb;
+      padding:11px 24px; display:flex; align-items:center; gap:10px;
+    }
+    .d-brand {
+      display:flex; align-items:center; gap:7px;
+      text-decoration:none; cursor:default;
+      pointer-events:none;
+    }
+    .d-brand-icon {
+      width:26px; height:26px; border-radius:7px; background:#09a3ff; color:#fff;
+      display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800;
+    }
+    .d-brand-text { font-weight:800; font-size:15px; color:#111; }
+    .d-sep { color:#d1d5db; }
+    .d-crumb { font-size:13px; color:#9ca3af; }
+    .d-close {
+      margin-left:auto; border:1px solid #e5e7eb; background:#fff;
+      border-radius:6px; padding:4px 12px; font-size:12px; color:#6b7280; cursor:pointer;
+    }
+    .d-close:hover { background:#f3f4f6; }
+
+    .d-wrap {
+      max-width:1040px; margin:0 auto; padding:24px 16px 80px;
+      display:flex; gap:20px; align-items:flex-start;
+    }
+    .d-main { flex:1 1 0; min-width:0; }
+    .d-side { flex:0 0 224px; width:224px; }
+
+    .jp-card {
+      background:#fff; border:1px solid #e5e7eb; border-radius:10px;
+      padding:24px; margin-bottom:16px;
+    }
+
+    .post-head {
+      display:flex; justify-content:space-between; align-items:flex-start;
+      gap:12px; margin-bottom:4px;
+    }
+    .post-title { font-size:20px; font-weight:800; color:#111; margin:0; }
+    .post-co { font-size:14px; font-weight:600; color:#6b7280; margin:4px 0 10px; }
+    .post-meta { display:flex; gap:16px; font-size:13px; color:#9ca3af; }
+
+    hr.d-hr { border:none; border-top:1px solid #e5e7eb; margin:16px 0; }
+
+    .sec-title { font-size:15px; font-weight:800; color:#111; margin-bottom:12px; }
+    .cond-grid {
+      display:grid; grid-template-columns:1fr 1fr; gap:12px 24px;
+      background:#f8fafc; border-radius:9px; padding:16px 18px; margin-bottom:22px;
+    }
+    .cond-label {
+      font-size:11px; font-weight:700; color:#9ca3af;
+      text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px;
+    }
+    .cond-val { font-size:14px; font-weight:600; color:#111; }
+    .cond-full { grid-column:1/-1; }
+
+    .post-bottom {
+      display:flex; align-items:center; justify-content:flex-end;
+      border-top:1px solid #e5e7eb; padding-top:18px; margin-top:4px;
+    }
+
+    .co-logo {
+      border:1px dashed #e5e7eb; border-radius:8px; text-align:center;
+      margin-bottom:12px; color:#9ca3af; font-size:13px; overflow:hidden;
+    }
+    .co-logo.has-img { border:none; padding:0; }
+    .co-logo.no-img { padding:16px 0 10px; }
+    .co-logo-icon { font-size:32px; display:block; margin-bottom:4px; }
+    .co-logo-img { width:100%; height:120px; object-fit:cover; display:block; }
+    .co-name { text-align:center; font-size:15px; font-weight:800; color:#111; margin-bottom:14px; }
+
+    .ci-table { width:100%; font-size:13px; border-collapse:collapse; }
+    .ci-table td { padding:4px 0; vertical-align:top; }
+    .ci-table td:first-child { color:#9ca3af; width:68px; }
+    .ci-table td:last-child  { color:#374151; font-weight:600; padding-left:6px; }
+
+    .readonly-link {
+      color:#374151;
+      font-weight:600;
+      word-break:break-all;
+      cursor:default;
+      text-decoration:none;
+      pointer-events:none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="d-topbar">
+  <div class="d-brand">
+    <span class="d-brand-icon">J</span>
+    <span class="d-brand-text">잡파인더</span>
+  </div>
+  <span class="d-sep">/</span><span class="d-crumb">기업서비스</span>
+  <span class="d-sep">/</span><span class="d-crumb">채용공고 상세</span>
+  <button class="d-close" type="button" onclick="window.close()">창닫기</button>
+</div>
+
+<div class="d-wrap">
+  <div class="d-main">
+    <div class="jp-card">
+      <div class="post-head">
+        <div>
+          <h1 class="post-title" th:text="${post.title}">공고 제목</h1>
+          <p class="post-co" th:text="${post.companyName}">회사명</p>
+        </div>
+      </div>
+
+      <div class="post-meta">
+        <span>
+          마감:
+          <span th:if="${post.deadlineType == 'always'}">상시채용</span>
+          <span th:unless="${post.deadlineType == 'always'}"
+                th:text="${post.deadlineAt != null ? #strings.replace(#strings.substring(post.deadlineAt,0,16),'T',' ') : '-'}">날짜</span>
+        </span>
+        <span>조회 <span th:text="${post.viewCount != null ? post.viewCount : 0}">0</span></span>
+        <span>등록일 <span th:text="${post.createdAt != null ? #strings.replace(#strings.substring(post.createdAt,0,16),'T',' ') : '-'}">-</span></span>
+      </div>
+
+      <hr class="d-hr">
+
+      <div class="sec-title">모집 조건</div>
+      <div class="cond-grid">
+        <div>
+          <div class="cond-label">지역</div>
+          <div class="cond-val" th:text="${post.parentRegionName != null ? post.parentRegionName + ' ' + post.regionName : post.regionName}">-</div>
+        </div>
+        <div>
+          <div class="cond-label">직무</div>
+          <div class="cond-val" th:text="${post.categoryName}">-</div>
+        </div>
+        <div>
+          <div class="cond-label">경력</div>
+          <div class="cond-val" th:text="${post.careerType != null ? post.careerType : '경력 무관'}">-</div>
+        </div>
+        <div>
+          <div class="cond-label">고용형태</div>
+          <div class="cond-val" th:text="${post.workType}">-</div>
+        </div>
+        <div>
+          <div class="cond-label">학력</div>
+          <div class="cond-val" th:text="${post.educationLevelName != null ? post.educationLevelName : '학력 무관'}">-</div>
+        </div>
+        <div>
+          <div class="cond-label">채용인원</div>
+          <div class="cond-val" th:text="${post.headcount != null ? post.headcount + '명' : '미정'}">-</div>
+        </div>
+        <div class="cond-full">
+          <div class="cond-label">연봉</div>
+          <div class="cond-val" th:text="${post.salary != null ? #numbers.formatInteger(post.salary, 0, 'COMMA') + '만원' : '회사내규에 따름'}">-</div>
+        </div>
+        <div class="cond-full">
+          <div class="cond-label">기술스택</div>
+          <div class="cond-val" th:if="${post.skillList != null and !post.skillList.isEmpty()}">
+            <span th:each="skill : ${post.skillList}"
+                  class="badge mr-1 mb-1 px-2 py-1"
+                  style="font-size:0.8rem; background:#e0e7ff; color:#3730a3;"
+                  th:text="${skill}">기술명</span>
+          </div>
+          <div class="cond-val" th:if="${post.skillList == null or post.skillList.isEmpty()}">-</div>
+        </div>
+      </div>
+
+      <div class="sec-title">상세 내용</div>
+      <div th:if="${post.content != null}"
+           style="line-height:1.8; color:#374151; white-space:pre-wrap; margin-bottom:20px;"
+           th:text="${post.content}">
+        공고 상세 내용
+      </div>
+      <div th:if="${post.content == null}" class="text-muted" style="margin-bottom:20px;">
+        상세 내용이 등록되지 않았습니다.
+      </div>
+
+      <div class="post-bottom">
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="d-side">
+    <div class="jp-card" style="padding:20px;">
+      <div style="font-size:14px; font-weight:800; color:#111; margin-bottom:14px;">기업 정보</div>
+
+      <div class="co-logo" th:classappend="${post.logoUrl != null and post.logoUrl != ''} ? 'has-img' : 'no-img'">
+        <img th:if="${post.logoUrl != null and post.logoUrl != ''}"
+             th:src="@{/{path}(path=${post.logoUrl})}"
+             class="co-logo-img" alt="기업 로고">
+        <th:block th:unless="${post.logoUrl != null and post.logoUrl != ''}">
+          <span class="co-logo-icon">&#127970;</span>
+          <span th:text="${post.companyName}">회사명</span>
+        </th:block>
+      </div>
+
+      <div class="co-name" th:text="${post.companyName}">회사명</div>
+
+      <table class="ci-table">
+        <tr th:if="${post.companyType != null}"><td>기업형태</td><td th:text="${post.companyType}">-</td></tr>
+        <tr th:if="${post.ceoName != null}"><td>대표자</td><td th:text="${post.ceoName}">-</td></tr>
+        <tr th:if="${post.industryCode != null}"><td>업종</td><td th:text="${post.industryCode}">-</td></tr>
+        <tr th:if="${post.openDate != null}"><td>설립일</td><td th:text="${post.openDate}">-</td></tr>
+        <tr th:if="${post.companyAddr != null and !#strings.isEmpty(post.companyAddr)}"><td>주소</td><td th:text="${post.companyAddr}">-</td></tr>
+        <tr th:if="${post.homepageUrl != null}">
+          <td>홈페이지</td>
+          <td><span class="readonly-link" th:text="${post.homepageUrl}">홈페이지 주소</span></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+  
+  
+  
+</div>
+
+</body>
+</html>

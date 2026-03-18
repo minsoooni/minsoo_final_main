@@ -11,7 +11,7 @@
   const contextPath = /*[[@{/}]]*/ "";
   
   document.addEventListener("click", async (e) => {
-   // 1) ⋮ 버튼 클릭 -> 메뉴 토글
+   // 버튼 클릭 -> 메뉴 토글
     const moreBtn = e.target.closest(".js-more");
     if (moreBtn) {
   	  e.preventDefault();
@@ -30,7 +30,7 @@
   }
 
 
-   // 1-1) 삭제 클릭 -> AJAX DELETE
+   // 삭제 클릭 -> AJAX DELETE
    const delBtn = e.target.closest(".js-delete");
    if (delBtn) {
 	  e.preventDefault();
@@ -51,12 +51,11 @@
 	  const params = new URLSearchParams(window.location.search);
 	  const currentShowPageNo = params.get("currentShowPageNo") || "1";
 	  location.href = contextPath + "/company/job/list?currentShowPageNo=" + encodeURIComponent(currentShowPageNo);
-	  //location.href = contextPath + "/company/job/list";
 	  return;
    }
 
    
-   // 2) 메뉴 내부 클릭은 행 클릭(selectJob)으로 안 올라가게 막기
+   // 메뉴 내부 클릭은 행 클릭(selectJob)으로 안 올라가게 막기
    if (e.target.closest(".job-menu")) {
 	  e.stopPropagation(); // 중요
 	  return;
@@ -64,20 +63,11 @@
 
 	  // 3) 바깥 클릭 -> 모든 메뉴 닫기
 	  document.querySelectorAll(".job-menu").forEach(m => m.hidden = true);
-   });
+   });//document.addEventListener("click", async (e) => {})
 
-  /*
-  function selectJob(e, jobId){
-    if(!jobId) return;
-  
-    // action 영역(⋮/메뉴) 클릭이면 무시
-    if (e && e.target && e.target.closest(".job-actions")) return;
-  
-    const baseUrl = contextPath +  "/company/job/list";
-    location.href = baseUrl + '?jobId=' + encodeURIComponent(jobId);
-  }
-  */
+   
   // 공고 선택 함수
+  /*
   function selectJob(e, jobId){
     if (!jobId) return;
   
@@ -93,6 +83,23 @@
     location.href = baseUrl
         + "?currentShowPageNo=" + encodeURIComponent(currentShowPageNo)
         + "&jobId=" + encodeURIComponent(jobId);
+  }
+  */
+  
+  //공고 선택 -> 새 창 팝업
+  function selectJob(e, jobId) {
+    if (!jobId) return;
+
+    // 액션 버튼 영역 클릭이면 무시
+    if (e && e.target && e.target.closest(".job-actions")) return;
+
+    const popupUrl = contextPath + "company/job/detail/" + encodeURIComponent(jobId);
+
+    window.open(
+      popupUrl,
+      "jobDetailPopup",
+      "width=1280,height=900,scrollbars=yes,resizable=yes,menubar=no,toolbar=no,location=no,status=no"
+    );
   }
   </script>
   
@@ -147,6 +154,10 @@
       </h3>
     </div>
 
+	<div class="job-guide">
+	  ※ 공고를 클릭하면 상세정보 팝업이 열립니다.
+	</div>
+	
     <div class="table-responsive">
       <table class="table job-table mb-0">
         <thead>
@@ -175,7 +186,6 @@
           <tr th:each="job : ${jobList}"
 			  th:onclick="|selectJob(event, ${job.jobId})|"
 			  class="job-row"
-			  th:classappend="${selectedJob != null and selectedJob.jobId == job.jobId} ? ' is-selected' : ''"
 			  th:attrappend="class=${job.isHidden == 1} ? ' is-reported' : ''">
 
             <td><b th:text="${job.title}">공고제목</b></td>
@@ -188,9 +198,9 @@
             
             <!-- 마감일 -->
             <td>
-              <i class="fa-regular fa-clock"></i>
-              <span th:text="${job.deadlineAt}">2026. 3. 16.</span>
-            </td>
+			  <i class="fa-regular fa-clock"></i>
+			  <span th:text="${job.deadlineAt != null ? #strings.replace(#strings.substring(job.deadlineAt, 0, 16), 'T', ' ') : '-'}">2026-03-16 11:58</span>
+			</td>
             
             <!-- 공고 상태(진행중/마감/임시저장) -->
             <td th:switch="${job.status}">
@@ -215,7 +225,6 @@
             </td>
             
 			<!-- 스크랩 수 -->
-            <!-- <td th:text="${job.scrapCount}">조회수</td> -->
             <td th:text="${job.scrapCount}"
 			    th:classappend="${job.scrapCount > 0} ? 'text-red' : ''">
 			</td>
@@ -275,7 +284,7 @@
     <div class="job-pagination" th:if="${totalPage > 1}">
 	  <!-- 이전 -->
 	  <a th:if="${currentShowPageNo > 1}"
-	     th:href="@{/company/job/list(currentShowPageNo=${currentShowPageNo - 1}, jobId=${selectedJob != null ? selectedJob.jobId : null})}"
+	     th:href="@{/company/job/list(currentShowPageNo=${currentShowPageNo - 1})}"
 	     class="page-link">
 	    이전
 	  </a>
@@ -283,7 +292,7 @@
 	  <!-- 페이지 번호 -->
 	  <th:block th:each="i : ${#numbers.sequence(1, totalPage)}">
 	    <a th:if="${i != currentShowPageNo}"
-	       th:href="@{/company/job/list(currentShowPageNo=${i}, jobId=${selectedJob != null ? selectedJob.jobId : null})}"
+	       th:href="@{/company/job/list(currentShowPageNo=${i})}"
 	       th:text="${i}"
 	       class="page-link">
 	    </a>
@@ -296,7 +305,7 @@
 	
 	  <!-- 다음 -->
 	  <a th:if="${currentShowPageNo < totalPage}"
-	     th:href="@{/company/job/list(currentShowPageNo=${currentShowPageNo + 1}, jobId=${selectedJob != null ? selectedJob.jobId : null})}"
+	     th:href="@{/company/job/list(currentShowPageNo=${currentShowPageNo + 1})}"
 	     class="page-link">
 	    다음
 	  </a>
@@ -307,185 +316,7 @@
   
 
   <!-- 공고 상세 미리보기 (구직자 화면처럼 전체 렌더링) -->
-  <div class="panel panel-detail">
-    <div class="panel-head">
-      <h3>공고 상세 미리보기</h3>
-    </div>
-
-    <div class="preview-box">
-      <!-- 선택 전 -->
-      <div class="preview-empty" th:if="${selectedJob == null}">
-        표에서 공고를 클릭하여 상세 정보를 확인하세요
-      </div>
-
-      <!-- 선택 후: 구직자 상세 화면 느낌으로 전체 구성 -->
-      <div class="job-view" th:if="${selectedJob != null}">
-
-        <!-- 상단 타이틀 영역 -->
-        <div class="jv-head">
-          <div class="jv-title" th:text="${selectedJob.title}">프론트엔드 개발자</div>
-
-          <!-- 회사명은 selectedJob에 없으면 companyName 같이 내려주는 걸 추천 -->
-          <div class="jv-company" th:text="${selectedJob.memberId != null ? selectedJob.memberId : '기업명'}">테크기업</div>
-
-          <!-- 조회수 제거(요구사항) / 마감일만 노출 -->
-          <div class="jv-meta">
-            <i class="fa-regular fa-clock"></i>
-            <span th:text="${selectedJob.deadlineAt}">~ 2026.03.15</span>
-          </div>
-        </div>
-        
-        
-        <div class="job-report-box" th:if="${selectedJob.isHidden == 1}">
-		  <div class="job-report-title">
-		    <i class="fa-solid fa-triangle-exclamation"></i>
-		    신고 처리된 공고입니다
-		  </div>
-		
-		  <div class="job-report-meta">
-		    <span>
-		      신고 사유 :
-		      <b th:text="${selectedJob.reportReasonName != null ? selectedJob.reportReasonName : '사유 미확인'}">
-		        허위 / 과장 정보
-		      </b>
-		    </span>
-		
-		    <span th:if="${selectedJob.reportStatusText != null}">
-		      · 처리상태 :
-		      <b th:text="${selectedJob.reportStatusText}">처리대기</b>
-		    </span>
-		
-		    <span th:if="${selectedJob.reportCreatedAt != null}">
-		      · 신고일 :
-		      <b th:text="${#dates.format(selectedJob.reportCreatedAt, 'yyyy-MM-dd HH:mm')}">
-		        2026-03-17 13:00
-		      </b>
-		    </span>
-		  </div>
-		
-		  <div class="job-report-content"
-		       th:if="${selectedJob.reportContent != null and !#strings.isEmpty(selectedJob.reportContent)}">
-		    <div class="job-report-label">신고 내용</div>
-		    <div th:text="${selectedJob.reportContent}">허위 채용공고 의심</div>
-		  </div>
-		
-		  <div class="job-report-content"
-		       th:if="${selectedJob.reportProcessReason != null and !#strings.isEmpty(selectedJob.reportProcessReason)}">
-		    <div class="job-report-label">관리자 처리 사유</div>
-		    <div th:text="${selectedJob.reportProcessReason}">검토 후 숨김 처리되었습니다.</div>
-		  </div>
-		</div>
-        
-
-        <hr class="jv-divider"/>
-
-        <!-- 모집 조건 -->
-        <div class="jv-section">
-          <div class="jv-section-title">모집 조건</div>
-
-          <div class="jv-grid" style="padding-left: 10px">
-            <!-- 모집 지역 -->
-            <div class="jv-item">
-			  <div class="jv-label">
-			    <i class="fa-solid fa-location-dot"></i>지역
-			  </div>
-			  <div class="jv-value" th:text="${selectedJob.regionCode}">서울 강남구</div>
-			</div>
-			
-			<!-- 모집 직무 -->
-            <div class="jv-item">
-			  <div class="jv-label">
-			    <i class="fa-solid fa-briefcase"></i>직무
-			  </div>
-			  <div class="jv-value"
-			       th:text="${selectedJob.categoryName}">
-			    개발
-			  </div>
-			</div>
-			
-			<!-- 모집 학력 -->
-            <div class="jv-item">
-			  <div class="jv-label">
-			    <i class="fa-regular fa-clock"></i>학력
-			  </div>
-			  <div class="jv-value" th:text="${selectedJob.eduLevelName}">
-			    경력 3년 이상
-			  </div>
-			</div>
-
-			<!-- 모집 경력 -->
-            <div class="jv-item">
-			  <div class="jv-label">
-			    <i class="fa-regular fa-clock"></i>경력
-			  </div>
-			  <div class="jv-value" th:text="${selectedJob.careerType}">
-			    경력 3년 이상
-			  </div>
-			</div>
-
-			<!-- 모집 고용형태 -->
-            <div class="jv-item">
-			  <div class="jv-label">
-			    <i class="fa-solid fa-briefcase"></i>고용형태
-			  </div>
-			  <div class="jv-value" th:text="${selectedJob.workType}">
-			    정규직
-			  </div>
-			</div>
-			
-			<!-- 모집 인원 -->
-			<div class="jv-item">
-			  <div class="jv-label">
-			    <i class="fa-solid fa-user-group"></i>모집인원
-			  </div>
-			  <div class="jv-value" th:text="${selectedJob.headcount} + ' 명'">
-			  	0 명
-			  </div>
-			</div>
-
-			<!-- 모집 급여 -->
-            <div class="jv-item">
-			  <div class="jv-label">
-			    <i class="fa-solid fa-sack-dollar"></i>급여
-			  </div>
-			  <div class="jv-value jv-salary"
-			       th:text="${selectedJob.salary != null ? '연봉 ' + #numbers.formatInteger(selectedJob.salary,0,'COMMA') + '만원 이상': '-'}">
-			    연봉 4000만원 이상
-			  </div>
-			</div>
-            
-          </div>
-        </div>
-
-        <!-- 상세 내용 -->
-        <div class="jv-section" style="margin-top: 30px;">
-          <div class="jv-section-title">상세 내용</div>
-
-          <!-- content가 텍스트(줄바꿈 포함)라면 text + pre-wrap -->
-          <div class="jv-content" style="padding-left: 10px;" th:text="${selectedJob.content}">
-            주요 업무...
-          </div>
-
-          <!-- content가 HTML 저장이면 아래로 교체(둘 중 하나만 쓰기)
-          <div class="jv-content" th:utext="${selectedJob.content}"></div>
-          -->
-        </div>
-
-        <hr class="jv-divider"/>
-
-        <!-- 하단 버튼(정적 태그, 클릭이벤트 없음) -->
-        <div class="jv-bottom">
-          <button type="button" class="jv-btn jv-btn-ghost">URL 복사</button>
-
-          <div class="jv-bottom-right">
-            <button type="button" class="jv-btn jv-btn-ghost">목록</button>
-            <button type="button" class="jv-btn jv-btn-primary">지원하기</button>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
+  
 
 </section>
 </body>

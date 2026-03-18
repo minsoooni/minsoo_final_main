@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -234,6 +235,9 @@ public class CompanyWebController {
 
         return "company/job/job_list";
     }
+    
+    
+    
 
     // 채용공고 등록 페이지
     @GetMapping("/job/job_write")
@@ -272,9 +276,38 @@ public class CompanyWebController {
 	
 	    return "company/job/job_update";
 	}
+	
+	//공고상세 팝업창 열기
+	@GetMapping("/job/detail/{jobId}")
+	public String jobDetailPopup(@PathVariable("jobId") Long jobId,
+	                             Model model,
+	                             Authentication authentication) {
+
+	    model.addAttribute("activeMenu", "job");
+
+	    if (authentication == null || authentication.getName() == null) {
+	        return "redirect:/login";
+	    }
+
+	    String memberId = authentication.getName();
+	    service.refreshJobPostingStatuses();
+
+	    JobPostingDTO post = service.getJobPostingOne(jobId);
+
+	    // 공고가 없거나, 로그인한 기업의 공고가 아니면 목록으로
+	    if (post == null || !memberId.equals(post.getMemberId())) {
+	        return "redirect:/company/job/list";
+	    }
+
+	    model.addAttribute("post", post);
+	    return "company/job/job_detail_popup";
+	}
+	
     // ============================== 채용공고 ============================== //
 
     
+	
+	
     
     
 	// ============================== 지원자 관리 ============================== //

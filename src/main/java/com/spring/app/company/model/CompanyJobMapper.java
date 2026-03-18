@@ -31,6 +31,10 @@ public interface CompanyJobMapper {
 	//선택한 공고 상세정보
 	JobPostingDTO getJobPostingOne(Long jobId);
 	
+	// 팝업용 기술스택명 조회
+	List<String> getSkillNamesByJobId(Long jobId);
+	
+	
 	//기존 공고의 값 조회하기(상세내용/지역/스킬)
 	JobPostingEditResponseDTO getJobPostingForEdit(long jobId);
 	RegionChainDTO getRegionChain(String regionCode);

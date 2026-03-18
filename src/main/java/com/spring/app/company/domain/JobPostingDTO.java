@@ -14,13 +14,22 @@ public class JobPostingDTO {
     private String memberId;       // MEMBERID (VARCHAR2(50))
     private Long categoryId;       // 직무카테고리ID (NUMBER(10))
     private String categoryName;   // 목록/상세 화면 표시용 직무명
+    
     private String regionCode;     // 지역코드 (VARCHAR2(30))
+    private String regionName;         // 추가: 현재 지역명
+    private String parentRegionCode;   // 추가: 상위 지역코드
+    private String parentRegionName;   // 추가: 상위 지역명
+    
+    
     private String title;          // 공고제목 (VARCHAR2(100))
     private String content;        // 공고내용 (CLOB)
     private String workType;       // 고용형태
     private String careerType;     // 경력구분
+    
     private String eduCode; 	   // 학력수준
     private String eduLevelName;   // 학력이름
+    private String educationLevelName; // 추가: 팝업 템플릿 호환용 별칭
+    
     private Long salary;           // 최소연봉 (NUMBER(10))
     private Long headcount;        // 채용인원 (NUMBER(10))
     private String status;         // 상태[임시저장/진행중/마감]
@@ -30,7 +39,18 @@ public class JobPostingDTO {
     //스크랩 수는 매핑테이블에서 count(*) 를 이용해 인원수 조회해오기
     
     
- // 기존 공고 필드 외 신고 관련 추가
+    // 기업 정보(팝업 우측 카드용)
+    private String companyName;
+    private String companyType;   // 기업형태
+    private String ceoName;       // 대표자
+    private String industryCode;  // 업종명 또는 업종코드명
+    private String openDate;      // 설립일
+    private String companyAddr;   // 회사 주소
+    private String homepageUrl;   // 홈페이지
+    private String logoUrl;       // 기업 로고 경로
+    
+    
+    // 기존 공고 필드 외 신고 관련 추가
     private Integer isHidden;              // 0: 정상, 1: 신고됨
 
     private Long reportId;
@@ -48,7 +68,6 @@ public class JobPostingDTO {
     private String reportStatusText;       // 화면용 상태 문구
     
     
-    
     private LocalDateTime deadlineAt;     // 마감일시
     private LocalDateTime openedAt;       // 공개게시일시
     private LocalDateTime closedAt;       // 공고마감일시
@@ -56,4 +75,5 @@ public class JobPostingDTO {
     private LocalDateTime updatedAt;    // 수정일시
     
     private List<Long> skillIds;
+    private List<String> skillList;      // 기술스택 뱃지 출력용
 }
