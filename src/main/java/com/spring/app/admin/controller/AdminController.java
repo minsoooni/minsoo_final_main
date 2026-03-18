@@ -288,8 +288,8 @@ public class AdminController {
 	    
 	    return "admin/admin_job_posts";
 	}
-	
-	@PatchMapping("/job-posts/{jobId}/visibility")
+	//
+	@PatchMapping("/job-posts/{jobId}/visibility") 
 	@ResponseBody
 	public ResponseEntity<?> updateJobVisibility(
 			@PathVariable("jobId") Long jobId,
