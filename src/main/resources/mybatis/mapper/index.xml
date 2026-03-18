@@ -4,7 +4,87 @@
 
 <!-- ==== 루트 엘리먼트 & 네임스페이스 설정(프로젝트 전체내에서 유일해야 한다.) ==== -->
 <mapper namespace="index">
-	
+  <select id="selectParentJobCategories" resultType="map">
+    SELECT CATEGORY_ID , CATEGORY_NAME
+    FROM TBL_JOB_CATEGORY
+    WHERE DEPTH = 1
+    ORDER BY CATEGORY_ID ASC
+  </select>
+<!-- 	
+추천 기업(핫한 기업) 점수 산정 방식
+1. 최근 7일 지원수(totalApplyCount)를 기업별로 집계
+2. 게시중 공고의 누적 조회수(totalViewCount)를 기업별로 집계
+3. 각 값을 전체 기업 중 최대값 기준으로 100점 환산
+4. 최종 점수 = 지원 점수 70% + 조회수 점수 30%
+5. 최종 점수(hotScore) 높은 순으로 상위 4개 기업 조회
+ -->
+  <select id="selectHotCompanies" resultType="map">
+    WITH company_base AS (
+        SELECT
+            C.fk_memberid AS memberId,
+            C.company_name AS companyName,
+            MAX(CI.company_type) AS companyType,
+            MAX(PR.region_name) AS parentRegionName,
+            MAX(R.region_name) AS regionName,
+            COUNT(DISTINCT JP.job_id) AS openJobCount,
+            NVL(SUM(JP.view_count), 0) AS totalViewCount,
+            NVL(SUM(
+                CASE
+                    WHEN JA.application_status = 0
+                     AND JA.applied_at &gt;= TRUNC(SYSDATE) - 6
+                    THEN 1
+                    ELSE 0
+                END
+            ), 0) AS totalApplyCount
+        FROM tbl_job_posting JP
+        JOIN tbl_company C ON JP.fk_memberid = C.fk_memberid
+        JOIN tbl_region R ON JP.fk_region_code = R.region_code
+        LEFT JOIN tbl_region PR ON R.fk_parent_region_code = PR.region_code
+        LEFT JOIN tbl_company_intro CI ON C.fk_memberid = CI.fk_memberid
+        LEFT JOIN tbl_job_application JA ON JA.fk_job_id = JP.job_id
+        WHERE JP.status = '게시중'
+          AND JP.is_hidden = 0
+          AND (JP.deadline_type = 'always' OR JP.deadline_at &gt;= TRUNC(SYSDATE))
+        GROUP BY
+            C.fk_memberid,
+            C.company_name
+    ),
+    score_base AS (
+        SELECT
+            CB.*,
+            MAX(CB.totalViewCount) OVER () AS maxViewCount,
+            MAX(CB.totalApplyCount) OVER () AS maxApplyCount
+        FROM company_base CB
+    )
+    SELECT *
+    FROM (
+        SELECT
+            memberId         AS "memberId",
+            companyName      AS "companyName",
+            companyType      AS "companyType",
+            parentRegionName AS "parentRegionName",
+            regionName       AS "regionName",
+            openJobCount     AS "openJobCount",
+            totalViewCount   AS "totalViewCount",
+            totalApplyCount  AS "totalApplyCount",
+            ROUND(
+                (
+                    CASE WHEN maxApplyCount &gt; 0
+                         THEN (totalApplyCount / maxApplyCount) * 100
+                         ELSE 0 END
+                ) * 0.7
+                +
+                (
+                    CASE WHEN maxViewCount &gt; 0
+                         THEN (totalViewCount / maxViewCount) * 100
+                         ELSE 0 END
+                ) * 0.3
+            ) AS "hotScore"
+        FROM score_base
+        ORDER BY 9 DESC, 8 DESC, 7 DESC
+    )
+    WHERE ROWNUM &lt;= 4
+  </select>
 	
 </mapper>
 
