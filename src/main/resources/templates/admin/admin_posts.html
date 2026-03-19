@@ -81,7 +81,8 @@
       const search   = document.getElementById('searchInput').value.trim();
       const status   = document.getElementById('statusFilter').value;
       const params   = new URLSearchParams();
-      params.set('page', '1');
+	  const currentTab = document.querySelector('.tab-btn.active').dataset.tab;
+	  params.set('tab', currentTab);
       if (search)        params.set('search', search);
       if (status !== '') params.set('status', status);
       window.location.href = contextPath + 'admin/posts?' + params.toString();

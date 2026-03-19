@@ -36,5 +36,5 @@ public interface AdminReportDAO {
     int updateCommentHidden(@Param("commentId") Long targetId);
     int updateJobHidden(@Param("jobId") Long targetId);
 
-	AdminReportDTO selectReportById(Long reportId);
+    AdminReportDTO selectReportById(@Param("reportId") Long reportId);
 }

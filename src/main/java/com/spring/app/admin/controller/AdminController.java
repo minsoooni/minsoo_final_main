@@ -586,7 +586,18 @@ public class AdminController {
 
 	    model.addAttribute("activeMenu",   menu);
 	    model.addAttribute("posts",        posts);
-	    model.addAttribute("totalCount",   adminPostService.getPostCount(null, null));
+	    model.addAttribute("commentTotalAll",
+	        adminPostService.getActiveCommentCount() +
+	        adminPostService.getHiddenCommentCount() +
+	        adminPostService.getDeletedCommentCount()
+	    );
+	    
+	    model.addAttribute("totalCount",
+	    	    adminPostService.getActivePostCount() +
+	    	    adminPostService.getHiddenPostCount() +
+	    	    adminPostService.getDeletedPostCount()
+	    	);
+	    
 	    model.addAttribute("activeCount",  adminPostService.getActivePostCount());
 	    model.addAttribute("hiddenCount",  adminPostService.getHiddenPostCount());
 	    model.addAttribute("deletedCount", adminPostService.getDeletedPostCount());

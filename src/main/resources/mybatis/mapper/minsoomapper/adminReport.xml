@@ -37,21 +37,21 @@
 	            r.CREATED_AT      AS CREATEDAT,
 	            r.PROCESS_REASON  AS PROCESSREASON,
 	            r.PROCESS_AT      AS PROCESSAT,
-	            (SELECT COUNT(*) 
-	             FROM TBL_REPORT r2
-	             LEFT JOIN TBL_JOB_POSTING j2 ON r2.TARGET_TYPE = 1 AND r2.TARGET_ID = j2.JOB_ID
-	             LEFT JOIN TBL_POST p2        ON r2.TARGET_TYPE = 2 AND r2.TARGET_ID = p2.POST_ID
-	             LEFT JOIN TBL_COMMENT c2     ON r2.TARGET_TYPE = 3 AND r2.TARGET_ID = c2.COMMENT_ID
-	             WHERE CASE r2.TARGET_TYPE
-	                 WHEN 1 THEN j2.FK_MEMBERID
-	                 WHEN 2 THEN p2.FK_MEMBERID
-	                 WHEN 3 THEN c2.FK_MEMBERID
-	             END = CASE r.TARGET_TYPE
-	                 WHEN 1 THEN j.FK_MEMBERID
-	                 WHEN 2 THEN p.FK_MEMBERID
-	                 WHEN 3 THEN c.FK_MEMBERID
-	             END
-	            ) AS REPORTCOUNT,
+	           (SELECT COUNT(*) 
+				 FROM TBL_REPORT r2
+				 LEFT JOIN TBL_JOB_POSTING j2 ON r2.TARGET_TYPE = 1 AND r2.TARGET_ID = j2.JOB_ID
+				 LEFT JOIN TBL_POST p2        ON r2.TARGET_TYPE = 2 AND r2.TARGET_ID = p2.POST_ID
+				 LEFT JOIN TBL_COMMENT c2     ON r2.TARGET_TYPE = 3 AND r2.TARGET_ID = c2.COMMENT_ID
+				 WHERE CASE r2.TARGET_TYPE
+				     WHEN 1 THEN j2.FK_MEMBERID
+				     WHEN 2 THEN p2.FK_MEMBERID
+				     WHEN 3 THEN c2.FK_MEMBERID
+				 END = CASE r.TARGET_TYPE
+				     WHEN 1 THEN j.FK_MEMBERID
+				     WHEN 2 THEN p.FK_MEMBERID
+				     WHEN 3 THEN c.FK_MEMBERID
+				 END
+				) AS REPORTCOUNT,
 	            CASE r.TARGET_TYPE
 	                WHEN 1 THEN j.TITLE
 	                WHEN 2 THEN p.TITLE
@@ -69,6 +69,7 @@
 	        LEFT JOIN TBL_POST p           ON r.TARGET_TYPE = 2 AND r.TARGET_ID = p.POST_ID
 	        LEFT JOIN TBL_COMMENT c        ON r.TARGET_TYPE = 3 AND r.TARGET_ID = c.COMMENT_ID
 	        <where>
+	        	 AND NOT (r.TARGET_TYPE = 1 AND j.STATUS = '임시저장')
 	            <if test="search != null and search != ''">
 	                AND r.FK_MEMBERID LIKE '%' || #{search} || '%'
 	            </if>
@@ -90,8 +91,10 @@
     <select id="selectReportCount" resultType="int">
         SELECT COUNT(*)
         FROM TBL_REPORT r
-        LEFT JOIN TBL_REPORT_REASON rr ON r.FK_REASON_ID = rr.REASON_ID
+		LEFT JOIN TBL_REPORT_REASON rr ON r.FK_REASON_ID = rr.REASON_ID
+		LEFT JOIN TBL_JOB_POSTING j    ON r.TARGET_TYPE = 1 AND r.TARGET_ID = j.JOB_ID
         <where>
+        	AND NOT (r.TARGET_TYPE = 1 AND j.STATUS = '임시저장')
             <if test="search != null and search != ''">
                 AND r.FK_MEMBERID LIKE '%' || #{search} || '%'
             </if>
@@ -109,7 +112,11 @@
 
     <!-- 유형별 건수 -->
     <select id="selectReportCountByType" resultType="int">
-        SELECT COUNT(*) FROM TBL_REPORT WHERE TARGET_TYPE = #{type}
+        SELECT COUNT(*) 
+	    FROM TBL_REPORT r
+	    LEFT JOIN TBL_JOB_POSTING j ON r.TARGET_TYPE = 1 AND r.TARGET_ID = j.JOB_ID
+	    WHERE r.TARGET_TYPE = #{type}
+	    AND NOT (r.TARGET_TYPE = 1 AND j.STATUS = '임시저장')
     </select>
 
     <!-- 상태 변경 -->
