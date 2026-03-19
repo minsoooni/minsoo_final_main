@@ -5,50 +5,220 @@
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 
 <head>
-<meta charset="UTF-8">
+  <meta charset="UTF-8">
 
-<title>구인공고 사이트</title>
-<link rel="stylesheet" th:href="@{/css/index.css}">
-<style type="text/css"></style>
+  <title>구인공고 사이트</title>
+  <link rel="stylesheet" th:href="@{/css/index.css}">
+  <style type="text/css"></style>
 
-<script type="text/javascript">
-
-  function getCookie(name) {
-    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-    return match ? match[2] : null;
-  }
-
-  function setCookie(name, value, hours) {
-    const expires = new Date(Date.now() + hours * 60 * 60 * 1000).toUTCString();
-    document.cookie = name + '=' + value + '; expires=' + expires + '; path=/';
-  }
-
-  function closePopup() {
-    if (document.getElementById('popupNoShow').checked) {
-      setCookie('notice_popup_hide', 'true', 24);
+  <script type="text/javascript">
+    function getCookie(name) {
+      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+      return match ? match[2] : null;
     }
-    document.getElementById('popupModal').style.display = 'none';
-  }
 
-  document.addEventListener('DOMContentLoaded', function () {
-    if (!getCookie('notice_popup_hide')) {
-    	fetch('notice/popup')
-        .then(res => res.json())
-        .then(data => {
-          if (!data || !data.noticeId) return;
-          document.getElementById('popupTitle').textContent = data.title;
-          let period = '';
-          if (data.popupStartAt && data.popupEndAt) {
-            period = '팝업 기간: ' + data.popupStartAt.substring(0,10) + ' ~ ' + data.popupEndAt.substring(0,10);
+    function setCookie(name, value, hours) {
+      const expires = new Date(Date.now() + hours * 60 * 60 * 1000).toUTCString();
+      document.cookie = name + '=' + value + '; expires=' + expires + '; path=/';
+    }
+
+    function closePopup() {
+      if (document.getElementById('popupNoShow').checked) {
+        setCookie('notice_popup_hide', 'true', 24);
+      }
+      document.getElementById('popupModal').style.display = 'none';
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      if (!getCookie('notice_popup_hide')) {
+        fetch('notice/popup')
+          .then(res => res.json())
+          .then(data => {
+            if (!data || !data.noticeId) return;
+
+            document.getElementById('popupTitle').textContent = data.title || '';
+
+            let period = '';
+            if (data.popupStartAt && data.popupEndAt) {
+              period = '팝업 기간: ' + data.popupStartAt.substring(0, 10) + ' ~ ' + data.popupEndAt.substring(0, 10);
+            }
+            document.getElementById('popupPeriod').textContent = period;
+            document.getElementById('popupContent').textContent = data.content || '';
+            document.getElementById('popupModal').style.display = 'flex';
+          })
+          .catch(() => {});
+      }
+
+      initSponsoredCarousel();
+    });
+
+    function initSponsoredCarousel() {
+      const carousel = document.querySelector('.jp-sponsored-carousel');
+      const track = document.getElementById('jpSponsoredTrack');
+      const prevBtn = document.getElementById('jpSponsoredPrev');
+      const nextBtn = document.getElementById('jpSponsoredNext');
+
+      if (!carousel || !track || !prevBtn || !nextBtn) {
+        return;
+      }
+
+      const originalSlides = Array.from(track.querySelectorAll('.jp-sponsored-slide'));
+      const originalCount = originalSlides.length;
+
+      if (originalCount <= 1) {
+        prevBtn.style.display = 'none';
+        nextBtn.style.display = 'none';
+        return;
+      }
+
+      let visibleCount = getVisibleCount();
+      let currentIndex = visibleCount;
+      let isAnimating = false;
+      let autoSlideTimer = null;
+
+      const AUTO_DELAY = 3500;
+      const TRANSITION_MS = 500;
+
+      buildInfiniteTrack();
+      moveToIndex(currentIndex, false);
+
+      prevBtn.addEventListener('click', function () {
+        stopAutoSlide();
+        movePrev();
+        startAutoSlide();
+      });
+
+      nextBtn.addEventListener('click', function () {
+        stopAutoSlide();
+        moveNext();
+        startAutoSlide();
+      });
+
+      track.addEventListener('transitionend', handleTransitionEnd);
+      carousel.addEventListener('mouseenter', stopAutoSlide);
+      carousel.addEventListener('mouseleave', startAutoSlide);
+
+      window.addEventListener('resize', function () {
+        const newVisibleCount = getVisibleCount();
+        if (newVisibleCount !== visibleCount) {
+          visibleCount = newVisibleCount;
+          rebuildInfiniteTrack();
+        } else {
+          moveToIndex(currentIndex, false);
+        }
+      });
+
+      startAutoSlide();
+
+      function getVisibleCount() {
+        if (window.innerWidth <= 768) return 1;
+        if (window.innerWidth <= 992) return 2;
+        return 3;
+      }
+
+      function getAllRenderedSlides() {
+        return Array.from(track.querySelectorAll('.jp-sponsored-slide'));
+      }
+
+      function getStepWidth() {
+        const firstSlide = track.querySelector('.jp-sponsored-slide');
+        if (!firstSlide) return 0;
+
+        const slideWidth = firstSlide.getBoundingClientRect().width;
+        const trackStyle = window.getComputedStyle(track);
+        const gap = parseFloat(trackStyle.columnGap || trackStyle.gap || '0');
+
+        return slideWidth + gap;
+      }
+
+      function clearTrack() {
+        track.innerHTML = '';
+      }
+
+      function createClone(slide) {
+        const clone = slide.cloneNode(true);
+        clone.classList.add('is-clone');
+        return clone;
+      }
+
+      function buildInfiniteTrack() {
+        clearTrack();
+
+        const beforeClones = originalSlides.slice(-visibleCount).map(createClone);
+        const afterClones = originalSlides.slice(0, visibleCount).map(createClone);
+
+        beforeClones.forEach(node => track.appendChild(node));
+        originalSlides.forEach(node => track.appendChild(node));
+        afterClones.forEach(node => track.appendChild(node));
+      }
+
+      function rebuildInfiniteTrack() {
+        track.style.transition = 'none';
+        track.style.transform = 'translate3d(0,0,0)';
+
+        buildInfiniteTrack();
+        currentIndex = visibleCount;
+
+        void track.offsetWidth;
+        moveToIndex(currentIndex, false);
+      }
+
+      function moveToIndex(index, animate) {
+        const step = getStepWidth();
+        if (!step) return;
+
+        track.style.transition = animate ? 'transform ' + TRANSITION_MS + 'ms ease' : 'none';
+        track.style.transform = 'translate3d(-' + (step * index) + 'px, 0, 0)';
+      }
+
+      function moveNext() {
+        if (isAnimating) return;
+        isAnimating = true;
+        currentIndex += 1;
+        moveToIndex(currentIndex, true);
+      }
+
+      function movePrev() {
+        if (isAnimating) return;
+        isAnimating = true;
+        currentIndex -= 1;
+        moveToIndex(currentIndex, true);
+      }
+
+      function handleTransitionEnd(e) {
+        if (e.target !== track) return;
+
+        if (currentIndex >= originalCount + visibleCount) {
+          currentIndex = visibleCount;
+          moveToIndex(currentIndex, false);
+        } else if (currentIndex < visibleCount) {
+          currentIndex = originalCount + visibleCount - 1;
+          moveToIndex(currentIndex, false);
+        }
+
+        requestAnimationFrame(function () {
+          isAnimating = false;
+        });
+      }
+
+      function startAutoSlide() {
+        stopAutoSlide();
+
+        autoSlideTimer = setInterval(function () {
+          if (!isAnimating) {
+            moveNext();
           }
-          document.getElementById('popupPeriod').textContent = period;
-          document.getElementById('popupContent').textContent = data.content;
-          document.getElementById('popupModal').style.display = 'flex';
-        })
-        .catch(() => {});
+        }, AUTO_DELAY);
+      }
+
+      function stopAutoSlide() {
+        if (autoSlideTimer) {
+          clearInterval(autoSlideTimer);
+          autoSlideTimer = null;
+        }
+      }
     }
-  });
-</script>
+  </script>
 </head>
 
 <body>
@@ -56,38 +226,23 @@
 <section>
   <!-- HERO -->
   <section class="jp-hero">
-    <div class="container-fluid jp-container text-center">
+    <div class="jp-hero__bg"></div>
+
+    <div class="container-fluid jp-container text-center jp-hero__inner">
       <h1 class="jp-hero__title">
         커리어의 시작과 끝,<br/>
         잡파인더에서 함께하세요
       </h1>
-      <div class="jp-hero__sub">15만개 이상의 기업이 당신을 기다리고 있습니다</div>
 
-      <!-- Search bar -->
-      <div class="jp-searchbar mx-auto" style="max-width: 820px;">
-        <div class="d-flex align-items-center">
-          <div class="px-2 text-muted" style="width:40px;">
-            <i class="fa-solid fa-magnifying-glass"></i>
-          </div>
-          <input class="form-control" type="text" placeholder="직무, 기술스택, 회사명을 입력하세요">
-          <button class="btn btn-primary ml-2" type="button">검색</button>
-        </div>
-      </div>
-
-      <!-- suggested chips -->
-      <div class="mt-3">
-        <span style="opacity:.9; font-size:13px; margin-right:10px;">추천 검색어:</span>
-        <a class="jp-chip" href="#">React</a>
-        <a class="jp-chip" href="#">Next.js</a>
-        <a class="jp-chip" href="#">Spring Boot</a>
-        <a class="jp-chip" href="#">데이터분석</a>
-        <a class="jp-chip" href="#">기획자</a>
+      <div class="jp-hero__sub">
+        15만개 이상의 기업과 다양한 포지션 속에서<br/>
+        내 이력서와 관심사에 맞는 채용 기회를 더 빠르게 찾아보세요
       </div>
     </div>
   </section>
 
   <!-- Category icons strip -->
-  <section class="jp-category-strip">
+  <section class="jp-category-strip" style="margin-bottom:30px;">
     <div class="container-fluid jp-container">
       <div class="jp-category-carousel">
         <button type="button"
@@ -117,198 +272,156 @@
     </div>
   </section>
 
-  <!-- 기업 스폰서 배너 -->
-<section class="jp-sponsored-wrap"
-         th:if="${mainBannerList != null and !#lists.isEmpty(mainBannerList)}">
-  <div class="container-fluid jp-container">
+  <!-- 우측 플로팅 사이드바 -->
+  <aside class="jp-floating-sidebar">
+    <div class="jp-floating-sidebar__inner">
 
-    <!-- 배너 여러 개 -->
-    <div class="jp-sponsored-list">
-
-      <div class="jp-sponsored-item"
-           th:each="banner : ${mainBannerList}">
-
-        <a th:href="@{/job/detail/{id}(id=${banner['fkJobId']})}"
-           class="jp-sponsored-banner-link">
-
-          <div class="jp-sponsored-banner">
-
-            <div class="jp-sponsored-banner__badge">
-              SPONSORED
-            </div>
-
-            <div class="jp-sponsored-banner__content">
-
-              <div class="jp-sponsored-banner__text">
-
-                <!-- 배너 제목 -->
-                <div class="jp-sponsored-banner__title"
-                     th:text="${banner['title']}">
-                  배너 제목
-                </div>
-
-                <!-- 공고 제목 -->
-                <div class="jp-sponsored-banner__desc"
-                     th:text="${banner['jobTitle']}">
-                  공고 제목
-                </div>
-<!-- 
-                기간
-                <div class="jp-sponsored-banner__meta">
-                  <span th:text="|기간 ${banner['startAt']} ~ ${banner['endAt']}|">
-                    기간
-                  </span>
-                </div>
--->              
-		    </div>
-
-              <!-- 이미지 -->
-              <div class="jp-sponsored-banner__image"
-                   th:if="${banner['FILEURL'] != null}">
-                <img th:src="${banner['FILEURL']}"
-                     alt="배너 이미지"
-                     style="height:80px; border-radius:12px;">
-              </div>
-
-            </div>
-
-          </div>
-        </a>
-
-      </div>
-
-    </div>
-  </div>
-</section>
-
-
-
-
-
-  <!-- 오늘의 추천 공고 -->
-  <section class="jp-section" style="background:#fff;">
-    <div class="container-fluid jp-container">
-      <div class="jp-section__head">
-        <div>
-          <h2 class="jp-section__title">⭐ 오늘의 추천 공고</h2>
-          <div class="jp-section__desc">회원님의 이력서를 바탕으로 분석한 맞춤 정보입니다.</div>
+      <div class="jp-floating-side-card jp-floating-side-card--event">
+        <div class="jp-side-eyebrow">
+          <i class="fa-solid fa-sparkles"></i>
+          SPECIAL EVENT
         </div>
-        <a class="jp-link" th:href="@{/job/list}">전체보기 <i class="fa-solid fa-chevron-right ml-1"></i></a>
+
+        <div class="jp-side-title">
+          이력서 완성하고<br/>
+          합격 예측 리포트 받기
+        </div>
+
+        <div class="jp-side-desc">
+          단 5분만 투자하면 내 이력서를 기준으로 한 맞춤 분석 리포트를 무료로 확인할 수 있어요.
+        </div>
+
+        <div class="jp-side-highlight">
+          <div class="jp-side-highlight__icon">
+            <i class="fa-regular fa-file-lines"></i>
+          </div>
+          <div class="jp-side-highlight__text">
+            대표 이력서를 등록하면 더 정교한 추천 공고와 분석 정보를 받을 수 있어요.
+          </div>
+        </div>
+
+        <button class="jp-side-btn jp-side-btn--primary" type="button">
+          이력서 완성하기
+        </button>
+
+        <div class="jp-side-mini">
+          지금 시작하면 추천 정확도도 함께 높아짐
+        </div>
       </div>
 
-      <!-- 추천공고 있음 -->
-      <div class="row" th:if="${recommendedJobList != null and !#lists.isEmpty(recommendedJobList)}">
-        <div class="col-md-3 mb-3" th:each="job : ${recommendedJobList}">
-          <a th:href="@{/job/detail/{id}(id=${job.jobId})}"
-             style="text-decoration:none; color:inherit;">
-            <div class="jp-card">
-              <div class="d-flex justify-content-between">
-                <div>
-                  <div class="jp-card__title" th:text="${job.title}">프론트엔드 개발자</div>
-                  <div class="jp-card__sub" th:text="${job.companyName}">(주)테크이노베이션</div>
-                </div>
-                <span class="badge badge-danger align-self-start"
-                      th:if="${job.dDayUrgent == 'Y'}">마감임박</span>
-              </div>
+      <div class="jp-floating-side-card" sec:authorize="isAnonymous()">
+        <div class="jp-side-eyebrow">
+          <i class="fa-regular fa-user"></i>
+          START NOW
+        </div>
 
-              <div class="jp-meta">
-                <i class="fa-solid fa-location-dot mr-2"></i>
-                <span th:text="${job.parentRegionName != null ? job.parentRegionName : ''}">서울</span>
-                <span th:text="${job.regionName != null ? ' ' + job.regionName : ''}">강남구</span>
-              </div>
+        <div class="jp-side-title">
+          잡파인더에서<br/>
+          새로운 커리어 시작하기
+        </div>
 
-              <div class="jp-meta">
-                <i class="fa-regular fa-id-badge mr-2"></i>
-                <span th:text="${job.careerType}">경력</span>
-              </div>
+        <div class="jp-side-desc">
+          회원가입 후 관심 직무와 이력서를 등록하면 나에게 더 잘 맞는 공고를 빠르게 확인할 수 있어요.
+        </div>
 
-              <div class="jp-meta">
-                <i class="fa-regular fa-clock mr-2"></i>
-                <span th:text="${job.dDay}">D-10</span>
-              </div>
-
-              <div class="mt-3">
-                <span class="jp-tag"
-                      th:each="skill, stat : ${job.skillList}"
-                      th:if="${stat.index < 3}"
-                      th:text="${skill}">Java</span>
-              </div>
-            </div>
+        <div class="jp-side-btn-group">
+          <a class="jp-side-btn jp-side-btn--primary" th:href="@{/member/join}">
+            개인 회원가입
+          </a>
+          <a class="jp-side-btn jp-side-btn--secondary" th:href="@{/company/service}">
+            기업 서비스 시작
           </a>
         </div>
       </div>
 
-      <!-- 추천공고 없음 -->
-      <div class="jp-empty-wrap"
-           th:if="${recommendedJobList == null or #lists.isEmpty(recommendedJobList)}">
+    </div>
+  </aside>
 
-        <!-- 로그인 안 한 경우 -->
-        <div class="jp-empty-box" th:if="${!isLoggedIn}">
-          <div class="jp-empty-icon">
-            <i class="fa-regular fa-user"></i>
-          </div>
-          <div class="jp-empty-title">로그인하고 맞춤 추천 공고를 확인해보세요</div>
-          <div class="jp-empty-desc">
-            이력서와 관심 직무를 바탕으로<br/>
-            나에게 맞는 공고를 추천해드려요.
-          </div>
-          <a class="jp-empty-btn" th:href="@{/member/login}">로그인 하러가기</a>
-        </div>
+  <!-- 기업 스폰서 배너 -->
+  <section class="jp-sponsored-wrap"
+           th:if="${mainBannerList != null and !#lists.isEmpty(mainBannerList)}">
+    <div class="container-fluid jp-container">
 
-        <!-- 로그인 했지만 이력서 없음 -->
-        <div class="jp-empty-box" th:if="${isLoggedIn and !hasResume}">
-          <div class="jp-empty-icon">
-            <i class="fa-regular fa-file-lines"></i>
-          </div>
-          <div class="jp-empty-title">대표 이력서를 등록하면 맞춤 공고를 추천해드려요</div>
-          <div class="jp-empty-desc">
-            이력서를 등록하면 경력, 희망직무, 기술스택을 바탕으로<br/>
-            더 잘 맞는 공고를 추천받을 수 있어요.
-          </div>
-          <a class="jp-empty-btn" th:href="@{/resume}">이력서 작성하기</a>
-        </div>
-
-        <!-- 추천 결과 없음 -->
-        <div class="jp-empty-box" th:if="${isLoggedIn and hasResume}">
-          <div class="jp-empty-icon">
-            <i class="fa-regular fa-compass"></i>
-          </div>
-          <div class="jp-empty-title">조건에 맞는 추천 공고가 아직 없어요</div>
-          <div class="jp-empty-desc">
-            조금 더 다양한 채용공고를 둘러보면서<br/>
-            관심 있는 포지션을 찾아보세요.
-          </div>
-          <a class="jp-empty-btn jp-empty-btn--light" th:href="@{/job/list}">전체 공고 보러가기</a>
+      <div class="jp-sponsored-head">
+        <div>
+          <h2 class="jp-section__title">📢 스폰서 채용 배너</h2>
+          <div class="jp-section__desc">기업이 직접 홍보하는 프리미엄 채용 공고입니다.</div>
         </div>
       </div>
 
-      <!-- Banner -->
-      <div class="mt-4">
-        <div class="jp-banner">
-          <div>
-            <div class="jp-banner__badge">SPECIAL EVENT</div>
-            <div class="jp-banner__title">
-              지금 이력서 완성하면<br/>
-              합격 예측 리포트가 무료!
+      <div class="jp-sponsored-carousel">
+        <button type="button"
+                class="jp-sponsored-nav jp-sponsored-nav--prev"
+                id="jpSponsoredPrev"
+                aria-label="이전 배너">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+
+        <div class="jp-sponsored-viewport">
+          <div class="jp-sponsored-track" id="jpSponsoredTrack">
+            <div class="jp-sponsored-slide"
+                 th:each="banner : ${mainBannerList}">
+              <a th:href="@{/job/detail/{id}(id=${banner['fkJobId']})}"
+                 class="jp-sponsored-card-link">
+                <article class="jp-sponsored-card">
+
+                  <div class="jp-sponsored-card__bg"
+                       th:if="${banner['fileUrl'] != null and banner['fileUrl'] != ''}">
+                    <img th:src="${banner['fileUrl']}"
+                         alt="배너 배경 이미지">
+                  </div>
+
+                  <div class="jp-sponsored-card__bg jp-sponsored-card__bg--empty"
+                       th:if="${banner['fileUrl'] == null or banner['fileUrl'] == ''}">
+                    <i class="fa-regular fa-image"></i>
+                  </div>
+
+                  <div class="jp-sponsored-card__overlay"></div>
+
+                  <div class="jp-sponsored-card__body">
+                    <div class="jp-sponsored-card__text">
+                      <div class="jp-sponsored-card__subline">
+                        <span class="jp-sponsored-card__subitem">
+                          <i class="fa-regular fa-building"></i>
+                          스폰서 기업 배너
+                        </span>
+                        <span class="jp-sponsored-card__dot"></span>
+                        <span class="jp-sponsored-card__subitem">
+                          <i class="fa-regular fa-rectangle-list"></i>
+                          채용공고 바로가기
+                        </span>
+                      </div>
+
+                      <h3 class="jp-sponsored-card__title"
+                          th:text="${banner['title']}">
+                        배너 제목
+                      </h3>
+
+                      <p class="jp-sponsored-card__desc"
+                         th:text="${banner['jobTitle']}">
+                        공고 제목
+                      </p>
+                    </div>
+                  </div>
+                </article>
+              </a>
             </div>
-            <div class="mt-3" style="opacity:.9;">단 5분 투자로 나의 합격 확률을 확인해 보세요.</div>
           </div>
-          <button class="jp-banner__btn" type="button">이력서 완성하기</button>
         </div>
+
+        <button type="button"
+                class="jp-sponsored-nav jp-sponsored-nav--next"
+                id="jpSponsoredNext"
+                aria-label="다음 배너">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
       </div>
+
     </div>
   </section>
 
-  <!-- 
-  추천 기업(핫한 기업) 점수 산정 방식
-  1. 최근 7일 지원수(totalApplyCount)를 기업별로 집계
-  2. 게시중 공고의 누적 조회수(totalViewCount)를 기업별로 집계
-  3. 각 값을 전체 기업 중 최대값 기준으로 100점 환산
-  4. 최종 점수 = 지원 점수 70% + 조회수 점수 30%
-  5. 최종 점수(hotScore) 높은 순으로 상위 4개 기업 조회
-  -->
   <!-- 요즘 뜨는 핫한 기업 -->
-  <section class="jp-section" style="background:#fff;">
+  <section class="jp-section" style="margin-bottom:30px; margin-top:30px;">
     <div class="container-fluid jp-container">
       <div class="jp-section__head">
         <div>
@@ -317,7 +430,6 @@
         </div>
       </div>
 
-      <!-- 핫한 기업 있음 -->
       <div class="row" th:if="${hotCompanyList != null and !#lists.isEmpty(hotCompanyList)}">
         <div class="col-md-3 mb-3" th:each="company : ${hotCompanyList}">
           <a th:href="@{/companyinfo/detail/{memberId}(memberId=${company['memberId']})}"
@@ -360,7 +472,6 @@
         </div>
       </div>
 
-      <!-- 핫한 기업 없음 -->
       <div class="text-center py-5"
            th:if="${hotCompanyList == null or #lists.isEmpty(hotCompanyList)}">
         <p class="mb-0">아직 핫한 기업 데이터가 없습니다.</p>
@@ -368,19 +479,96 @@
     </div>
   </section>
 
-
-
-  <!-- Bottom CTA -->
-  <section class="jp-cta" sec:authorize="isAnonymous()">
+  <!-- 오늘의 추천 공고 -->
+  <section class="jp-section jp-section--last">
     <div class="container-fluid jp-container">
-      <div class="jp-cta__title">당신의 새로운 커리어를 시작하세요</div>
-      <div class="jp-cta__desc">
-        나를 가장 잘 알아주는 채용 플랫폼 잡파인더에서<br/>
-        매일매일 업데이트되는 새로운 기회를 놓치지 마세요.
+      <div class="jp-section__head">
+        <div>
+          <h2 class="jp-section__title">⭐ 오늘의 추천 공고</h2>
+          <div class="jp-section__desc">회원님의 이력서를 바탕으로 분석한 맞춤 정보입니다.</div>
+        </div>
+        <a class="jp-link" th:href="@{/job/list}">전체보기 <i class="fa-solid fa-chevron-right ml-1"></i></a>
       </div>
-      <div class="mt-4">
-        <a class="btn btn-primary mr-2" th:href="@{/member/join}">개인 회원가입</a>
-        <a class="btn btn-outline-secondary" th:href="@{/company/service}">기업 서비스 시작</a>
+
+      <div class="row" th:if="${recommendedJobList != null and !#lists.isEmpty(recommendedJobList)}">
+        <div class="col-md-3 mb-3" th:each="job : ${recommendedJobList}">
+          <a th:href="@{/job/detail/{id}(id=${job.jobId})}"
+             style="text-decoration:none; color:inherit;">
+            <div class="jp-card">
+              <div class="d-flex justify-content-between">
+                <div>
+                  <div class="jp-card__title" th:text="${job.title}">프론트엔드 개발자</div>
+                  <div class="jp-card__sub" th:text="${job.companyName}">(주)테크이노베이션</div>
+                </div>
+                <span class="badge badge-danger align-self-start"
+                      th:if="${job.dDayUrgent == 'Y'}">마감임박</span>
+              </div>
+
+              <div class="jp-meta">
+                <i class="fa-solid fa-location-dot mr-2"></i>
+                <span th:text="${job.parentRegionName != null ? job.parentRegionName : ''}">서울</span>
+                <span th:text="${job.regionName != null ? ' ' + job.regionName : ''}">강남구</span>
+              </div>
+
+              <div class="jp-meta">
+                <i class="fa-regular fa-id-badge mr-2"></i>
+                <span th:text="${job.careerType}">경력</span>
+              </div>
+
+              <div class="jp-meta">
+                <i class="fa-regular fa-clock mr-2"></i>
+                <span th:text="${job.dDay}">D-10</span>
+              </div>
+
+              <div class="mt-3">
+                <span class="jp-tag"
+                      th:each="skill, stat : ${job.skillList}"
+                      th:if="${stat.index < 3}"
+                      th:text="${skill}">Java</span>
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <div class="jp-empty-wrap"
+           th:if="${recommendedJobList == null or #lists.isEmpty(recommendedJobList)}">
+
+        <div class="jp-empty-box" th:if="${!isLoggedIn}">
+          <div class="jp-empty-icon">
+            <i class="fa-regular fa-user"></i>
+          </div>
+          <div class="jp-empty-title">로그인하고 맞춤 추천 공고를 확인해보세요</div>
+          <div class="jp-empty-desc">
+            이력서와 관심 직무를 바탕으로<br/>
+            나에게 맞는 공고를 추천해드려요.
+          </div>
+          <a class="jp-empty-btn" th:href="@{/member/login}">로그인 하러가기</a>
+        </div>
+
+        <div class="jp-empty-box" th:if="${isLoggedIn and !hasResume}">
+          <div class="jp-empty-icon">
+            <i class="fa-regular fa-file-lines"></i>
+          </div>
+          <div class="jp-empty-title">대표 이력서를 등록하면 맞춤 공고를 추천해드려요</div>
+          <div class="jp-empty-desc">
+            이력서를 등록하면 경력, 희망직무, 기술스택을 바탕으로<br/>
+            더 잘 맞는 공고를 추천받을 수 있어요.
+          </div>
+          <a class="jp-empty-btn" th:href="@{/resume}">이력서 작성하기</a>
+        </div>
+
+        <div class="jp-empty-box" th:if="${isLoggedIn and hasResume}">
+          <div class="jp-empty-icon">
+            <i class="fa-regular fa-compass"></i>
+          </div>
+          <div class="jp-empty-title">조건에 맞는 추천 공고가 아직 없어요</div>
+          <div class="jp-empty-desc">
+            조금 더 다양한 채용공고를 둘러보면서<br/>
+            관심 있는 포지션을 찾아보세요.
+          </div>
+          <a class="jp-empty-btn jp-empty-btn--light" th:href="@{/job/list}">전체 공고 보러가기</a>
+        </div>
       </div>
     </div>
   </section>
