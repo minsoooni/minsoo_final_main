@@ -83,4 +83,10 @@ public class MypageService_imple implements MypageService {
     public List<Map<String, Object>> getRecentViewedPosts(String memberId) {
         return mypageDAO.selectRecentViewedPosts(memberId);
     }
+
+    /** 캘린더 이벤트 조회 (지원일/마감일/제안 응답기한) */
+    @Override
+    public List<Map<String, Object>> getCalendarEvents(String memberId) {
+        return mypageDAO.selectCalendarEvents(memberId);
+    }
 }
