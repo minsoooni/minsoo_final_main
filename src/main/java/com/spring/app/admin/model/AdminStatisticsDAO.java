@@ -28,8 +28,6 @@ public interface AdminStatisticsDAO {
     List<Map<String, Object>> selectJobClosedTrend(
         @Param("from") String from, @Param("to") String to, @Param("period") String period);
 
-    List<Map<String, Object>> selectSalaryDistribution();
-
     List<Map<String, Object>> selectPostTrend(
         @Param("from") String from, @Param("to") String to, @Param("period") String period);
 

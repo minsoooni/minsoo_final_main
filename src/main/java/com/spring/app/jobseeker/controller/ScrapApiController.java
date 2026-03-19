@@ -33,10 +33,9 @@ public class ScrapApiController {
         this.scrapService = scrapService;
     }
 
-    // ====================================================
-    // 스크랩 취소 API
+   
+    // 스크랩 취소
     // POST /api/scrap/{jobId}/delete
-    // ====================================================
     @Operation(
         summary = "스크랩 취소",
         description = "로그인한 구직자가 스크랩한 공고를 스크랩 목록에서 제거한다."

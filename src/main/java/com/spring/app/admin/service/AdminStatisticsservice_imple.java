@@ -31,7 +31,6 @@ public class AdminStatisticsservice_imple implements AdminStatisticsservice {
         result.put("memberGrowth", toChart(adminStatisticsDAO.selectMemberGrowthLast12()));
         result.put("jobReg",       toChart(adminStatisticsDAO.selectJobRegTrend(from, to, period)));
         result.put("jobClosed",    toChart(adminStatisticsDAO.selectJobClosedTrend(from, to, period)));
-        result.put("salary",       toSalaryChart(adminStatisticsDAO.selectSalaryDistribution()));
         result.put("postTrend",    toChart(adminStatisticsDAO.selectPostTrend(from, to, period)));
         result.put("commentTrend", toChart(adminStatisticsDAO.selectCommentTrend(from, to, period)));
 
@@ -44,18 +43,6 @@ public class AdminStatisticsservice_imple implements AdminStatisticsservice {
         List<Long>   data   = new ArrayList<>();
         for (Map<String, Object> row : rows) {
             labels.add(String.valueOf(row.get("DT")));
-            Object cnt = row.get("CNT");
-            data.add(cnt == null ? 0L : ((Number) cnt).longValue());
-        }
-        return Map.of("labels", labels, "data", data);
-    }
-
-    /** LABEL + CNT 구조 (급여 구간) */
-    private Map<String, Object> toSalaryChart(List<Map<String, Object>> rows) {
-        List<String> labels = new ArrayList<>();
-        List<Long>   data   = new ArrayList<>();
-        for (Map<String, Object> row : rows) {
-            labels.add(String.valueOf(row.get("LABEL")));
             Object cnt = row.get("CNT");
             data.add(cnt == null ? 0L : ((Number) cnt).longValue());
         }

@@ -80,7 +80,10 @@
     }
   </style>
 
-  <script>
+  <script th:inline="javascript">
+  
+  const contextPath = /*[[@{/}]]*/ "";
+  
     document.addEventListener('DOMContentLoaded', function () {
 
       /* ── 검색 (서버사이드) ── */
@@ -88,7 +91,7 @@
         const search = document.getElementById('searchInput').value;
         const params = new URLSearchParams();
         if (search) params.append('search', search);
-        location.href = 'http://localhost:8000/user-service/notice?' + params.toString();
+        location.href = contextPath + 'notice?' + params.toString();
       };
       document.getElementById('searchInput').addEventListener('keydown', e => {
         if (e.key === 'Enter') applySearch();
@@ -96,7 +99,7 @@
 
       /* ── 상세 모달 (서버에서 fetch) ── */
       window.openDetail = function (id) {
-    	  fetch('http://localhost:8000/user-service/notice/' + id + '/detail')
+    	  fetch(contextPath + 'notice/' + id + '/detail')
           .then(res => res.json())
           .then(data => {
             document.getElementById('detailBadge').className = 'badge ' + (data.pinnedYn === 'Y' ? 'important' : 'normal');
@@ -189,18 +192,18 @@
     <div class="table-footer">
       <span class="total-count">총 <span th:text="${totalCount}"></span>개의 공지사항</span>
       <div class="pagination">
-        <a th:href="@{/notice(page=1,search=${param.search})}"
+        <a th:href="@{notice(page=1,search=${param.search})}"
            th:classappend="${currentPage == 1} ? 'disabled'">«</a>
-        <a th:href="@{/notice(page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search})}"
+        <a th:href="@{notice(page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search})}"
            th:classappend="${currentPage == 1} ? 'disabled'">이전</a>
         <span th:each="i : ${#numbers.sequence(1, totalPages)}">
-          <a th:href="@{/notice(page=${i},search=${param.search})}"
+          <a th:href="@{notice(page=${i},search=${param.search})}"
              th:text="${i}"
              th:classappend="${i == currentPage} ? 'active'"></a>
         </span>
-        <a th:href="@{/notice(page=${currentPage < totalPages ? currentPage+1 : totalPages},search=${param.search})}"
+        <a th:href="@{notice(page=${currentPage < totalPages ? currentPage+1 : totalPages},search=${param.search})}"
            th:classappend="${currentPage == totalPages} ? 'disabled'">다음</a>
-        <a th:href="@{/notice(page=${totalPages},search=${param.search})}"
+        <a th:href="@{notice(page=${totalPages},search=${param.search})}"
            th:classappend="${currentPage == totalPages} ? 'disabled'">»</a>
       </div>
     </div>

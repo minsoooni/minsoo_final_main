@@ -145,6 +145,16 @@
 
 .btn-actions { display: flex; gap: 10px; justify-content: center; margin-top: 8px; }
 
+
+/* 뒤로가기 버튼 CSS */
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+
 @media (max-width: 600px) {
     .header-body { flex-direction: column; }
     .header-status { min-width: auto; width: 100%; }

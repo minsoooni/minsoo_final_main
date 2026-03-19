@@ -42,5 +42,6 @@ public interface ResumeService {
     // 지역 목록
     List<RegionDTO> selectRegionList();
 
+    // 기술스택 검색 (자동완성)
     List<ResumeTechstackDTO> searchSkill(String keyword);
 }

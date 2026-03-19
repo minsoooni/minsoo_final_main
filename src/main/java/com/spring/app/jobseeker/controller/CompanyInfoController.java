@@ -35,7 +35,7 @@ public class CompanyInfoController {
     }
 
 
-    // ===== 1. 기업 목록 =====
+    // ===== 기업 목록 =====
     // GET /companyinfo/list
     @GetMapping("/list")
     public ModelAndView companyList(
@@ -115,7 +115,7 @@ public class CompanyInfoController {
     }
 
 
-    // ===== 2. 기업 상세 =====
+    // ===== 기업 상세 =====
     // GET /companyinfo/detail/{id}
     @GetMapping("/detail/{id}")
     public ModelAndView companyDetail(@PathVariable("id") String id,
@@ -146,7 +146,7 @@ public class CompanyInfoController {
     }
 
 
-    // ===== 3. 진행중 채용공고 페이징 (AJAX) =====
+    // ===== 진행중 채용공고 페이징 (AJAX) =====
     // GET /companyinfo/api/jobpostings?memberId=xxx&page=1
     @GetMapping("/api/jobpostings")
     @ResponseBody

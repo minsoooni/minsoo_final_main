@@ -114,14 +114,22 @@
     .toast.warning { background: #f59e0b; }
   </style>
 
-  <script>
+  <script th:inline="javascript">
+  const contextPath = /*[[@{/}]]*/ "";
+  
     document.addEventListener('DOMContentLoaded', function () {
 
       var today = new Date().toISOString().split('T')[0];
-      document.getElementById('noticeEndDate').min  = today;
-      document.getElementById('popupStartDate').min = today;
-      document.getElementById('popupEndDate').min   = today;
-
+	  var maxDate = '2099-12-31';
+	  
+	  
+	  document.getElementById('noticeEndDate').min  = today;
+	  document.getElementById('noticeEndDate').max  = maxDate;
+	  document.getElementById('popupStartDate').min = today;
+	  document.getElementById('popupStartDate').max = maxDate;  
+	  document.getElementById('popupEndDate').min   = today;
+	  document.getElementById('popupEndDate').max   = maxDate;  
+	  
       var editingId       = null;
       var previewTargetId = null;
       var pendingPopupId  = null;
@@ -132,7 +140,7 @@
         var params = new URLSearchParams();
         if (search) params.set('search', search);
         params.set('page', '1');
-        window.location.href = '/user-service/admin/notices?' + params.toString();
+        window.location.href = contextPath + 'admin/notices?' + params.toString();
       };
       document.getElementById('searchInput').addEventListener('keydown', function (e) {
         if (e.key === 'Enter') applyFilters();
@@ -156,7 +164,7 @@
 
       /* ── 수정 모달 ── */
       window.editNotice = function (id) {
-        fetch('/user-service/admin/notices/' + id + '/detail')
+    	  fetch(contextPath + 'admin/notices/' + id + '/detail')
           .then(function (res) { return res.json(); })
           .then(function (data) {
             editingId = id;
@@ -189,60 +197,74 @@
       });
 
       /* ── 저장 ── */
-      window.saveNotice = function () {
-        var title      = document.getElementById('noticeTitle').value.trim();
-        var content    = document.getElementById('noticeContent').value.trim();
-        var status     = 1;
-        var pinnedYn   = document.querySelector('input[name="noticeType"]:checked').value;
-        var endDate    = document.getElementById('noticeEndDate').value;
-        var popupYn    = document.getElementById('popupYnCheck').checked ? 'Y' : 'N';
-        var popupStart = document.getElementById('popupStartDate').value;
-        var popupEnd   = document.getElementById('popupEndDate').value;
+	  window.saveNotice = function () {
+	    var MAX_DATE = '2099-12-31';
 
-        if (!title)   { alert('제목을 입력해주세요.');  return; }
-        if (!content) { alert('내용을 입력해주세요.');  return; }
+	    // ── 변수 선언을 먼저 ──
+	    var title      = document.getElementById('noticeTitle').value.trim();
+	    var content    = document.getElementById('noticeContent').value.trim();
+	    var status     = 1;
+	    var pinnedYn   = document.querySelector('input[name="noticeType"]:checked').value;
+	    var endDate    = document.getElementById('noticeEndDate').value;
+	    var popupYn    = document.getElementById('popupYnCheck').checked ? 'Y' : 'N';
+	    var popupStart = document.getElementById('popupStartDate').value;
+	    var popupEnd   = document.getElementById('popupEndDate').value;
 
-        if (endDate && endDate < today) {
-          alert('마감일은 오늘 이후 날짜로 설정해주세요.');
-          return;
-        }
-        if (popupYn === 'Y') {
-          if (!popupStart) { alert('팝업 시작일을 입력해주세요.'); return; }
-          if (popupStart < today) { alert('팝업 시작일은 오늘 이후로 설정해주세요.'); return; }
-          if (popupEnd) {
-            if (popupEnd < today)      { alert('팝업 종료일은 오늘 이후로 설정해주세요.');   return; }
-            if (popupEnd < popupStart) { alert('팝업 종료일은 시작일 이후로 설정해주세요.'); return; }
-          }
-          if (endDate && popupEnd && popupEnd > endDate) {
-            alert('팝업 종료일은 공지 마감일(' + endDate + ')을 초과할 수 없습니다.');
-            return;
-          }
-        }
+	    if (!title)   { alert('제목을 입력해주세요.');  return; }
+	    if (!content) { alert('내용을 입력해주세요.');  return; }
 
-        var body   = { title: title, content: content, status: status, pinnedYn: pinnedYn,
-                       endDate: endDate, popupYn: popupYn, popupStartAt: popupStart, popupEndAt: popupEnd };
-        var url    = editingId ? '/user-service/admin/notices/' + editingId : '/user-service/admin/notices';
-        var method = editingId ? 'PUT' : 'POST';
+	    // ── max 날짜 검증 ──
+	    if (endDate && endDate > MAX_DATE) {
+	      alert('마감일은 2099년 이전으로 설정해주세요.');
+	      return;
+	    }
 
-        fetch(url, {
-          method: method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        }).then(function (res) {
-          if (res.ok) {
-            closeModal();
-            showToast(editingId ? '수정됐습니다.' : '등록됐습니다.', 'success');
-            setTimeout(function () { location.href = location.pathname + location.search; }, 1000);
-          } else {
-            showToast('처리 중 오류가 발생했습니다.', 'warning');
-          }
-        });
-      };
+	    if (endDate && endDate < today) {
+	      alert('마감일은 오늘 이후 날짜로 설정해주세요.');
+	      return;
+	    }
+
+	    if (popupYn === 'Y') {
+	      if (!popupStart) { alert('팝업 시작일을 입력해주세요.'); return; }
+	      if (popupStart < today) { alert('팝업 시작일은 오늘 이후로 설정해주세요.'); return; }
+	      if (popupStart > MAX_DATE) { alert('팝업 시작일은 2099년 이전으로 설정해주세요.'); return; }
+	      if (popupEnd) {
+	        if (popupEnd < today)       { alert('팝업 종료일은 오늘 이후로 설정해주세요.');   return; }
+	        if (popupEnd < popupStart)  { alert('팝업 종료일은 시작일 이후로 설정해주세요.'); return; }
+	        if (popupEnd > MAX_DATE)    { alert('팝업 종료일은 2099년 이전으로 설정해주세요.'); return; }
+	      }
+	      if (endDate && popupEnd && popupEnd > endDate) {
+	        alert('팝업 종료일은 공지 마감일(' + endDate + ')을 초과할 수 없습니다.');
+	        return;
+	      }
+	    }
+
+	    var body   = { title: title, content: content, status: status, pinnedYn: pinnedYn,
+	                   endDate: endDate, popupYn: popupYn, popupStartAt: popupStart, popupEndAt: popupEnd };
+	    var url    = editingId
+	      ? contextPath + 'admin/notices/' + editingId
+	      : contextPath + 'admin/notices';
+	    var method = editingId ? 'PUT' : 'POST';
+
+	    fetch(url, {
+	      method: method,
+	      headers: { 'Content-Type': 'application/json' },
+	      body: JSON.stringify(body)
+	    }).then(function (res) {
+	      if (res.ok) {
+	        closeModal();
+	        showToast(editingId ? '수정됐습니다.' : '등록됐습니다.', 'success');
+	        setTimeout(function () { location.href = location.pathname + location.search; }, 1000);
+	      } else {
+	        showToast('처리 중 오류가 발생했습니다.', 'warning');
+	      }
+	    });
+	  };
 
       /* ── 삭제 ── */
       window.deleteNotice = function (id, title) {
         if (!confirm('정말 삭제하시겠습니까?\n\n제목: ' + title)) return;
-        fetch('/user-service/admin/notices/' + id, { method: 'DELETE' })
+        fetch(contextPath + 'admin/notices/' + id, { method: 'DELETE' })
           .then(function (res) {
             if (res.ok) {
               showToast('삭제됐습니다.', 'warning');
@@ -255,7 +277,7 @@
 
       /* ── 중요/일반 토글 ── */
       window.toggleType = function (id) {
-        fetch('/user-service/admin/notices/' + id + '/type', { method: 'PATCH' })
+    	  fetch(contextPath + 'admin/notices/' + id + '/type', { method: 'PATCH' })
           .then(function (res) {
             if (res.ok) location.href = location.pathname + location.search;
             else showToast('처리 중 오류가 발생했습니다.', 'warning');
@@ -265,7 +287,7 @@
       /* ── 팝업 버튼 클릭 → 미리보기 모달 ── */
       window.handlePopupBtn = function (id, popupYn) {
         previewTargetId = id;
-        fetch('/user-service/admin/notices/' + id + '/detail')
+        fetch(contextPath + 'admin/notices/' + id + '/detail')
           .then(function (res) { return res.json(); })
           .then(function (data) {
             document.getElementById('popupPreviewTitle').textContent   = data.title;
@@ -302,7 +324,7 @@
 
       /* ── 팝업 해제 ── */
       window.deactivatePopupFromPreview = function () {
-        fetch('/user-service/admin/notices/' + previewTargetId + '/popup', {
+    	  fetch(contextPath + 'admin/notices/' + previewTargetId + '/popup', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'deactivate' })
@@ -318,7 +340,7 @@
       };
 
       function doActivatePopup(id) {
-        fetch('/user-service/admin/notices/' + id + '/popup', {
+    	 fetch(contextPath + 'admin/notices/' + id + '/popup', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'activate' })
@@ -483,18 +505,18 @@
     <div class="table-footer">
       <span class="total-count">총 <span th:text="${totalCount}"></span>개의 공지사항</span>
       <div class="pagination">
-        <a th:href="@{/admin/notices(page=1,search=${param.search})}"
+        <a th:href="@{notices(page=1,search=${param.search})}"
            th:classappend="${currentPage == 1} ? 'disabled'">«</a>
-        <a th:href="@{/admin/notices(page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search})}"
+        <a th:href="@{notices(page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search})}"
            th:classappend="${currentPage == 1} ? 'disabled'">이전</a>
         <span th:each="i : ${#numbers.sequence(1, totalPages)}">
-          <a th:href="@{/admin/notices(page=${i},search=${param.search})}"
+          <a th:href="@{notices(page=${i},search=${param.search})}"
              th:text="${i}"
              th:classappend="${i == currentPage} ? 'active'"></a>
         </span>
-        <a th:href="@{/admin/notices(page=${currentPage < totalPages ? currentPage+1 : totalPages},search=${param.search})}"
+        <a th:href="@{notices(page=${currentPage < totalPages ? currentPage+1 : totalPages},search=${param.search})}"
            th:classappend="${currentPage == totalPages} ? 'disabled'">다음</a>
-        <a th:href="@{/admin/notices(page=${totalPages},search=${param.search})}"
+        <a th:href="@{notices(page=${totalPages},search=${param.search})}"
            th:classappend="${currentPage == totalPages} ? 'disabled'">»</a>
       </div>
     </div>

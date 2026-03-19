@@ -37,7 +37,7 @@ public class MypageApiController {
     }
 
   
-    // 프로필 조회 API
+    // 프로필 조회
     // GET /api/mypage/profile
     @Operation(
         summary = "프로필 조회",

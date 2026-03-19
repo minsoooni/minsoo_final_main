@@ -30,9 +30,22 @@ public class CompanyApplicantApiController {
 
     private final CompanyService service;
     
-    
-    
+    private String mapProcessStatus(Integer processStatus) {
+        if (processStatus == null) return "UNREAD";
 
+        switch (processStatus) {
+            case 0: return "UNREAD";
+            case 1: return "READ";
+            case 2: return "REJECTED";   // 서류탈락
+            case 3: return "INTERVIEW";  // 면접요청
+            case 4: return "PASSED";     // 합격
+            case 5: return "REJECTED";   // 불합격
+            default: return "UNREAD";
+        }
+    }
+    
+    
+    // 지원가 목록 조회
     @Operation(summary = "지원자 목록 조회", description = "기업 회원이 등록한 공고에 지원한 지원자 목록을 조회한다.")
     @GetMapping("/list")
     public List<ApplicantListDTO> applicantList(Authentication authentication,
@@ -53,35 +66,7 @@ public class CompanyApplicantApiController {
 
     
     
-    @Operation(summary = "지원자 상태 변경", description = "기업 회원이 등록한 공고에 지원한 지원자 상태를 변경한다.")
-    @PutMapping("/status")
-    public Map<String, Object> updateApplicantStatus(@RequestBody Map<String, Object> request,
-                                                     Authentication authentication) {
-
-        String memberId = authentication.getName();
-
-        Long applicationId = Long.valueOf(String.valueOf(request.get("applicationId")));
-        Integer prevStatus = Integer.valueOf(String.valueOf(request.get("prevStatus")));
-        Integer newStatus = Integer.valueOf(String.valueOf(request.get("newStatus")));
-
-        Map<String, Object> paraMap = new HashMap<>();
-        paraMap.put("applicationId", applicationId);
-        paraMap.put("prevStatus", prevStatus);
-        paraMap.put("newStatus", newStatus);
-        paraMap.put("memberId", memberId);
-
-        boolean success = service.updateApplicantStatus(paraMap);
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("success", success);
-        result.put("message", success ? "상태가 변경되었습니다." : "상세 확인 후 상태를 변경할 수 있습니다.");
-
-        return result;
-    }
-    
-    
-    
-    // 지원자 상세 보기
+    // 지원자 상세 조회
     @Operation(summary = "지원자 이력서 조회", description = "기업 회원이 등록한 공고에 지원한 이력서를 조회한다.")
     @GetMapping("/detail")
     public ModelAndView applicantDetail(@RequestParam("applicationId") Long applicationId,
@@ -157,20 +142,33 @@ public class CompanyApplicantApiController {
         return mav;
     }
 
-    private String mapProcessStatus(Integer processStatus) {
-        if (processStatus == null) return "UNREAD";
-
-        switch (processStatus) {
-            case 0: return "UNREAD";
-            case 1: return "READ";
-            case 2: return "REJECTED";   // 서류탈락
-            case 3: return "INTERVIEW";  // 면접요청
-            case 4: return "PASSED";     // 합격
-            case 5: return "REJECTED";   // 불합격
-            default: return "UNREAD";
-        }
-    }
     
+    // 지원자 상태 변경
+    @Operation(summary = "지원자 상태 변경", description = "기업 회원이 등록한 공고에 지원한 지원자 상태를 변경한다.")
+    @PutMapping("/status")
+    public Map<String, Object> updateApplicantStatus(@RequestBody Map<String, Object> request,
+                                                     Authentication authentication) {
+
+        String memberId = authentication.getName();
+
+        Long applicationId = Long.valueOf(String.valueOf(request.get("applicationId")));
+        Integer prevStatus = Integer.valueOf(String.valueOf(request.get("prevStatus")));
+        Integer newStatus = Integer.valueOf(String.valueOf(request.get("newStatus")));
+
+        Map<String, Object> paraMap = new HashMap<>();
+        paraMap.put("applicationId", applicationId);
+        paraMap.put("prevStatus", prevStatus);
+        paraMap.put("newStatus", newStatus);
+        paraMap.put("memberId", memberId);
+
+        boolean success = service.updateApplicantStatus(paraMap);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", success);
+        result.put("message", success ? "상태가 변경되었습니다." : "상세 확인 후 상태를 변경할 수 있습니다.");
+
+        return result;
+    }
     
     
 }

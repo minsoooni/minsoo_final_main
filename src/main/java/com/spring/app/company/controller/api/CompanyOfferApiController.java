@@ -161,21 +161,32 @@ public class CompanyOfferApiController {
     }
     
     //수신자 상세 조회
-    @Operation(summary = "제안서 수신자 상세 조회", description = "선택한 제안서의 수신자별 발송/열람/응답 상태를 조회")
     @GetMapping("/{offerLetterId}/recipient-details")
     public ResponseEntity<Map<String, Object>> recipientDetails(
             @PathVariable("offerLetterId") Long offerLetterId,
             Authentication authentication) {
 
-        String companyMemberId = authentication.getName();
+        try {
+            String companyMemberId = authentication.getName();
 
-        List<OfferRecipientDetailDTO> list =
-                service.selectOfferRecipientDetailsByOfferLetterId(offerLetterId, companyMemberId);
+            List<OfferRecipientDetailDTO> list =
+                    service.selectOfferRecipientDetailsByOfferLetterId(offerLetterId, companyMemberId);
 
-        return ResponseEntity.ok(Map.of(
-                "result", "ok",
-                "items", list
-        ));
+            return ResponseEntity.ok(Map.of(
+                    "result", "ok",
+                    "items", list
+            ));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(404).body(Map.of(
+                    "result", "fail",
+                    "message", e.getMessage()
+            ));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(403).body(Map.of(
+                    "result", "fail",
+                    "message", e.getMessage()
+            ));
+        }
     }
     
     
