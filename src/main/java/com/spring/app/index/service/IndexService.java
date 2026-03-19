@@ -13,4 +13,5 @@ public interface IndexService {
 	// 핫한 기업 조회
 	List<Map<String, Object>> getHotCompanies();
 	
+	List<Map<String, Object>> getMainBannerList();
 }

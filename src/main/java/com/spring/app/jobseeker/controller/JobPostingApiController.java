@@ -38,7 +38,7 @@ public class JobPostingApiController {
 
 
     @Operation(summary = "최근본 공고 목록 조회",
-               description = "로그인 시 DB에서, 비로그인 시 쿠키에서 최근본 공고 목록을 조회합니다.")
+               description = "로그인 시 DB에서, 비로그인 시 쿠키에서 최근본 공고 목록을 조회한다.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "조회 성공")
     })
@@ -141,7 +141,7 @@ public class JobPostingApiController {
 
         return result;
     }
-    // === 스크랩 토글 API === //
+    // === 스크랩 토글 === //
     @PostMapping("/scrap")
     public Map<String, Object> toggleScrap(@RequestBody Map<String, Object> params,
                                             Authentication authentication) {

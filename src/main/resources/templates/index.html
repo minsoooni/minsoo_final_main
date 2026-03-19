@@ -12,6 +12,7 @@
 <style type="text/css"></style>
 
 <script type="text/javascript">
+
   function getCookie(name) {
     const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
     return match ? match[2] : null;
@@ -31,7 +32,7 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     if (!getCookie('notice_popup_hide')) {
-      fetch('/finalProject/notice/popup')
+    	fetch('notice/popup')
         .then(res => res.json())
         .then(data => {
           if (!data || !data.noticeId) return;
@@ -115,6 +116,74 @@
       </div>
     </div>
   </section>
+
+  <!-- 기업 스폰서 배너 -->
+<section class="jp-sponsored-wrap"
+         th:if="${mainBannerList != null and !#lists.isEmpty(mainBannerList)}">
+  <div class="container-fluid jp-container">
+
+    <!-- 배너 여러 개 -->
+    <div class="jp-sponsored-list">
+
+      <div class="jp-sponsored-item"
+           th:each="banner : ${mainBannerList}">
+
+        <a th:href="@{/job/detail/{id}(id=${banner['fkJobId']})}"
+           class="jp-sponsored-banner-link">
+
+          <div class="jp-sponsored-banner">
+
+            <div class="jp-sponsored-banner__badge">
+              SPONSORED
+            </div>
+
+            <div class="jp-sponsored-banner__content">
+
+              <div class="jp-sponsored-banner__text">
+
+                <!-- 배너 제목 -->
+                <div class="jp-sponsored-banner__title"
+                     th:text="${banner['title']}">
+                  배너 제목
+                </div>
+
+                <!-- 공고 제목 -->
+                <div class="jp-sponsored-banner__desc"
+                     th:text="${banner['jobTitle']}">
+                  공고 제목
+                </div>
+<!-- 
+                기간
+                <div class="jp-sponsored-banner__meta">
+                  <span th:text="|기간 ${banner['startAt']} ~ ${banner['endAt']}|">
+                    기간
+                  </span>
+                </div>
+-->              
+		    </div>
+
+              <!-- 이미지 -->
+              <div class="jp-sponsored-banner__image"
+                   th:if="${banner['FILEURL'] != null}">
+                <img th:src="${banner['FILEURL']}"
+                     alt="배너 이미지"
+                     style="height:80px; border-radius:12px;">
+              </div>
+
+            </div>
+
+          </div>
+        </a>
+
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+
+
 
   <!-- 오늘의 추천 공고 -->
   <section class="jp-section" style="background:#fff;">
@@ -299,40 +368,7 @@
     </div>
   </section>
 
-  <!-- 커리어 가이드 -->
-  <section class="jp-section" style="background:#fff;">
-    <div class="container-fluid jp-container">
-      <div class="jp-section__head">
-        <div>
-          <h2 class="jp-section__title">커리어 가이드</h2>
-        </div>
-      </div>
 
-      <div class="row">
-        <div class="col-md-4 mb-3">
-          <div class="jp-card">
-            <div class="text-primary font-weight-bold mb-2">이직 가이드</div>
-            <div class="jp-card__title">성공적인 이직을 위한 체크리스트 5가지</div>
-            <div class="jp-card__sub">2026.02.10</div>
-          </div>
-        </div>
-        <div class="col-md-4 mb-3">
-          <div class="jp-card">
-            <div class="text-primary font-weight-bold mb-2">연봉/복지</div>
-            <div class="jp-card__title">연봉 협상에서 우위를 점하는 대화법</div>
-            <div class="jp-card__sub">2026.02.08</div>
-          </div>
-        </div>
-        <div class="col-md-4 mb-3">
-          <div class="jp-card">
-            <div class="text-primary font-weight-bold mb-2">커리어</div>
-            <div class="jp-card__title">요즘 유행하는 개발자 포트폴리오 트렌드</div>
-            <div class="jp-card__sub">2026.02.05</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
 
   <!-- Bottom CTA -->
   <section class="jp-cta" sec:authorize="isAnonymous()">

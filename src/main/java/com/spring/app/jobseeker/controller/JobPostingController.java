@@ -55,7 +55,7 @@ public class JobPostingController {
 			Authentication authentication,
 			Model model) {
 
-		// === 1. 검색/필터 파라미터 Map 구성 === //
+		// === 검색/필터 파라미터 Map 구성 === //
 		Map<String, Object> paraMap = new HashMap<>();
 		paraMap.put("keyword", keyword);
 		paraMap.put("regions", regions);
@@ -70,20 +70,20 @@ public class JobPostingController {
 		paraMap.put("includeClosed", includeClosed);
 		paraMap.put("sort", sort);
 
-		// === 2. 페이징 처리 === //
+		// === 페이징 처리 === //
 		int sizePerPage = 10;
 		int startRow = (page - 1) * sizePerPage + 1;
 		int endRow = page * sizePerPage;
 		paraMap.put("startRow", startRow);
 		paraMap.put("endRow", endRow);
 
-		// === 3. 전체 건수 조회 === //
+		// === 전체 건수 조회 === //
 		int totalCount = jobPostingService.getJobPostingCount(paraMap);
 
-		// === 4. 전체 채용공고 목록 조회 === //
+		// === 전체 채용공고 목록 조회 === //
 		List<JobPostingListDTO> jobPosts = jobPostingService.getJobPostingList(paraMap);
 
-		// === 5. 추천 채용공고 + 인기 채용공고 조회 === //
+		// === 추천 채용공고 + 인기 채용공고 조회 === //
 		List<JobPostingListDTO> recommendedPosts = new ArrayList<>();
 		List<JobPostingListDTO> popularPosts = jobPostingService.getPopularJobPostings();
 		String loginId = null;
@@ -100,13 +100,13 @@ public class JobPostingController {
 		model.addAttribute("hasResume", hasResume);
 		model.addAttribute("popularPosts", popularPosts);
 
-		// === 6. 페이징 정보 계산 === //
+		// === 페이징 정보 계산 === //
 		int totalPages = (int) Math.ceil((double) totalCount / sizePerPage);
 		int blockSize = 5;
 		int startPage = ((page - 1) / blockSize) * blockSize + 1;
 		int endPage = Math.min(startPage + blockSize - 1, totalPages);
 
-		// === 7. Model에 데이터 전달 === //
+		// === Model에 데이터 전달 === //
 		model.addAttribute("jobPosts", jobPosts);
 		model.addAttribute("recommendedPosts", recommendedPosts);
 		model.addAttribute("totalCount", totalCount);
@@ -130,7 +130,7 @@ public class JobPostingController {
 		model.addAttribute("includeClosed", includeClosed);
 		model.addAttribute("sort", sort);
 
-		// === 8. 필터용 마스터 데이터 전달 === //
+		// === 필터용 마스터 데이터 전달 === //
 		model.addAttribute("regionList", jobPostingService.getRegionList());
 		model.addAttribute("eduLevelList", jobPostingService.getEduLevelList());
 		model.addAttribute("categoryList", jobPostingService.getJobCategoryList());
@@ -253,10 +253,8 @@ public class JobPostingController {
 	}
 
 
-	// ================================================================
-	//  쿠키 유틸 메서드
-	// ================================================================
 
+	//  쿠키 유틸 메서드
 	/**
 	 * 쿠키에서 최근본 공고 ID 목록 읽기
 	 * 쿠키값 형식: "1016|1015|1014" (최근 본 순서대로 | 구분)

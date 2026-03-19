@@ -72,6 +72,9 @@ public class IndexController {
 		List<Map<String, Object>> hotCompanyList = indexService.getHotCompanies();
 		model.addAttribute("hotCompanyList", hotCompanyList);
 		
+		List<Map<String, Object>> mainBannerList = indexService.getMainBannerList();
+		model.addAttribute("mainBannerList", mainBannerList);
+		
 		return "index";
 	}
 }

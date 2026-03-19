@@ -50,6 +50,7 @@ public class JobPostingService_imple implements JobPostingService {
         Map<String, Object> paraMap = new HashMap<>();
 
         if (memberId != null) {
+        	// 대표이력서 가져오기
             ResumeDTO resume = mypageDAO.selectPrimaryResume(memberId);
             if (resume != null) {
                 if (resume.getRegionCode() != null) {
@@ -66,9 +67,10 @@ public class JobPostingService_imple implements JobPostingService {
             }
         }
 
+        // 추천 채용공고 가져오기
         List<JobPostingListDTO> list = jobPostingDAO.selectRecommendedJobPostings(paraMap);
         for (JobPostingListDTO dto : list) {
-            convertSkillNames(dto);
+            convertSkillNames(dto); // 기술스택 ID를 이름으로 변환
         }
         return list;
     }
@@ -102,29 +104,33 @@ public class JobPostingService_imple implements JobPostingService {
         return dto;
     }
 
-    // === 마스터 데이터 조회 === //
+    // === 데이터 조회 === //
 
+    // 지역 목록 조회 (시/도, 시/군/구)
     @Override
     public List<RegionDTO> getRegionList() {
         return jobPostingDAO.selectRegionList();
     }
 
+    // 학력 수준 목록 조회 (고졸/전문대졸/대졸/석사/박사)
     @Override
     public List<EducationDTO> getEduLevelList() {
         return jobPostingDAO.selectEduLevelList();
     }
 
+    // 직무 카테고리 목록 조회 (프론트엔드/백엔드/풀스택 등)
     @Override
     public List<JobCategoryDTO> getJobCategoryList() {
         return jobPostingDAO.selectJobCategoryList();
     }
 
+    // 기술스택 목록 조회 (카테고리별 그룹핑)
     @Override
     public List<Map<String, Object>> getSkillListGroupByCategory() {
         return jobPostingDAO.selectSkillListGroupByCategory();
     }
 
-    // skillNames 콤마 문자열 -> List 변환 헬퍼
+    // skillNames 콤마 문자열 -> List 변환("Java,Spring" → ["Java","Spring"])
     private void convertSkillNames(JobPostingListDTO dto) {
         if (dto.getSkillNames() != null && !dto.getSkillNames().isEmpty()) {
             dto.setSkillList(Arrays.asList(dto.getSkillNames().split(",")));
@@ -133,11 +139,13 @@ public class JobPostingService_imple implements JobPostingService {
 
     // === 최근본 공고 === //
 
+    // 공고 열람 기록 저장 (이미 있으면 시간만 갱신)
     @Override
     public void saveViewLog(String memberId, Long jobId) {
         jobPostingDAO.mergeViewLog(memberId, jobId);
     }
 
+    // 최근 본 공고 목록 조회
     @Override
     public List<JobPostingListDTO> getRecentViewedJobs(String memberId) {
         List<JobPostingListDTO> list = jobPostingDAO.selectRecentViewedJobs(memberId);
@@ -147,6 +155,7 @@ public class JobPostingService_imple implements JobPostingService {
         return list;
     }
 
+    // 공고 ID 목록으로 공고 정보 일괄 조회 (비회원 최근본공고용)
     @Override
     public List<JobPostingListDTO> getJobPostingsByIds(List<Long> jobIds) {
         if (jobIds == null || jobIds.isEmpty()) {
@@ -196,11 +205,15 @@ public class JobPostingService_imple implements JobPostingService {
         return jobPostingDAO.checkAlreadyReported(paraMap) > 0;
     }
 
+    
+    // 기업 회원의 상태 확인 (정상/탈퇴/정지)
     @Override
     public int getCompanyMemberStatus(String companyMemberId) {
         return jobPostingDAO.checkCompanyMemberStatus(companyMemberId);
     }
 
+    
+    // 기업 팔로우 확인(팔로우 중이면 true, 아니면 false)
     @Override
     public boolean isFollowed(String companyMemberId, String memberId) {
         if (memberId == null) return false;
@@ -210,6 +223,8 @@ public class JobPostingService_imple implements JobPostingService {
         return jobPostingDAO.checkFollowStatus(paraMap) > 0;
     }
 
+    
+    // 기업 팔로우/언팔로우 토글(true면 팔로우 등록, false면 팔로우 해제)
     @Override
     public void toggleFollow(String companyMemberId, String memberId, boolean follow) {
         Map<String, Object> paraMap = new HashMap<>();
@@ -222,6 +237,8 @@ public class JobPostingService_imple implements JobPostingService {
         }
     }
 
+    
+    // 채용공고 스크랩 여부 확인
     @Override
     public boolean isScraped(Long jobId, String memberId) {
         if (memberId == null) return false;
@@ -231,6 +248,8 @@ public class JobPostingService_imple implements JobPostingService {
         return jobPostingDAO.checkScrapStatus(paraMap) > 0;
     }
 
+    
+    // 채용공고 스크랩/스크랩 해제 토글(스크랩이 true면 등록, false면 삭제)
     @Override
     public void toggleScrap(Long jobId, String memberId, boolean scrap) {
         Map<String, Object> paraMap = new HashMap<>();
@@ -243,14 +262,19 @@ public class JobPostingService_imple implements JobPostingService {
         }
     }
 
+    
+    // 채용공고의 지원자 통계 조회
     @Override
     public Map<String, Object> getApplicantStats(Long jobId) {
         Map<String, Object> stats = new HashMap<>();
+        // 기본 통계 (총 지원자 수, 성별)
         Map<String, Object> basic = jobPostingDAO.selectApplicantStats(jobId);
         if (basic != null) {
             stats.putAll(basic);
         }
+        // 기술스택 TOP 5
         List<Map<String, Object>> techTop5 = jobPostingDAO.selectApplicantTechTop5(jobId);
+        // 자격증 TOP 5
         List<Map<String, Object>> certTop5 = jobPostingDAO.selectApplicantCertTop5(jobId);
 
         // percent 계산
@@ -270,7 +294,7 @@ public class JobPostingService_imple implements JobPostingService {
         // 확장 통계 - 막대 그래프용 데이터
         int maxBarPx = 100;
 
-        // 연령대
+        // 연령대 분포
         Map<String, Object> ageRaw = jobPostingDAO.selectApplicantAgeStats(jobId);
         if (ageRaw != null) {
             int[] ageVals = {
@@ -285,7 +309,7 @@ public class JobPostingService_imple implements JobPostingService {
             stats.put("ageData", new java.util.ArrayList<>());
         }
 
-        // 희망연봉
+        // 희망연봉 분포
         Map<String, Object> salaryRaw = jobPostingDAO.selectApplicantSalaryStats(jobId);
         if (salaryRaw != null) {
             int[] salaryVals = {
@@ -300,7 +324,7 @@ public class JobPostingService_imple implements JobPostingService {
             stats.put("salaryData", new java.util.ArrayList<>());
         }
 
-        // 자격증 개수
+        // 자격증 개수 분포
         Map<String, Object> certRaw = jobPostingDAO.selectApplicantCertCountStats(jobId);
         if (certRaw != null) {
             int[] certVals = {
@@ -315,7 +339,7 @@ public class JobPostingService_imple implements JobPostingService {
             stats.put("certCountData", new java.util.ArrayList<>());
         }
 
-        // 학력별
+        // 학력별 분포
         Map<String, Object> eduRaw = jobPostingDAO.selectApplicantEduStats(jobId);
         if (eduRaw != null) {
             int[] eduVals = {
@@ -330,7 +354,7 @@ public class JobPostingService_imple implements JobPostingService {
             stats.put("eduData", new java.util.ArrayList<>());
         }
 
-        // 경력별
+        // 경력별 분포
         Map<String, Object> careerRaw = jobPostingDAO.selectApplicantCareerStats(jobId);
         if (careerRaw != null) {
             int[] careerVals = {
@@ -348,7 +372,7 @@ public class JobPostingService_imple implements JobPostingService {
         return stats;
     }
 
-    // 막대 그래프용 데이터 변환 (count → px)
+    // 막대 그래프용 데이터 변환
     private List<Map<String, Object>> toBarData(int[] values, int maxPx) {
         List<Map<String, Object>> list = new java.util.ArrayList<>();
         int max = 0;
@@ -363,15 +387,16 @@ public class JobPostingService_imple implements JobPostingService {
     }
 
 
-    // ================================================================
-    //  매칭도 관련
-    // ================================================================
+   
+    // ======= 매칭도 관련 ======= //
+
 
     // 채용상세 매칭도 조회 (특정 공고 vs 내 대표이력서)
     @Override
     public Map<String, Object> getMatchScoreForJob(Long jobId, String memberId) {
         if (memberId == null) return null;
 
+        // 대표이력서 가져오기
         ResumeDTO resume = mypageDAO.selectPrimaryResume(memberId);
         if (resume == null) return null;
 
@@ -382,6 +407,7 @@ public class JobPostingService_imple implements JobPostingService {
         paraMap.put("desiredSalary", resume.getDesiredSalary() != null ? resume.getDesiredSalary() : 0);
         paraMap.put("resumeId", resume.getResumeId());
 
+        // 채용상세 매칭도 점수 조회 (지역/직무/연봉/기술 항목별 점수)
         Map<String, Object> result = jobPostingDAO.selectMatchScoreForJob(paraMap);
         if (result == null) return null;
 
@@ -418,10 +444,11 @@ public class JobPostingService_imple implements JobPostingService {
         paraMap.put("categoryId", currentPost.getCategoryId());
         paraMap.put("regionCode", currentPost.getRegionCode());
 
+        // 유사 공고 가져오기
         List<JobPostingListDTO> list = jobPostingDAO.selectSimilarJobPostings(paraMap);
         for (JobPostingListDTO dto : list) {
             convertSkillNames(dto);
-            // 유사도 퍼센트 환산 (만점 기준 동일)
+            // 유사도 퍼센트 환산 (만점 = 3(직무) + 3(지역) + 기술수*2)
             if (dto.getMatchScore() != null) {
                 int techTotalCount = dto.getSkillList() != null ? dto.getSkillList().size() : 1;
                 int maxScore = 3 + 3 + (techTotalCount > 0 ? techTotalCount * 2 : 2);

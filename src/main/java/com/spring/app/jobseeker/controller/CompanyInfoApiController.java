@@ -34,7 +34,7 @@ public class CompanyInfoApiController {
     }
 
 
-    // ===== 팔로우 토글 API =====
+    // 팔로우 토글
     // POST /api/companyinfo/follow
     @Operation(
         summary = "기업 팔로우 토글",
@@ -81,7 +81,7 @@ public class CompanyInfoApiController {
     }
 
 
-    // ===== 진행중 채용공고 페이징 API =====
+    // 진행중 채용공고 페이징
     // GET /api/companyinfo/jobpostings?memberId=xxx&page=1
     @Operation(
         summary = "기업 채용공고 페이징 조회",

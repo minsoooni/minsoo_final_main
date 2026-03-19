@@ -23,7 +23,14 @@
         if (count > 1) badge.innerText = count - 1;
         else badge.style.display = "none";
       }
-      window.location.href = url;
+      /* window.location.href = url; */
+      if (url.startsWith('/board-service/')) {
+        window.location.href = gatewayOrigin + url;
+      } else if (url.startsWith('/community')) {
+        window.location.href = boardServiceBase + url;
+      } else {
+        window.location.href = userServiceBase + url;
+      }
     });
     return false;
   }
@@ -130,8 +137,9 @@
                 </div>
 
                 <a th:each="noti : ${notificationList}"
-                   th:href="@{${noti.linkUrl}}"
-                   th:onclick="'return moveAfterRead(event, ' + ${noti.notiId} + ', this.href)'"
+				href="javascript:void(0)"
+				th:attr="data-noti-id=${noti.notiId}, data-url=${noti.linkUrl}"
+				onclick="return moveAfterRead(event, this.dataset.notiId, this.dataset.url)"
                    th:class="'dropdown-item px-3 py-3 border-bottom ' + (${noti.isRead} == 1 ? 'text-muted bg-light' : '')"
                    style="white-space:normal; line-height:1.5;">
 

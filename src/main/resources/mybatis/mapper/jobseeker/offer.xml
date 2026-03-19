@@ -75,10 +75,17 @@
             resultType="map">
       SELECT
           COUNT(*)                                                              AS "totalCount",
-          NVL(SUM(CASE WHEN r.response_status = 0 THEN 1 ELSE 0 END), 0)      AS "pendingCount",
+          NVL(SUM(CASE WHEN r.response_status = 0
+                        AND (s.expire_at IS NULL OR s.expire_at >= TRUNC(SYSDATE))
+                       THEN 1 ELSE 0 END), 0)                                 AS "pendingCount",
           NVL(SUM(CASE WHEN r.response_status = 1 THEN 1 ELSE 0 END), 0)      AS "acceptedCount",
-          NVL(SUM(CASE WHEN r.response_status = 2 THEN 1 ELSE 0 END), 0)      AS "rejectedCount"
+          NVL(SUM(CASE WHEN r.response_status = 2 THEN 1 ELSE 0 END), 0)      AS "rejectedCount",
+          NVL(SUM(CASE WHEN r.response_status = 0
+                        AND s.expire_at IS NOT NULL
+                        AND s.expire_at &lt; TRUNC(SYSDATE)
+                       THEN 1 ELSE 0 END), 0)                                 AS "expiredCount"
       FROM tbl_offer_response r
+      JOIN tbl_offer_submit s ON s.offer_submit_id = r.fk_offer_submit_id
       WHERE r.fk_memberid = #{memberId}
     </select>
 
@@ -93,7 +100,7 @@
     </update>
 
 
-    <!-- 제안 수락 처리 -->
+    <!-- 제안 수락 처리 (만료일 지나면 수락 불가) -->
     <update id="updateAccept">
       UPDATE tbl_offer_response
          SET response_status = 1,
@@ -101,10 +108,15 @@
        WHERE fk_offer_submit_id = #{offerSubmitId}
          AND fk_memberid = #{memberId}
          AND response_status = 0
+         AND fk_offer_submit_id IN (
+             SELECT offer_submit_id FROM tbl_offer_submit
+             WHERE offer_submit_id = #{offerSubmitId}
+               AND (expire_at IS NULL OR expire_at >= TRUNC(SYSDATE))
+         )
     </update>
 
 
-    <!-- 제안 거절 처리 -->
+    <!-- 제안 거절 처리 (만료일 지나면 거절 불가) -->
     <update id="updateReject">
       UPDATE tbl_offer_response
          SET response_status = 2,
@@ -112,6 +124,11 @@
        WHERE fk_offer_submit_id = #{offerSubmitId}
          AND fk_memberid = #{memberId}
          AND response_status = 0
+         AND fk_offer_submit_id IN (
+             SELECT offer_submit_id FROM tbl_offer_submit
+             WHERE offer_submit_id = #{offerSubmitId}
+               AND (expire_at IS NULL OR expire_at >= TRUNC(SYSDATE))
+         )
     </update>
 
 </mapper>

@@ -189,7 +189,7 @@
 
   <div class="container-fluid px-4 py-4">
 
-    <!-- ── 헤더 ── -->
+    <!-- 헤더 -->
     <div class="js-page-header">
       <h1 class="js-page-title">지원 내역</h1>
       <p class="js-page-subtitle">
@@ -197,7 +197,7 @@
       </p>
     </div>
 
-    <!-- ── 요약 카드 ── -->
+    <!-- 요약 카드 -->
     <div class="row mb-4">
       <div class="col mb-2">
         <div class="stat-card stat-blue d-flex align-items-center justify-content-between">
@@ -246,7 +246,7 @@
       </div>
     </div>
 
-    <!-- ── 필터 탭 ── -->
+    <!-- 필터 탭 -->
     <ul class="nav app-tabs">
       <li class="nav-item">
         <a class="nav-link" th:classappend="${status == null || status == 'ALL'} ? 'active' : ''"
@@ -286,7 +286,7 @@
       </li>
     </ul>
 
-    <!-- ── 검색바 ── -->
+    <!-- 검색바 -->
     <div class="js-search-bar">
       <form th:action="@{/jobseeker/application/list}" method="get"
             class="d-flex align-items-center" style="gap: 10px;">
@@ -309,14 +309,14 @@
       </form>
     </div>
 
-    <!-- ── 지원 목록 없음 ── -->
+    <!-- 지원 목록 없음 -->
     <div th:if="${#lists.isEmpty(applications)}" class="empty-state">
       <i class="fas fa-file-alt fa-3x mb-3"></i>
       <p class="h6 mt-2">지원 내역이 없습니다.</p>
       <a th:href="@{/job/list}" class="btn btn-primary btn-sm mt-2">채용공고 보러가기</a>
     </div>
 
-    <!-- ── 지원 카드 목록 ── -->
+    <!-- 지원 카드 목록 -->
     <div th:each="app : ${applications}" class="app-card border rounded">
       <div class="app-card-body">
         <div class="d-flex" style="gap: 16px;">

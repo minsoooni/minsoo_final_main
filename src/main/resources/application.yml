@@ -1,4 +1,4 @@
-# MSA 버전 아님
+# MSA 버전
 jwt:
   secret: "change-this-to-a-very-long-random-secret-key-for-final-project-2026"
   access-token-expiration-ms: 60000    # 1분
@@ -77,15 +77,15 @@ eureka:
     register-with-eureka: true
     fetch-registry: true
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://discovery-service:8761/eureka/
   instance:
     prefer-ip-address: true
 
 file:
-  upload-dir: file_upload
-  photoupload-dir: file_photoupload
-  emailattachfile-dir: file_emailattachfile
-  images-dir: file_images
+  upload-dir: /app/data/file_upload
+  photoupload-dir: /app/data/file_photoupload
+  emailattachfile-dir: /app/data/file_emailattachfile
+  images-dir: /app/data/file_images
 
 portone:
   impCode: imp13783325

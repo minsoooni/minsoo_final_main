@@ -33,10 +33,9 @@ public class RecentViewedApiController {
         this.recentViewedService = recentViewedService;
     }
 
-    // ====================================================
-    // 최근본 공고 개별 삭제 API
+    
+    // 최근본 공고 개별 삭제
     // POST /api/recent/{jobId}/delete
-    // ====================================================
     @Operation(
         summary = "최근본 공고 개별 삭제",
         description = "로그인한 구직자의 최근본 공고 목록에서 특정 공고를 삭제한다."
@@ -85,10 +84,9 @@ public class RecentViewedApiController {
         return ResponseEntity.ok(result);
     }
 
-    // ====================================================
-    // 최근본 공고 전체 삭제 API
+   
+    // 최근본 공고 전체 삭제
     // POST /api/recent/clear
-    // ====================================================
     @Operation(
         summary = "최근본 공고 전체 삭제",
         description = "로그인한 구직자의 최근본 공고 기록을 모두 삭제한다."

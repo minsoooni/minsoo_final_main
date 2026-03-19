@@ -224,7 +224,7 @@
         상세 내용이 등록되지 않았습니다.
       </div>
 
-      <!-- ★ 나와의 매칭도 박스 (로그인 + 대표이력서 있으면 항상 표시) -->
+      <!-- 나와의 매칭도 박스 (로그인 + 대표이력서 있으면 항상 표시) -->
       <div th:if="${matchData != null}"
            style="background:linear-gradient(135deg,#EFF6FF 0%,#F8FAFF 100%); border:1px solid #BFDBFE; border-radius:10px; margin-bottom:16px; overflow:hidden;">
 
@@ -285,9 +285,9 @@
               <div style="width:100px; height:6px; background:#E5E7EB; border-radius:3px; overflow:hidden;">
                 <div th:style="'width:' + (${matchData['salaryScore'] > 0} ? '100' : '0') + '%; height:100%; border-radius:3px; background:#D97706;'"></div>
               </div>
-              <span style="font-size:12px; font-weight:600; min-width:50px; text-align:right;"
-                    th:style="(${matchData['salaryScore'] > 0} ? 'color:#059669;' : 'color:#9CA3AF;')"
-                    th:text="${matchData['salaryScore'] > 0} ? '✓ 부합' : '미확인'">부합</span>
+              <span th:if="${matchData['salaryScore'] > 0}" style="font-size:12px; font-weight:600; min-width:50px; text-align:right; color:#059669;">✓ 부합</span>
+              <span th:if="${matchData['salaryScore'] == 0 and matchData['hasSalary'] != null and matchData['hasSalary'] > 0}" style="font-size:12px; font-weight:600; min-width:50px; text-align:right; color:#DC2626;">불부합</span>
+              <span th:if="${matchData['salaryScore'] == 0 and (matchData['hasSalary'] == null or matchData['hasSalary'] == 0)}" style="font-size:12px; font-weight:600; min-width:50px; text-align:right; color:#9CA3AF;">미확인</span>
             </div>
           </div>
 
@@ -330,7 +330,7 @@
       </div>
     </div>
 
-    <!-- ===== 지원자 통계 카드 (추후 구현) ===== -->
+    <!-- ===== 지원자 통계 카드 ===== -->
     <div class="jp-card" th:if="${stats != null}">
       <div class="stats-head">
         <div class="stats-tit">지원자 통계</div>
@@ -502,7 +502,7 @@
       </button>
     </div><!-- /통계 카드 -->
 
-    <!-- ★ 유사 공고 추천 -->
+    <!-- 유사 공고 추천 -->
     <div th:if="${similarPosts != null and !similarPosts.isEmpty()}" class="jp-card" style="padding:24px;">
       <div style="font-size:15px; font-weight:800; color:#111; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
         <i class="fas fa-th-list" style="color:#2563EB;"></i> 이 공고와 비슷한 공고
