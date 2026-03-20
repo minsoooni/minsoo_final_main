@@ -33,6 +33,9 @@ public class IndexDAO_imple implements IndexDAO {
         return sqlSession.selectList("index.selectHotCompanies");
     }
 	
-	
+    @Override
+	public List<Map<String, Object>> selectMainBannerList() {
+		return sqlSession.selectList("index.selectMainBannerList");
+	}
 
 }

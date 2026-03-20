@@ -10,7 +10,7 @@ public class AdminPostDTO {
     private Long boardId;
     private String title;
     private String content;
-    private String postStatus;
+    private String PostStatus;
     private int viewCount;
     private LocalDate createdAt;
     private LocalDate updatedAt;

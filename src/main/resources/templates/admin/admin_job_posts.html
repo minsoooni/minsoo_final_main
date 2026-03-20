@@ -14,7 +14,8 @@
     .content-container { background: white; border-radius: 8px; border: 1px solid #e5e7eb; padding: 24px; }
     .page-title { font-size: 18px; font-weight: 600; color: #1f2937; margin-bottom: 24px; }
 
-    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid #e5e7eb; }
+    /* ── stats-grid: 6칸 → 7칸으로 확장 ── */
+    .stats-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 16px; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid #e5e7eb; }
     .stat-card .label { font-size: 13px; color: #6b7280; margin-bottom: 8px; }
     .stat-card .value { font-size: 28px; font-weight: 700; color: #1f2937; }
     .stat-card .value.green { color: #10b981; }
@@ -85,66 +86,63 @@
     @media (max-width: 768px) { .filters { flex-direction: column; } .stats-grid { grid-template-columns: 1fr 1fr; } }
   </style>
 
-  	<!-- th:inline="javascript" 추가 -->
-	<script th:inline="javascript">
-   
-	/* contextPath 선언 */
-	 const contextPath = /*[[@{/}]]*/ "";
-	
+  <!-- th:inline="javascript" 추가 -->
+  <script th:inline="javascript">
+
+    /* contextPath 선언 */
+    const contextPath = /*[[@{/}]]*/ "";
+
     document.addEventListener('DOMContentLoaded', function () {
 
-    	 window.applyFilters = function () {
-    		    const search = document.getElementById('searchInput').value.trim();
-    		    const status = document.getElementById('statusFilter').value;
+      window.applyFilters = function () {
+        const search = document.getElementById('searchInput').value.trim();
+        const status = document.getElementById('statusFilter').value;
 
-    		    const params = new URLSearchParams();
-    		    params.set('page', '1');
-    		    if (search) params.set('search', search);
-    		    if (status) params.set('status', status);
+        const params = new URLSearchParams();
+        params.set('page', '1');
+        if (search) params.set('search', search);
+        if (status) params.set('status', status);
 
-    		    window.location.href = contextPath + 'admin/job-posts?' + params.toString();
-    	    };
+        window.location.href = contextPath + 'admin/job-posts?' + params.toString();
+      };
 
-    		  /* ── 검색창 Enter 키 이벤트 연결 (누락되어 있던 부분) ── */
-    		  document.getElementById('searchInput').addEventListener('keydown', function (e) {
-    		    if (e.key === 'Enter') applyFilters();
-    		  });
-    		  
-     	 /* ── 필터 (회원/기업과 동일한 서버사이드 방식) ── */
-    		  window.toggleVisibility = function (jobId, currentHidden, currentStatus) {
+      /* ── 검색창 Enter 키 이벤트 ── */
+      document.getElementById('searchInput').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') applyFilters();
+      });
 
-   			    // 마감된 공고는 토글 금지
-   			    if (currentStatus === '마감') return;
+      /* ── 노출/숨김 토글 ── */
+      window.toggleVisibility = function (jobId, currentHidden, currentStatus) {
 
-   			    const newHidden = currentHidden === 0 ? 1 : 0;
+        // 마감·삭제·임시저장 공고는 토글 금지
+        if (currentStatus === '마감' || currentStatus === '삭제됨' || currentStatus === '임시저장') return;
 
-   			 	fetch(contextPath + 'admin/job-posts/' + jobId + '/visibility', {
-   			        method: 'PATCH',
-   			        headers: { 'Content-Type': 'application/json' },
-   			        body: JSON.stringify({
-   			            isHidden: newHidden
-   			        })
-   			    })
-   			    .then(res => {
-   			        if (res.ok) {
-   			            location.reload();
-   			        } else {
-   			            showToast('노출 상태 변경 실패', 'warning');
-   			        }
-   			    })
-   			    .catch(() => showToast('서버 오류 발생', 'warning'));
-   			};
+        const newHidden = currentHidden === 0 ? 1 : 0;
+
+        fetch(contextPath + 'admin/job-posts/' + jobId + '/visibility', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isHidden: newHidden })
+        })
+        .then(res => {
+          if (res.ok) {
+            location.reload();
+          } else {
+            showToast('노출 상태 변경 실패', 'warning');
+          }
+        })
+        .catch(() => showToast('서버 오류 발생', 'warning'));
+      };
 
     });
-    
-    
+
     function showToast(message, type) {
-        const toast = document.getElementById('toast');
-        toast.textContent = message;
-        toast.className = 'toast show ' + type;
-        setTimeout(() => {
-            toast.className = 'toast';
-        }, 3000);
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = 'toast show ' + type;
+      setTimeout(() => {
+        toast.className = 'toast';
+      }, 3000);
     }
   </script>
 </head>
@@ -155,7 +153,7 @@
   <div class="content-container">
     <h1 class="page-title">채용공고 관리</h1>
 
-    <!-- 통계 카드 (서버에서 전체 건수 수신) -->
+    <!-- 통계 카드 -->
     <div class="stats-grid">
       <div class="stat-card">
         <div class="label">총 공고 수</div>
@@ -173,18 +171,29 @@
         <div class="label">마감 공고</div>
         <div class="value gray" th:text="${closedCount}">0</div>
       </div>
+      <div class="stat-card">
+        <div class="label">삭제 공고</div>
+        <div class="value" style="color:#ef4444;" th:text="${deletedCount}">0</div>
+      </div>
+      <!-- ✅ 임시저장 카드 추가 -->
+      <div class="stat-card">
+        <div class="label">임시저장</div>
+        <div class="value" style="color:#6366f1;" th:text="${tempCount}">0</div>
+      </div>
     </div>
 
-    <!-- 검색 & 필터 (회원/기업과 동일한 서버사이드 방식) -->
+    <!-- 검색 & 필터 -->
     <div class="filters">
       <input type="text" class="search-input" id="searchInput"
              placeholder="기업명 또는 공고 제목 검색..."
              th:value="${param.search != null ? param.search[0] : ''}">
       <select class="filter-select" id="statusFilter" onchange="applyFilters()">
-        <option value="" th:selected="${param.status == null or param.status == ''}">전체 상태</option>
-        <option value="active" th:selected="${param.status != null and param.status[0] == 'active'}">활성</option>
-        <option value="hidden" th:selected="${param.status != null and param.status[0] == 'hidden'}">숨김</option>
-        <option value="closed" th:selected="${param.status != null and param.status[0] == 'closed'}">마감</option>
+        <option value=""        th:selected="${param.status == null or param.status == ''}">전체 상태</option>
+        <option value="active"  th:selected="${param.status != null and param.status[0] == 'active'}">활성</option>
+        <option value="hidden"  th:selected="${param.status != null and param.status[0] == 'hidden'}">숨김</option>
+        <option value="closed"  th:selected="${param.status != null and param.status[0] == 'closed'}">마감</option>
+        <option value="deleted" th:selected="${param.status != null and param.status[0] == 'deleted'}">삭제됨</option>
+        <option value="temp"    th:selected="${param.status != null and param.status[0] == 'temp'}">임시저장</option>
       </select>
     </div>
 
@@ -203,7 +212,7 @@
           <th class="center" style="width:70px;">지원자</th>
           <th class="center" style="width:100px;">등록일</th>
           <th class="center" style="width:100px;">마감일</th>
-		  <th class="center" style="width:100px;">수정일</th>
+          <th class="center" style="width:100px;">수정일</th>
           <th class="center" style="width:70px;">상태</th>
           <th class="center" style="width:100px;">표시/숨김</th>
         </tr>
@@ -221,33 +230,39 @@
           <td class="center"><span class="applicant-badge" th:text="${job.applicantCount} ?: '0'"></span></td>
           <td class="center" th:text="${job.createdAt != null} ? ${#strings.substring(job.createdAt.toString(), 0, 10)} : '-'"></td>
           <td class="center" th:text="${job.deadlineAt != null} ? ${#strings.substring(job.deadlineAt.toString(), 0, 10)} : '-'"></td>
-		  <td class="center" th:text="${job.updatedAt != null} ? ${#strings.substring(job.updatedAt.toString(), 0, 10)} : '-'"></td>
-          
-		  <td class="center">
-		    <span th:if="${job.status == '마감'}"
-		          class="status-badge closed">마감</span>
-		
-		    <span th:if="${job.status != '마감' and job.isHidden == 0}"
-		          class="status-badge active">활성</span>
-		
-		    <span th:if="${job.status != '마감' and job.isHidden == 1}"
-		          class="status-badge hidden">숨김</span>
-		  </td>
-		  
+          <td class="center" th:text="${job.updatedAt != null} ? ${#strings.substring(job.updatedAt.toString(), 0, 10)} : '-'"></td>
+
+          <!-- 상태 배지 -->
           <td class="center">
-			    <div th:if="${job.status != '마감'}" class="toggle-wrapper">
-			        <div class="toggle-switch"
-			             th:classappend="${job.isHidden == 0} ? 'on'"
-			             th:attr="onclick='toggleVisibility(' + ${job.jobId} + ', ' + ${job.isHidden} + ', \'' + ${job.status} + '\')'">
-			        </div>
-			        <span class="visibility-icon"
-			              th:classappend="${job.isHidden == 0} ? 'visible'"
-			              th:text="${job.isHidden == 0} ? '👁' : '🚫'">
-			        </span>
-			    </div>
-			    <span th:if="${job.status == '마감'}" style="color:#d1d5db; font-size:12px;">-</span>
-			</td>
-          
+            <span th:if="${job.status == '마감'}"
+                  class="status-badge closed">마감</span>
+            <span th:if="${job.status == '삭제됨'}"
+                  class="status-badge" style="background:#fee2e2; color:#991b1b; font-size:10px;">삭제됨</span>
+            <!-- 임시저장 배지 -->
+            <span th:if="${job.status == '임시저장'}"
+                  class="status-badge" style="background:#ede9fe; color:#5b21b6; font-size:9px; padding: 3px 6px;">임시저장</span>
+            <span th:if="${job.status != '마감' and job.status != '삭제됨' and job.status != '임시저장' and job.isHidden == 0}"
+                  class="status-badge active">활성</span>
+            <span th:if="${job.status != '마감' and job.status != '삭제됨' and job.status != '임시저장' and job.isHidden == 1}"
+                  class="status-badge hidden">숨김</span>
+          </td>
+
+          <!-- 토글 (마감·삭제·임시저장이면 '-') -->
+          <td class="center">
+            <div th:if="${job.status != '마감' and job.status != '삭제됨' and job.status != '임시저장'}"
+                 class="toggle-wrapper">
+              <div class="toggle-switch"
+                   th:classappend="${job.isHidden == 0} ? 'on'"
+                   th:attr="onclick='toggleVisibility(' + ${job.jobId} + ', ' + ${job.isHidden} + ', \'' + ${job.status} + '\')'">
+              </div>
+              <span class="visibility-icon"
+                    th:classappend="${job.isHidden == 0} ? 'visible'"
+                    th:text="${job.isHidden == 0} ? '👁' : '🚫'">
+              </span>
+            </div>
+            <span th:if="${job.status == '마감' or job.status == '삭제됨' or job.status == '임시저장'}"
+                  style="color:#d1d5db; font-size:12px;">-</span>
+          </td>
         </tr>
 
         <tr th:if="${#lists.isEmpty(jobs)}">
@@ -258,41 +273,28 @@
       </tbody>
     </table>
 
-    <!-- 페이지바 (회원/기업 관리와 동일한 구조) -->
-	<div class="table-footer">
-	
-	  <span class="total-count">
-	    총 <span th:text="${totalCount}"></span>개의 채용공고
-	  </span>
-	
-	  <div class="pagination">
-	
-	    <!-- « 맨 처음 -->
-	    <a th:href="@{job-posts(page=1,search=${param.search},status=${param.status})}"
-	       th:classappend="${currentPage == 1} ? 'disabled'">«</a>
-	
-	    <!-- 이전 -->
-	    <a th:href="@{job-posts(page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search},status=${param.status})}"
-	       th:classappend="${currentPage == 1} ? 'disabled'">이전</a>
-	
-	    <!-- 숫자 -->
-	    <span th:each="i : ${#numbers.sequence(1, totalPages)}">
-	      <a th:href="@{job-posts(page=${i},search=${param.search},status=${param.status})}"
-	         th:text="${i}"
-	         th:classappend="${i == currentPage} ? 'active'">
-	      </a>
-	    </span>
-	
-	    <!-- 다음 -->
-	    <a th:href="@{job-posts(page=${currentPage < totalPages ? currentPage+1 : totalPages},search=${param.search},status=${param.status})}"
-	       th:classappend="${currentPage == totalPages} ? 'disabled'">다음</a>
-	
-	    <!-- » 맨 마지막 -->
-	    <a th:href="@{job-posts(page=${totalPages},search=${param.search},status=${param.status})}"
-	       th:classappend="${currentPage == totalPages} ? 'disabled'">»</a>
-	
-	  </div>
-	</div>
+    <!-- 페이지바 -->
+    <div class="table-footer">
+      <span class="total-count">
+        총 <span th:text="${totalCount}"></span>개의 채용공고
+      </span>
+      <div class="pagination">
+        <a th:href="@{job-posts(page=1,search=${param.search},status=${param.status})}"
+           th:classappend="${currentPage == 1} ? 'disabled'">«</a>
+        <a th:href="@{job-posts(page=${currentPage > 1 ? currentPage-1 : 1},search=${param.search},status=${param.status})}"
+           th:classappend="${currentPage == 1} ? 'disabled'">이전</a>
+        <span th:each="i : ${#numbers.sequence(1, totalPages)}">
+          <a th:href="@{job-posts(page=${i},search=${param.search},status=${param.status})}"
+             th:text="${i}"
+             th:classappend="${i == currentPage} ? 'active'">
+          </a>
+        </span>
+        <a th:href="@{job-posts(page=${currentPage < totalPages ? currentPage+1 : totalPages},search=${param.search},status=${param.status})}"
+           th:classappend="${currentPage == totalPages} ? 'disabled'">다음</a>
+        <a th:href="@{job-posts(page=${totalPages},search=${param.search},status=${param.status})}"
+           th:classappend="${currentPage == totalPages} ? 'disabled'">»</a>
+      </div>
+    </div>
 
   </div>
 </section>

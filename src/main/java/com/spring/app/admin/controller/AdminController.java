@@ -23,6 +23,7 @@ import com.spring.app.admin.domain.AdminDashboardDTO;
 import com.spring.app.admin.domain.AdminJobPostDTO;
 import com.spring.app.admin.domain.AdminMemberDTO;
 import com.spring.app.admin.domain.AdminNoticeDTO;
+import com.spring.app.admin.domain.AdminPostDTO;
 import com.spring.app.admin.service.AdminBannerService;
 import com.spring.app.admin.service.AdminCompanyService;
 import com.spring.app.admin.service.AdminDashboardService;
@@ -45,7 +46,7 @@ public class AdminController {
 	private final AdminCompanyService companyAdminService;
 	private final AdminMemberService memberAdminService;
 	private final AdminJobPostService adminJobPostService;
-	private final AdminNoticeService noticeAdminService; // ← 필드 선언부에 추가
+	private final AdminNoticeService noticeAdminService;
 	private final AdminBannerService bannerAdminService;
 	private final AdminReportService adminReportService;
 	private final AdminPostService adminPostService;
@@ -283,11 +284,13 @@ public class AdminController {
 	    model.addAttribute("activeCount",  adminJobPostService.getJobCountByStatus("active"));
 	    model.addAttribute("hiddenCount",  adminJobPostService.getJobCountByStatus("hidden"));
 	    model.addAttribute("closedCount",  adminJobPostService.getJobCountByStatus("closed"));
-
+	    model.addAttribute("deletedCount",  adminJobPostService.getJobCountByStatus("deleted")); 
+	    model.addAttribute("tempCount",     adminJobPostService.getJobCountByStatus("temp"));
+	    
 	    return "admin/admin_job_posts";
-	}
+	}		
 	
-	@PatchMapping("/job-posts/{jobId}/visibility")
+	@PatchMapping("/job-posts/{jobId}/visibility") 
 	@ResponseBody
 	public ResponseEntity<?> updateJobVisibility(
 			@PathVariable("jobId") Long jobId,
@@ -301,10 +304,8 @@ public class AdminController {
 	}
 	
 	
-	
 	// =========================================
-	
-	
+		
 	@GetMapping("/banners")
 	public String banners(@RequestParam(value="menu", defaultValue="banners") String menu,
 	                      @RequestParam(value="page", defaultValue="1") int page,
@@ -559,33 +560,60 @@ public class AdminController {
 	public String posts(
 	        @RequestParam(value="menu", defaultValue="posts") String menu,
 	        @RequestParam(name="search", required=false) String search,
-	        @RequestParam(name="isHidden", required=false) Integer isHidden,
+	        @RequestParam(name="status", required=false) String status,
 	        @RequestParam(value="page", defaultValue="1") int page,
 	        Model model) {
 
+	    Integer isHidden = null;
+	    if ("active".equals(status))      isHidden = 0;
+	    else if ("hidden".equals(status)) isHidden = 1;
+
 	    int limit = 10;
-	    int totalCount = adminPostService.getPostCount(search, isHidden);
-	    int totalPages = (int) Math.ceil((double) totalCount / limit);
+
+	    // 삭제됨 필터일 때는 POST_STATUS='DELETED' 기준으로 별도 조회
+	    List<AdminPostDTO> posts;
+	    int filteredCount;
+	    if ("deleted".equals(status)) {
+	        posts = adminPostService.getDeletedPagedPosts(search, page, limit);
+	        filteredCount = adminPostService.getDeletedPostCount();
+	    } else {
+	        posts = adminPostService.getPagedPosts(search, isHidden, page, limit);
+	        filteredCount = adminPostService.getPostCount(search, isHidden);
+	    }
+
+	    int totalPages = (int) Math.ceil((double) filteredCount / limit);
 	    if (totalPages == 0) totalPages = 1;
 
-	    model.addAttribute("activeMenu",      menu);
-	    model.addAttribute("posts",           adminPostService.getPagedPosts(search, isHidden, page, limit));
-	    model.addAttribute("totalCount",      totalCount);
-	    model.addAttribute("activeCount",     adminPostService.getPostCountByHidden(0));
-	    model.addAttribute("hiddenCount",     adminPostService.getPostCountByHidden(1));
-	    model.addAttribute("currentPage",     page);
-	    model.addAttribute("totalPages",      totalPages);
+	    model.addAttribute("activeMenu",   menu);
+	    model.addAttribute("posts",        posts);
+	    model.addAttribute("commentTotalAll",
+	        adminPostService.getActiveCommentCount() +
+	        adminPostService.getHiddenCommentCount() +
+	        adminPostService.getDeletedCommentCount()
+	    );
+	    
+	    model.addAttribute("totalCount",
+	    	    adminPostService.getActivePostCount() +
+	    	    adminPostService.getHiddenPostCount() +
+	    	    adminPostService.getDeletedPostCount()
+	    	);
+	    
+	    model.addAttribute("activeCount",  adminPostService.getActivePostCount());
+	    model.addAttribute("hiddenCount",  adminPostService.getHiddenPostCount());
+	    model.addAttribute("deletedCount", adminPostService.getDeletedPostCount());
+	    model.addAttribute("currentPage",  page);
+	    model.addAttribute("totalPages",   totalPages);
 
-	    // 댓글
+	    // 댓글 (기존 유지)
 	    int commentTotal = adminPostService.getCommentCount(search, isHidden);
 	    int commentPages = (int) Math.ceil((double) commentTotal / limit);
 	    if (commentPages == 0) commentPages = 1;
-
-	    model.addAttribute("comments",        adminPostService.getPagedComments(search, isHidden, page, limit));
-	    model.addAttribute("commentTotal",    commentTotal);
-	    model.addAttribute("commentActive",   adminPostService.getCommentCountByHidden(0));
-	    model.addAttribute("commentHidden",   adminPostService.getCommentCountByHidden(1));
-	    model.addAttribute("commentPages",    commentPages);
+	    model.addAttribute("comments",      adminPostService.getPagedComments(search, isHidden, page, limit));
+	    model.addAttribute("commentTotal",  commentTotal);
+	    model.addAttribute("commentActive",  adminPostService.getActiveCommentCount());
+	    model.addAttribute("commentHidden",  adminPostService.getHiddenCommentCount());
+	    model.addAttribute("commentDeleted", adminPostService.getDeletedCommentCount());
+	    model.addAttribute("commentPages",  commentPages);
 
 	    return "admin/admin_posts";
 	}
