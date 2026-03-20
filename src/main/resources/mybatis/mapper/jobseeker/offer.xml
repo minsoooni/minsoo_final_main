@@ -131,4 +131,15 @@
          )
     </update>
 
+    <!-- 알림용 제안 정보 조회 (제안서 제목 + 기업 회원 ID + 구직자명) -->
+    <select id="selectOfferInfoForNoti" resultType="map">
+        SELECT s.title AS "offerTitle",
+               jp.fk_memberid AS "companyMemberId",
+               m.name AS "memberName"
+        FROM tbl_offer_submit s
+        JOIN tbl_job_posting jp ON jp.job_id = s.fk_job_id
+        JOIN tbl_member m ON m.memberid = #{memberId}
+        WHERE s.offer_submit_id = #{offerSubmitId}
+    </select>
+
 </mapper>

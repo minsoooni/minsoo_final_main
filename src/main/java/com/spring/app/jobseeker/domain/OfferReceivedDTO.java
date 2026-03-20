@@ -87,9 +87,10 @@ public class OfferReceivedDTO {
     }
 
     /**
-     * 신규 제안 여부 (발송일이 24시간 이내)
+     * 신규 제안 여부 (발송일이 24시간 이내 + 미응답 상태만)
      */
     public boolean isNew() {
+        if (!"UNREAD".equals(getStatus()) && !"PENDING".equals(getStatus())) return false;
         if (sendAt == null || sendAt.isEmpty()) return false;
         try {
             java.time.LocalDateTime sent = java.time.LocalDateTime.parse(sendAt,

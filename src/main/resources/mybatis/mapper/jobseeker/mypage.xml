@@ -123,7 +123,7 @@
     </select>
 
 
-    <!-- ======= 대시보드 : 최근 지원 내역 (최근 3건) ======= -->
+    <!-- ======= 대시보드 : 최근 지원 내역 (최근 5건) ======= -->
     <!--  dashboard.html 키: id, postTitle, companyName, appliedAt, status -->
     <select id="selectRecentApplications" parameterType="string" resultType="java.util.HashMap">
         SELECT * FROM (
@@ -143,7 +143,7 @@
             WHERE A.fk_memberid = #{memberId}
               AND A.application_status = 0
             ORDER BY A.applied_at DESC
-        ) WHERE ROWNUM &lt;= 3
+        ) WHERE ROWNUM &lt;= 5
     </select>
 
 
@@ -166,13 +166,19 @@
                        WHEN TRUNC(SYSDATE) - TRUNC(V.viewed_at) = 1
                            THEN '1일 전'
                        ELSE FLOOR(TRUNC(SYSDATE) - TRUNC(V.viewed_at)) || '일 전'
-                   END                                                          AS "viewedAt"
+                   END                                                          AS "viewedAt",
+                   CASE
+                       WHEN P.deadline_type = 'always' THEN '상시채용'
+                       WHEN P.deadline_at &lt; TRUNC(SYSDATE) THEN '마감'
+                       WHEN TRUNC(P.deadline_at) = TRUNC(SYSDATE) THEN 'D-Day'
+                       ELSE 'D-' || (TRUNC(P.deadline_at) - TRUNC(SYSDATE))
+                   END                                                          AS "dDay"
             FROM tbl_viewed_posting V
             JOIN tbl_job_posting P ON V.fk_job_id = P.job_id
             JOIN tbl_company C     ON P.fk_memberid = C.fk_memberid
             WHERE V.fk_memberid = #{memberId}
             ORDER BY V.viewed_at DESC
-        ) WHERE ROWNUM &lt;= 3
+        ) WHERE ROWNUM &lt;= 5
     </select>
 
 
@@ -183,5 +189,55 @@
             updated_at = SYSDATE
         WHERE memberid = #{memberId}
     </update>
+
+    <!-- 캘린더용 이벤트 조회 (지원일 + 마감일 + 제안 응답기한) -->
+    <select id="selectCalendarEvents" parameterType="string" resultType="map">
+        SELECT 'applied' AS "type",
+               C.company_name || ' 지원' AS "title",
+               C.company_name || ' - ' || JP.title AS "fullTitle",
+               TO_CHAR(A.applied_at, 'YYYY-MM-DD') AS "date",
+               C.company_name AS "company",
+               A.fk_job_id AS "jobId",
+               NULL AS "offerSubmitId"
+        FROM tbl_job_application A
+        JOIN tbl_job_posting JP ON A.fk_job_id = JP.job_id
+        JOIN tbl_company C ON JP.fk_memberid = C.fk_memberid
+        WHERE A.fk_memberid = #{memberId}
+          AND A.application_status = 0
+
+        UNION ALL
+
+        SELECT 'deadline' AS "type",
+               C.company_name || ' 마감' AS "title",
+               C.company_name || ' - ' || JP.title AS "fullTitle",
+               TO_CHAR(JP.deadline_at, 'YYYY-MM-DD') AS "date",
+               C.company_name AS "company",
+               A.fk_job_id AS "jobId",
+               NULL AS "offerSubmitId"
+        FROM tbl_job_application A
+        JOIN tbl_job_posting JP ON A.fk_job_id = JP.job_id
+        JOIN tbl_company C ON JP.fk_memberid = C.fk_memberid
+        WHERE A.fk_memberid = #{memberId}
+          AND A.application_status = 0
+          AND JP.deadline_at IS NOT NULL
+          AND JP.deadline_type != 'always'
+
+        UNION ALL
+
+        SELECT 'offer' AS "type",
+               C.company_name || ' 응답기한' AS "title",
+               C.company_name || ' - ' || S.title AS "fullTitle",
+               TO_CHAR(S.expire_at, 'YYYY-MM-DD') AS "date",
+               C.company_name AS "company",
+               S.fk_job_id AS "jobId",
+               S.offer_submit_id AS "offerSubmitId"
+        FROM tbl_offer_response R
+        JOIN tbl_offer_submit S ON S.offer_submit_id = R.fk_offer_submit_id
+        JOIN tbl_job_posting JP ON JP.job_id = S.fk_job_id
+        JOIN tbl_company C ON C.fk_memberid = JP.fk_memberid
+        WHERE R.fk_memberid = #{memberId}
+          AND R.response_status = 0
+          AND S.expire_at IS NOT NULL
+    </select>
 
 </mapper>

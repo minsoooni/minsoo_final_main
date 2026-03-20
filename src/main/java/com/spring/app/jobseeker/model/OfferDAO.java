@@ -28,4 +28,8 @@ public interface OfferDAO {
     // 제안 거절 처리
     int updateReject(@Param("offerSubmitId") long offerSubmitId,
                      @Param("memberId") String memberId);
+
+    // 알림용 제안 정보 조회 (제안서 제목 + 기업 회원 ID + 구직자명)
+    Map<String, Object> selectOfferInfoForNoti(@Param("offerSubmitId") long offerSubmitId,
+                                               @Param("memberId") String memberId);
 }

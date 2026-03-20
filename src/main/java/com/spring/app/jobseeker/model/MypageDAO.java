@@ -43,4 +43,7 @@ public interface MypageDAO {
     // === 대시보드 목록 === //
     List<Map<String, Object>> selectRecentApplications(@Param("memberId") String memberId);
     List<Map<String, Object>> selectRecentViewedPosts(@Param("memberId") String memberId);
+
+    // === 캘린더 이벤트 === //
+    List<Map<String, Object>> selectCalendarEvents(@Param("memberId") String memberId);
 }

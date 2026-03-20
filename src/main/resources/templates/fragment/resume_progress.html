@@ -1,0 +1,175 @@
+<!--/* 이력서 완성도 프로그레스 사이드바 fragment */-->
+<div th:fragment="resume_progress" class="progress-sidebar">
+  <div class="progress-card">
+
+    <!-- 원형 프로그레스 -->
+    <div class="circle-wrap">
+      <div class="circle-progress">
+        <svg viewBox="0 0 100 100" width="90" height="90">
+          <circle class="circle-bg" cx="50" cy="50" r="42"/>
+          <circle class="circle-fill" id="progressCircle" cx="50" cy="50" r="42"
+                  stroke-dasharray="263.9" stroke-dashoffset="263.9"/>
+        </svg>
+        <div class="circle-text" id="progressText">0%</div>
+      </div>
+      <div style="font-size:14px; font-weight:700; margin-top:6px;">이력서 완성도</div>
+    </div>
+
+    <!-- 체크리스트 -->
+    <ul class="progress-check-list">
+      <li data-field="basic"><span class="label"><i class="fas fa-user"></i> 기본정보</span> <i class="fas fa-circle status-icon"></i></li>
+      <li data-field="desired"><span class="label"><i class="fas fa-heart"></i> 희망조건</span> <i class="fas fa-circle status-icon"></i></li>
+      <li data-field="education"><span class="label"><i class="fas fa-graduation-cap"></i> 학력</span> <i class="fas fa-circle status-icon"></i></li>
+      <li data-field="career"><span class="label"><i class="fas fa-briefcase"></i> 경력</span> <i class="fas fa-circle status-icon"></i></li>
+      <li data-field="techstack"><span class="label"><i class="fas fa-code"></i> 기술스택</span> <i class="fas fa-circle status-icon"></i></li>
+      <li data-field="certificate"><span class="label"><i class="fas fa-certificate"></i> 자격증</span> <i class="fas fa-circle status-icon"></i></li>
+      <li data-field="portfolio"><span class="label"><i class="fas fa-folder-open"></i> 포트폴리오</span> <i class="fas fa-circle status-icon"></i></li>
+      <li data-field="selfintro"><span class="label"><i class="fas fa-pen"></i> 자기소개</span> <i class="fas fa-circle status-icon"></i></li>
+    </ul>
+
+    <!-- 가이드 메시지 -->
+    <div class="progress-guide" id="progressGuide"></div>
+
+  </div>
+
+  <style>
+    .progress-sidebar {
+      position: fixed;
+      top: 140px;
+      left: calc(50% + 110px + 350px);
+      width: 220px;
+      z-index: 100;
+    }
+    .progress-card {
+      background:#fff; border-radius:12px; border:1px solid #E5E7EB;
+      padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    }
+    .circle-wrap { text-align:center; margin-bottom:12px; }
+    .circle-progress { position:relative; display:inline-block; width:80px; height:80px; }
+    .circle-progress svg { transform: rotate(-90deg); }
+    .circle-bg { fill:none; stroke:#E5E7EB; stroke-width:8; }
+    .circle-fill { fill:none; stroke-width:8; stroke-linecap:round; transition: stroke-dashoffset 0.8s ease; }
+    .circle-text {
+      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+      font-size:18px; font-weight:800;
+    }
+    .progress-check-list { list-style:none; padding:0; margin:0; }
+    .progress-check-list li {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:6px 0; border-bottom:1px solid #F3F4F6; font-size:12px;
+    }
+    .progress-check-list li:last-child { border-bottom:none; }
+    .progress-check-list li .label { font-weight:500; color:#374151; }
+    .progress-check-list li .label i { width:14px; color:#9CA3AF; margin-right:3px; font-size:11px; }
+    .progress-check-list li .status-icon { font-size:12px; }
+    .progress-check-list li .status-icon.done { color:#059669; }
+    .progress-check-list li .status-icon.empty { color:#D1D5DB; }
+    .progress-guide {
+      margin-top:10px; padding:8px 10px; border-radius:6px;
+      font-size:11px; line-height:1.5;
+    }
+    .progress-guide.low { background:#FEF2F2; color:#991B1B; }
+    .progress-guide.mid { background:#FFFBEB; color:#92400E; }
+    .progress-guide.high { background:#ECFDF5; color:#065F46; }
+    @media (max-width: 1600px) {
+      .progress-sidebar { display: none; }
+    }
+  </style>
+
+  <script>
+    // 이력서 완성도 계산
+    function updateResumeProgress() {
+      var items = {
+        basic: ($('#title').val() || '').trim().length > 0 && ($('#address').val() || '').trim().length > 0,
+        desired: ($('#categoryId').val() || '').trim().length > 0 || ($('#regionCode').val() || '').trim().length > 0,
+        education: $('#educationList > div').length > 0,
+        career: $('#careerList > div').length > 0,
+        techstack: $('#skillList .badge, #skillList .skill-tag, #skillList > span, #skillList > div').length > 0,
+        certificate: $('#certificateList > div').length > 0,
+        portfolio: $('#portfolioList > div').length > 0,
+        selfintro: ($('#selfIntro').val() || '').trim().length > 0
+      };
+
+      var total = 8;
+      var done = 0;
+      var emptyNames = [];
+      var fieldLabels = {
+        basic: '기본정보', desired: '희망조건', education: '학력', career: '경력',
+        techstack: '기술스택', certificate: '자격증', portfolio: '포트폴리오', selfintro: '자기소개'
+      };
+
+      // 체크리스트 업데이트
+      $('.progress-check-list li').each(function() {
+        var field = $(this).data('field');
+        var icon = $(this).find('.status-icon');
+        if (items[field]) {
+          done++;
+          icon.removeClass('fa-circle empty').addClass('fa-check-circle done');
+        } else {
+          emptyNames.push(fieldLabels[field]);
+          icon.removeClass('fa-check-circle done').addClass('fa-circle empty');
+        }
+      });
+
+      var percent = Math.round(done / total * 100);
+
+      // 원형 프로그레스 업데이트
+      var circumference = 263.9;
+      var offset = circumference - (circumference * percent / 100);
+      var circle = document.getElementById('progressCircle');
+      var text = document.getElementById('progressText');
+
+      circle.style.strokeDashoffset = offset;
+      text.textContent = percent + '%';
+
+      // 색상 변경
+      if (percent <= 40) {
+        circle.style.stroke = '#DC2626';
+        text.style.color = '#DC2626';
+      } else if (percent < 100) {
+        circle.style.stroke = '#D97706';
+        text.style.color = '#D97706';
+      } else {
+        circle.style.stroke = '#059669';
+        text.style.color = '#059669';
+      }
+
+      // 가이드 메시지
+      var guide = $('#progressGuide');
+      guide.removeClass('low mid high');
+      if (percent === 100) {
+        guide.addClass('high').html('<i class="fas fa-trophy"></i> 모든 항목이 작성되었습니다! 지금 바로 지원해보세요');
+      } else if (percent <= 40) {
+        guide.addClass('low').html('<i class="fas fa-exclamation-triangle"></i> ' + emptyNames.slice(0, 2).join(', ') + '을(를) 추가하면 기업 매칭률이 크게 올라갑니다!');
+      } else {
+        guide.addClass('mid').html('<i class="fas fa-lightbulb"></i> ' + emptyNames.slice(0, 2).join(', ') + '을(를) 추가하면 완성도가 더 올라갑니다!');
+      }
+    }
+
+    // 폼 변경 감지 → 프로그레스 업데이트
+    $(document).ready(function() {
+      // 초기 로드 시 약간의 딜레이 (기존 이력서 데이터 로드 후)
+      setTimeout(updateResumeProgress, 500);
+
+      // input 변경 감지
+      $(document).on('input change', '#title, #address, #selfIntro, #desiredSalary, #categoryId, #regionCode, #photoUpload', function() {
+        updateResumeProgress();
+      });
+
+      // 사진 삭제 버튼 감지
+      $(document).on('click', '#photoDeleteBtn', function() {
+        setTimeout(updateResumeProgress, 300);
+      });
+
+      // 리스트 항목 추가/삭제 감지 (MutationObserver)
+      var observer = new MutationObserver(function() {
+        updateResumeProgress();
+      });
+      ['#educationList', '#careerList', '#skillList', '#certificateList', '#portfolioList', '#languageList'].forEach(function(sel) {
+        var el = document.querySelector(sel);
+        if (el) observer.observe(el, { childList: true, subtree: true });
+      });
+    });
+  </script>
+
+</div>

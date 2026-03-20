@@ -23,8 +23,8 @@ public interface JobPostingDAO {
     // 추천 채용공고 조회 (대표이력서 기반: 희망지역, 희망직무, 희망연봉)
     List<JobPostingListDTO> selectRecommendedJobPostings(Map<String, Object> paraMap);
 
-    // 인기 채용공고 조회 (조회수 높은순 3건)
-    List<JobPostingListDTO> selectPopularJobPostings();
+    // 인기 채용공고 조회 (조회수 높은순 n건)
+    List<JobPostingListDTO> selectPopularJobPostings(@Param("limit") int limit);
 
     // 채용공고 상세 조회
     JobPostingListDTO selectJobPostingDetail(@Param("jobId") Long jobId);

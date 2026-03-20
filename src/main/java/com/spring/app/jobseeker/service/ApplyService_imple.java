@@ -16,6 +16,8 @@ import com.spring.app.jobseeker.model.ApplyDAO;
 import com.spring.app.jobseeker.model.MypageDAO;
 import com.spring.app.jobseeker.model.ResumeDAO;
 import com.spring.app.member.domain.MemberDTO;
+import com.spring.app.notification.domain.NotificationDTO;
+import com.spring.app.notification.model.NotificationDAO;
 
 import lombok.RequiredArgsConstructor;
 
@@ -29,6 +31,7 @@ public class ApplyService_imple implements ApplyService {
     private final MypageDAO mypageDAO;
     private final FileManager fileManager;
     private final ObjectMapper objectMapper;  // Java 객체 ↔ JSON 문자열 변환 도구
+    private final NotificationDAO notificationDAO;
 
     @Value("${file.upload-dir}")
     private String uploadDir;
@@ -151,6 +154,22 @@ public class ApplyService_imple implements ApplyService {
                     }
                 }
             }
+        }
+
+        // 기업에게 알림 발송
+        try {
+            Map<String, Object> jobInfo = applyDAO.selectJobPostingForNoti(jobId);
+            if (jobInfo != null) {
+                NotificationDTO noti = new NotificationDTO();
+                noti.setFkMemberId((String) jobInfo.get("companyMemberId"));
+                noti.setType("APPLICATION");
+                noti.setTitle("새로운 지원자 안내");
+                noti.setMessage("[" + jobInfo.get("postTitle") + "]에 " + member.getName() + "님이 지원했습니다");
+                noti.setLinkUrl("/company/applicant/list?jobId=" + jobId);
+                notificationDAO.insertNotification(noti);
+            }
+        } catch (Exception e) {
+            // 알림 실패해도 지원 자체는 성공 처리
         }
 
         return applicationId;

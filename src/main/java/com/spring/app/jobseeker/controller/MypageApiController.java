@@ -197,4 +197,34 @@ public class MypageApiController {
             return ResponseEntity.ok(result);
         }
     }
+
+
+    // 캘린더 이벤트 조회
+    @Operation(summary = "캘린더 이벤트 조회", description = "지원일/마감일/제안 응답기한을 FullCalendar 형식으로 반환한다.")
+    @GetMapping("/calendar/events")
+    public ResponseEntity<?> getCalendarEvents(Principal principal) {
+        String memberId = principal.getName();
+        java.util.List<Map<String, Object>> rawEvents = mypageService.getCalendarEvents(memberId);
+
+        java.util.List<Map<String, Object>> fcEvents = new java.util.ArrayList<>();
+        for (Map<String, Object> row : rawEvents) {
+            Map<String, Object> ev = new HashMap<>();
+            ev.put("title", row.get("title"));
+            ev.put("fullTitle", row.get("fullTitle"));
+            ev.put("start", row.get("date"));
+            ev.put("type", row.get("type"));
+            ev.put("company", row.get("company"));
+            ev.put("jobId", row.get("jobId"));
+            ev.put("offerSubmitId", row.get("offerSubmitId"));
+
+            String type = (String) row.get("type");
+            if ("applied".equals(type))       ev.put("className", "ev-applied");
+            else if ("deadline".equals(type))  ev.put("className", "ev-deadline");
+            else if ("offer".equals(type))     ev.put("className", "ev-offer");
+            else                               ev.put("className", "ev-applied");
+
+            fcEvents.add(ev);
+        }
+        return ResponseEntity.ok(fcEvents);
+    }
 }
