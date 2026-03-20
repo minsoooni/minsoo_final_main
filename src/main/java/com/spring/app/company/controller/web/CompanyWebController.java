@@ -24,6 +24,8 @@ import com.spring.app.company.domain.OfferListDTO;
 import com.spring.app.company.domain.TalentResumeDetailDTO;
 import com.spring.app.company.domain.TalentSearchConditionDTO;
 import com.spring.app.company.service.CompanyService;
+import com.spring.app.notification.domain.NotificationDTO;
+import com.spring.app.notification.service.NotificationService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +40,7 @@ import lombok.RequiredArgsConstructor;
 public class CompanyWebController {
 
     private final CompanyService service;
+    private final NotificationService notificationService;
     
     //포트원 결제를 위한 객체주입
     @Value("${portone.impCode}")
@@ -50,34 +53,45 @@ public class CompanyWebController {
     @ModelAttribute
     public void addCompanyTopbarInfo(Model model, Authentication authentication) {
         if (authentication == null || authentication.getName() == null) {
+            model.addAttribute("notificationList", java.util.Collections.emptyList());
+            model.addAttribute("unreadNotificationCount", 0);
             return;
         }
 
         String memberId = authentication.getName();
+
+        // ===== 기업 상단바 정보 =====
         CompanyTopbarDTO topbarInfo = service.getCompanyTopbarInfo(memberId);
 
         if (topbarInfo == null) {
             model.addAttribute("loginCompanyName", "기업명 미설정");
             model.addAttribute("loginCompanyEmail", "이메일 미등록");
             model.addAttribute("loginCompanyInitial", "C");
-            return;
+        }
+        else {
+            String companyName = topbarInfo.getCompanyName();
+            String email = topbarInfo.getEmail();
+
+            model.addAttribute("loginCompanyName",
+                    (companyName != null && !companyName.isBlank()) ? companyName : "기업명 미설정");
+
+            model.addAttribute("loginCompanyEmail",
+                    (email != null && !email.isBlank()) ? email : "이메일 미등록");
+
+            String initial = "C";
+            if (companyName != null && !companyName.isBlank()) {
+                initial = companyName.substring(0, 1);
+            }
+
+            model.addAttribute("loginCompanyInitial", initial);
         }
 
-        String companyName = topbarInfo.getCompanyName();
-        String email = topbarInfo.getEmail();
+        // ===== 알림 정보 =====
+        List<NotificationDTO> notificationList = notificationService.getMyNotifications(memberId);
+        int unreadNotificationCount = notificationService.getUnreadNotificationCount(memberId);
 
-        model.addAttribute("loginCompanyName",
-                (companyName != null && !companyName.isBlank()) ? companyName : "기업명 미설정");
-
-        model.addAttribute("loginCompanyEmail",
-                (email != null && !email.isBlank()) ? email : "이메일 미등록");
-
-        String initial = "C";
-        if (companyName != null && !companyName.isBlank()) {
-            initial = companyName.substring(0, 1);
-        }
-
-        model.addAttribute("loginCompanyInitial", initial);
+        model.addAttribute("notificationList", notificationList);
+        model.addAttribute("unreadNotificationCount", unreadNotificationCount);
     }
     
     
@@ -263,19 +277,38 @@ public class CompanyWebController {
 
 
 	// 채용공고 수정 페이지 (job_write 템플릿 재사용 형태)
-	@GetMapping("/job/update")
-	public String jobUpdateForm(@RequestParam("jobId") long jobId, Model model) {
-	    model.addAttribute("activeMenu", "job");
-	    model.addAttribute("jobId", jobId);
+    // URL 직접 입력으로 페이지 접속 방지 추가
+    @GetMapping("/job/update")
+    public String jobUpdateForm(@RequestParam("jobId") long jobId,
+                                Model model,
+                                Authentication authentication) {
+        model.addAttribute("activeMenu", "job");
+
+        if (authentication == null || authentication.getName() == null) {
+            return "redirect:/login";
+        }
+
+        String memberId = authentication.getName();
+        JobPostingDTO post = service.getJobPostingOne(jobId);
+
+        if (post == null || !memberId.equals(post.getMemberId())) {
+            return "redirect:/company/job/list";
+        }
+
+        // 신고 공고는 수정 페이지 진입 자체를 막음
+        if (post.getIsHidden() != null && post.getIsHidden() == 1) {
+            return "redirect:/company/job/list";
+        }
+
+        model.addAttribute("jobId", jobId);
+        model.addAttribute("eduDtoList", service.selectEduList());
+        model.addAttribute("cat1List", service.getRoots());
+        model.addAttribute("skillCategoryList", service.getSkillCategoryWithSkills());
+        model.addAttribute("region1List", service.getRegionLevel1());
+
+        return "company/job/job_update";
+    }
 	
-	    // 등록 페이지와 동일한 lookup 데이터 제공
-	    model.addAttribute("eduDtoList", service.selectEduList());
-	    model.addAttribute("cat1List", service.getRoots());
-	    model.addAttribute("skillCategoryList", service.getSkillCategoryWithSkills());
-	    model.addAttribute("region1List", service.getRegionLevel1());
-	
-	    return "company/job/job_update";
-	}
 	
 	//공고상세 팝업창 열기
 	@GetMapping("/job/detail/{jobId}")
@@ -384,7 +417,7 @@ public class CompanyWebController {
         
         List<BannerListDTO> bannerList = service.getBannerListByMemberId(memberId);
         model.addAttribute("bannerList", bannerList);
-        System.out.println(bannerList);
+        //System.out.println(bannerList);
         /*
         [BannerListDTO(bannerId=7, fkMemberId=TESTC, fkJobId=1018, title=api 적용 후 공고 등록입니다! 테스트로 기술을 수정해보겠습니다. ,imageFileId=6, startAt=2026-03-08 00:00, endAt=2026-03-15 00:00, status=승인완료, rejectReason=null, jobTitle=api 적용 후 공고 등록입니다! 테스트로 기술을 수정해보겠습니다., fileUrl=/images/banner/20260308202127_1df9fed2223a478aad831c2764272be6.jpg, originalFilename=minsoocap.jpg), 
         BannerListDTO(bannerId=6, fkMemberId=TESTC, fkJobId=1013, title=김스트 공고 모집입니다!!!, imageFileId=5, startAt=2026-03-08 00:00, endAt=2026-03-15 00:00, status=승인완료, rejectReason=null, jobTitle=테스트 공고 모집입니다!!!, fileUrl=/images/banner/20260308193446_7eb2f75ca1ee4573baba68caae4594e4.jpg, originalFilename=minsooyellow.jpg), 

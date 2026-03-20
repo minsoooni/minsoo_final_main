@@ -335,3 +335,26 @@
   color: #6b7280;
   margin-bottom: 10px;
 }
+
+
+
+/* 수정 불가 CSS */
+.job-menu-item.is-disabled{
+  color:#9ca3af;
+  background:#f9fafb;
+  cursor:not-allowed;
+}
+
+.job-menu-item.is-disabled:hover{
+  background:#f9fafb;
+}
+
+.job-title-sub{
+  margin-top:4px;
+  font-size:12px;
+  line-height:1.4;
+}
+
+.job-title-sub.warning{
+  color:#b91c1c;
+}

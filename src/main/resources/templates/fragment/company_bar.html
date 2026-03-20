@@ -4,6 +4,48 @@
 <div xmlns:th="http://www.thymeleaf.org"
      th:fragment="company_layout(content)"
      class="company-wrapper">
+     
+     
+  <script>
+  const companyGatewayOrigin = window.location.origin;
+  const companyUserServiceBase = companyGatewayOrigin + '/user-service';
+  const companyBoardServiceBase = companyGatewayOrigin + '/board-service';
+
+  function companyMoveAfterRead(event, notiId, url) {
+    event.preventDefault();
+
+    fetch(companyUserServiceBase + '/notification/api/read/' + notiId, {
+      method: 'POST',
+      credentials: 'include'
+    })
+    .catch(() => {})
+    .finally(() => {
+      const badge = document.getElementById("companyNotificationBadge");
+      if (badge) {
+        let count = parseInt(badge.innerText || "0");
+        if (count > 1) {
+          badge.innerText = count - 1;
+        } else {
+          badge.style.display = "none";
+        }
+      }
+
+      if (!url || url.trim() === '') return false;
+
+      if (url.startsWith('/board-service/')) {
+        window.location.href = companyGatewayOrigin + url;
+      } else if (url.startsWith('/user-service/')) {
+        window.location.href = companyGatewayOrigin + url;
+      } else if (url.startsWith('/community')) {
+        window.location.href = companyBoardServiceBase + url;
+      } else {
+        window.location.href = companyUserServiceBase + url;
+      }
+    });
+
+    return false;
+  }
+  </script>
 
   <!-- 상단 -->
   <header class="company-topbar">
@@ -26,21 +68,66 @@
 	  </a>
 	</div>
   
+  
     <div class="topbar-right">
-      <div class="profile">
-	    <div class="topbar-avatar"
-	         th:text="${loginCompanyInitial != null ? loginCompanyInitial : 'C'}">C</div>
-	    <div class="profile-meta">
-	      <div class="company-name"
-	           th:text="${loginCompanyName != null ? loginCompanyName : '기업명 미설정'}">
-	        기업명
+      
+      <!-- 알림 -->
+	  <div class="company-noti dropdown" th:if="${notificationList != null}">
+	    <button class="company-noti-btn dropdown-toggle"
+	            type="button"
+	            id="companyNotificationDropdown"
+	            data-toggle="dropdown"
+	            aria-haspopup="true"
+	            aria-expanded="false">
+	  
+	      <i class="fa-regular fa-bell"></i>
+	  
+	      <span class="company-noti-badge"
+	            id="companyNotificationBadge"
+	            th:if="${unreadNotificationCount > 0}"
+	            th:text="${unreadNotificationCount}">
+	        0
+	      </span>
+	    </button>
+	    
+	    <div class="dropdown-menu dropdown-menu-right company-noti-menu"
+	         aria-labelledby="companyNotificationDropdown">
+	  
+	      <div class="company-noti-head">알림</div>
+	  
+	      <div th:if="${#lists.isEmpty(notificationList)}"
+	           class="company-noti-empty">
+	        알림이 없습니다.
 	      </div>
-	      <div class="email"
-	           th:text="${loginCompanyEmail != null ? loginCompanyEmail : '이메일 미등록'}">
-	        email@example.com
-	      </div>
+	  
+	      <a th:each="noti : ${notificationList}"
+	         href="javascript:void(0)"
+	         th:attr="data-noti-id=${noti.notiId}, data-url=${noti.linkUrl}"
+	         onclick="return companyMoveAfterRead(event, this.dataset.notiId, this.dataset.url)"
+	         th:class="'dropdown-item company-noti-item ' + (${noti.isRead} == 1 ? 'is-read' : '')">
+	  
+	        <div class="company-noti-title" th:text="${noti.title}">알림 제목</div>
+	        <div class="company-noti-message" th:text="${noti.message}">알림 내용</div>
+	      </a>
 	    </div>
 	  </div>
+      
+      <!-- 프로필 -->
+      <a th:href="@{/company/profile}" class="profile profile-link">
+        <div class="topbar-avatar"
+             th:text="${loginCompanyInitial != null ? loginCompanyInitial : 'C'}">C</div>
+        <div class="profile-meta">
+          <div class="company-name"
+               th:text="${loginCompanyName != null ? loginCompanyName : '기업명 미설정'}">
+            기업명
+          </div>
+          <div class="email"
+               th:text="${loginCompanyEmail != null ? loginCompanyEmail : '이메일 미등록'}">
+            email@example.com
+          </div>
+        </div>
+      </a>
+	  
     </div>
     
   </header>
