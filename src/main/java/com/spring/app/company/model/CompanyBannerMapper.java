@@ -37,6 +37,12 @@ public interface CompanyBannerMapper {
     List<BannerListDTO> selectBannerListByMemberId(@Param("memberId") String memberId);
 	
 	
+    // 배너 종료일이 지난 경우 상태를 '마감'으로 변경
+    int updateBannerStatusToClosed();
     
+    
+    // 배너 삭제(소프트 삭제)
+    int deleteBannerByBannerId(@Param("bannerId") Long bannerId,
+                               @Param("memberId") String memberId);
     
 }

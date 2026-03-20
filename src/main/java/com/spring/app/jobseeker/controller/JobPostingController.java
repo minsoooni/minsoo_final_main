@@ -83,9 +83,12 @@ public class JobPostingController {
 		// === 전체 채용공고 목록 조회 === //
 		List<JobPostingListDTO> jobPosts = jobPostingService.getJobPostingList(paraMap);
 
-		// === 추천 채용공고 + 인기 채용공고 조회 === //
+		
+		// ======= 추천 채용공고 + 인기 채용공고 조회 ======= //
 		List<JobPostingListDTO> recommendedPosts = new ArrayList<>();
-		List<JobPostingListDTO> popularPosts = jobPostingService.getPopularJobPostings();
+		// 인기채용공고
+		List<JobPostingListDTO> popularPosts = jobPostingService.getPopularJobPostings(3);
+		
 		String loginId = null;
 		boolean isLoggedIn = (authentication != null && authentication.isAuthenticated());
 		boolean hasResume = false;
@@ -93,6 +96,7 @@ public class JobPostingController {
 			loginId = authentication.getName();
 			hasResume = jobPostingService.hasPrimaryResume(loginId);
 			if (hasResume) {
+				// 추천채용공고
 				recommendedPosts = jobPostingService.getRecommendedJobPostings(loginId);
 			}
 		}

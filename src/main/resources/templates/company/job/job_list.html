@@ -37,9 +37,15 @@
 	  e.stopPropagation();
 	
 	  const jobId = delBtn.dataset.jobId;
+	  const isHidden = delBtn.dataset.isHidden === "1";
+
 	  if (!jobId) return;
-	
-	  if (!confirm("해당 공고를 삭제할까요?")) return;
+
+	  const msg = isHidden
+	    ? "이 공고는 신고된 공고입니다. 삭제 처리할까요?"
+	    : "해당 공고를 삭제할까요?";
+
+	  if (!confirm(msg)) return;
 	
 	  const res = await fetch(`${contextPath}company/api/jobs/${jobId}`, { method: "DELETE" });
 	  if (!res.ok) { alert("삭제 실패"); return; }
@@ -188,7 +194,12 @@
 			  class="job-row"
 			  th:attrappend="class=${job.isHidden == 1} ? ' is-reported' : ''">
 
-            <td><b th:text="${job.title}">공고제목</b></td>
+            <td>
+			  <b th:text="${job.title}">공고제목</b>
+			  <div class="job-title-sub warning" th:if="${job.isHidden == 1}">
+			    신고 접수된 공고입니다. 수정이 제한됩니다.
+			  </div>
+			</td>
 
             <!-- 분류는 DTO에 categoryId만 있으면 화면용 categoryName을 같이 내려주는 걸 추천 -->
             <td th:text="${job.categoryName}">백엔드</td>
@@ -256,15 +267,30 @@
 			    </button>
 			  
 			    <div class="job-menu" hidden>
-			      <!-- 수정: GET 이동 -->
-			      <a class="job-menu-item"
-			         th:href="@{/company/job/update(jobId=${job.jobId})}">수정</a>
-			  
-			      <!-- 삭제: AJAX DELETE -->
-                  <button type="button" class="job-menu-item js-delete"
-                          th:attr="data-job-id=${job.jobId}"
-                          onclick="return false;">삭제</button>
-			    </div>
+				  <th:block th:if="${job.isHidden != 1}">
+				    <a class="job-menu-item"
+				       th:href="@{/company/job/update(jobId=${job.jobId})}">
+				      수정
+				    </a>
+				  </th:block>
+				
+				  <th:block th:if="${job.isHidden == 1}">
+				    <button type="button"
+				            class="job-menu-item is-disabled"
+				            disabled
+				            title="신고된 공고는 수정할 수 없습니다.">
+				      수정불가
+				    </button>
+				  </th:block>
+				
+				  <button type="button"
+				          class="job-menu-item js-delete"
+				          th:attr="data-job-id=${job.jobId}, data-is-hidden=${job.isHidden}"
+				          onclick="return false;">
+				    삭제
+				  </button>
+				</div>
+			    
 			  </div>
 			</td>
 			

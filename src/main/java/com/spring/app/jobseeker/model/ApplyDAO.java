@@ -51,4 +51,7 @@ public interface ApplyDAO {
 
     // 지원 진행상태 이력 조회
     List<Map<String, Object>> selectApplicationHistory(@Param("applicationId") long applicationId);
+
+    // 알림용 공고 정보 조회 (공고 제목 + 기업 회원 ID)
+    Map<String, Object> selectJobPostingForNoti(@Param("jobId") long jobId);
 }

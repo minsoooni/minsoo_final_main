@@ -137,6 +137,45 @@
 	  font-size: 13px;
 	  border-radius: 6px;
 	}
+	
+	
+	.report-alert {
+      margin: 0 0 16px;
+      padding: 14px 16px;
+      border: 1px solid #fecaca;
+      background: #fff1f2;
+      border-radius: 10px;
+    }
+    
+    .report-alert-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #b91c1c;
+      margin-bottom: 8px;
+    }
+    
+    .report-alert-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 13px;
+      color: #7f1d1d;
+      margin-bottom: 10px;
+    }
+    
+    .report-alert-content {
+      font-size: 13px;
+      line-height: 1.6;
+      color: #374151;
+      margin-top: 8px;
+    }
+    
+    .report-alert-guide {
+      margin-top: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #991b1b;
+    }
   </style>
 </head>
 <body>
@@ -160,7 +199,41 @@
           <p class="post-co" th:text="${post.companyName}">회사명</p>
         </div>
       </div>
-
+      
+	  <div class="report-alert" th:if="${post.isHidden == 1}">
+        <div class="report-alert-title">신고 접수된 공고입니다</div>
+      
+        <div class="report-alert-meta">
+          <span>
+            신고사유 :
+            <b th:text="${post.reportReasonName != null ? post.reportReasonName : '사유 미확인'}">기타</b>
+          </span>
+      
+          <span th:if="${post.reportStatusText != null}">
+            처리상태 :
+            <b th:text="${post.reportStatusText}">처리대기</b>
+          </span>
+        </div>
+      
+        <div class="report-alert-content"
+             th:if="${post.reportContent != null and !#strings.isEmpty(post.reportContent)}">
+          <b>신고내용</b><br>
+          <span th:text="${post.reportContent}">신고 내용</span>
+        </div>
+      
+        <div class="report-alert-content"
+             th:if="${post.reportProcessReason != null and !#strings.isEmpty(post.reportProcessReason)}">
+          <b>처리메모</b><br>
+          <span th:text="${post.reportProcessReason}">처리 사유</span>
+        </div>
+      
+        <div class="report-alert-guide">
+          신고된 공고는 수정이 제한되며, 필요 시 삭제만 가능합니다.
+        </div>
+      </div>
+	  
+	  
+	  
   	  <div class="status-row">
         <span class="status-badge"
               th:text="${post.status}"

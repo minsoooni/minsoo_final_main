@@ -469,9 +469,26 @@ public class CompanyService_imple implements CompanyService {
 	
 
 	//채용공고 리스트 조회하기(페이징처리)
+	/*
 	public List<JobPostingDTO> getJobPostingListPaing(Map<String, Object> paraMap) {
 	    return jobMapper.getJobPostingListPaing(paraMap);
 	}
+	*/
+	@Override
+	public List<JobPostingDTO> getJobPostingListPaing(Map<String, Object> paraMap) {
+	    List<JobPostingDTO> jobList = jobMapper.getJobPostingListPaing(paraMap);
+
+	    if (jobList != null) {
+	        for (JobPostingDTO dto : jobList) {
+	            dto.setReportStatusText(
+	                convertReportProcessStatusText(dto.getReportProcessStatus())
+	            );
+	        }
+	    }
+
+	    return jobList;
+	}
+	
 	//공고 전체갯수
 	@Override
 	public int getJobPostingCount(String memberId) {
@@ -479,9 +496,9 @@ public class CompanyService_imple implements CompanyService {
 	}
 	
 	
-	// 1-1)채용공고 삭제하기
-	public int deleteJobPosting(Long jobId) {
-	    return jobMapper.deleteJobPosting(jobId);
+	//채용공고 삭제하기
+	public int deleteJobPosting(Long jobId, String memberId) {
+	    return jobMapper.deleteJobPosting(jobId, memberId);
 	}
 	
 	
@@ -551,32 +568,48 @@ public class CompanyService_imple implements CompanyService {
 	
 	// 3)채용공고 수정하기(공고 데이터 수정 및 기존 매핑테이블 값 삭제 후 다시 삽입)
 	@Override
-    @Transactional
-    public int updateJobPosting(JobPostingDTO dto, List<Long> skillIds) {
-        // 1) 공고 업데이트
-        int n = jobMapper.updateJobPosting(dto);
+	@Transactional
+	public int updateJobPosting(JobPostingDTO dto, List<Long> skillIds) {
 
+	    JobPostingDTO origin = jobMapper.getJobPostingOne(dto.getJobId());
+
+	    if (origin == null) {
+	        return 0;
+	    }
+
+	    if (!origin.getMemberId().equals(dto.getMemberId())) {
+	        return 0;
+	    }
+
+	    if (origin.getIsHidden() != null && origin.getIsHidden() == 1) {
+	        return 0;
+	    }
+	    
+        // 1) 공고 업데이트
+	    int n = jobMapper.updateJobPosting(dto);
+	    
         // 업데이트가 실패했으면 아래 매핑 작업을 안 하는게 안전
-        if (n != 1) return n;
+	    if (n != 1) return n;
 
         // 2) 기존 매핑 삭제
-        jobMapper.deleteJobPostingSkills(dto.getJobId());
+	    jobMapper.deleteJobPostingSkills(dto.getJobId());
 
         // 3) 새 매핑 insert (비어있으면 = 전부 해제)
-        if (skillIds != null && !skillIds.isEmpty()) {
-        	jobMapper.insertNewJobPostingSkills(dto.getJobId(), skillIds);
-        }
+	    if (skillIds != null && !skillIds.isEmpty()) {
+	        jobMapper.insertNewJobPostingSkills(dto.getJobId(), skillIds);
+	    }
 
-        return n;
-    }
+	    return n;
+	}
+	
 
 	
 	//4)직무 및 기술스택 매핑테이블에 트랜잭션 처리하여 채용공고 등록하기
 	@Override
 	@Transactional
 	public int insertJobPosting(JobPostingDTO dto, List<Long> skillIds) {
-		System.out.println("dto:" + dto);
-		System.out.println("skillIds" + skillIds);
+		//System.out.println("dto:" + dto);
+		//System.out.println("skillIds" + skillIds);
 		/*
 		dto:JobPostingDTO(jobId=null, memberId=TESTC, categoryId=18, categoryName=null, 
 						  regionCode=GG_SEONGNAM, title=임시저장 에러테스트, content=null, workType=정규직, 
@@ -1087,34 +1120,38 @@ public class CompanyService_imple implements CompanyService {
     @Override
     public List<OfferRecipientDetailDTO> selectOfferRecipientDetailsByOfferLetterId(Long offerLetterId, String companyMemberId) {
 
-        // 소유권 확인
-        int owns = offerMapper.existsOfferHistoryOwnedByCompany(offerLetterId, companyMemberId);
-        if (owns != 1) {
+        int ownsTemplate = offerMapper.existsOfferLetterOwnedByCompany(offerLetterId, companyMemberId);
+        int ownsHistory  = offerMapper.existsOfferHistoryOwnedByCompany(offerLetterId, companyMemberId);
+
+        // 원본도 없고 발송 이력도 없으면 진짜 권한 없음 / 존재하지 않음
+        if (ownsTemplate != 1 && ownsHistory != 1) {
             throw new IllegalStateException("권한이 없거나 존재하지 않는 제안서입니다.");
         }
 
         List<OfferRecipientDetailDTO> list = offerMapper.selectOfferRecipientDetailsByOfferLetterId(offerLetterId);
 
-        if (list != null) {
-            for (OfferRecipientDetailDTO dto : list) {
-                // 화면용 상태문구를 조금 더 자연스럽게 보정
-                if (dto.getResponseStatus() != null) {
-                    switch (dto.getResponseStatus()) {
-                        case 1:
-                            dto.setResponseStatusText("수락");
-                            break;
-                        case 2:
-                            dto.setResponseStatusText("거절");
-                            break;
-                        default:
-                            dto.setResponseStatusText("미응답");
-                            break;
-                    }
-                } else {
-                    dto.setResponseStatusText("미응답");
+        if (list == null) {
+            return Collections.emptyList();
+        }
+
+        for (OfferRecipientDetailDTO dto : list) {
+            if (dto.getResponseStatus() != null) {
+                switch (dto.getResponseStatus()) {
+                    case 1:
+                        dto.setResponseStatusText("수락");
+                        break;
+                    case 2:
+                        dto.setResponseStatusText("거절");
+                        break;
+                    default:
+                        dto.setResponseStatusText("미응답");
+                        break;
                 }
+            } else {
+                dto.setResponseStatusText("미응답");
             }
         }
+
         return list;
     }
     
@@ -1462,6 +1499,23 @@ public class CompanyService_imple implements CompanyService {
 	@Override
 	public List<BannerListDTO> getBannerListByMemberId(String memberId) {
 	    return bannerMapper.selectBannerListByMemberId(memberId);
+	}
+	
+
+	//배너 종료일에 따른 상태변화
+	@Override
+	@Transactional
+	public void refreshBannerStatuses() {
+	    bannerMapper.updateBannerStatusToClosed();
+	}
+	
+	
+	// 마감된 배너 삭제 처리
+	@Override
+	@Transactional
+	public boolean deleteBanner(Long bannerId, String memberId) {
+	    int n = bannerMapper.deleteBannerByBannerId(bannerId, memberId);
+	    return n > 0;
 	}
     //========================= [배너] =========================//
     

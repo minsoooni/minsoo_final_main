@@ -1,5 +1,7 @@
 package com.spring.app.company.controller.api;
 
+import java.net.Authenticator;
+import java.security.AuthProvider;
 import java.util.List;
 import java.util.Map;
 
@@ -92,29 +94,96 @@ public class CompanyJobApiController {
     //채용공고 수정을 위한 기존 데이터 불러오기
     @Operation(summary = "기존 채용공고 데이터 조회", description = "기존 jobId의 채용공고 데이터를 조회한다.")
     @GetMapping("/jobs/{jobId}/edit")
-    public JobPostingEditResponseDTO getForEdit(@PathVariable("jobId") long jobId) {
-        return service.getJobPostingForEdit(jobId);
+    public ResponseEntity<?> getForEdit(@PathVariable("jobId") long jobId,
+                                        Authentication authentication) {
+
+        String loginMemberId = authentication.getName();
+        JobPostingDTO origin = service.getJobPostingOne(jobId);
+
+        if (origin == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        if (!loginMemberId.equals(origin.getMemberId())) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("success", false, "message", "본인 공고만 수정할 수 있습니다."));
+        }
+
+        if (origin.getIsHidden() != null && origin.getIsHidden() == 1) {
+            return ResponseEntity.status(409)
+                    .body(Map.of("success", false, "message", "신고된 공고는 수정할 수 없습니다."));
+        }
+
+        JobPostingEditResponseDTO dto = service.getJobPostingForEdit(jobId);
+        return ResponseEntity.ok(dto);
     }
     
-    //변경된 공고 내용을 수정해주기
+    
+    
+    //변경된 공고 내용을 수정해주기(인증/소유자/신고체크)
     @Operation(summary = "채용공고 수정", description = "jobId의 채용공고를 수정한다.")
     @PutMapping("/jobs/{jobId}")
     public ResponseEntity<Map<String, Object>> updateJob(
             @PathVariable("jobId") long jobId,
-            @RequestBody JobPostingUpdateRequestDTO req) {
+            @RequestBody JobPostingUpdateRequestDTO req,
+            Authentication authentication) {
+
+        String loginMemberId = authentication.getName();
+        JobPostingDTO origin = service.getJobPostingOne(jobId);
+
+        if (origin == null) {
+            return ResponseEntity.status(404)
+                    .body(Map.of("success", false, "message", "존재하지 않는 공고입니다."));
+        }
+
+        if (!loginMemberId.equals(origin.getMemberId())) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("success", false, "message", "본인 공고만 수정할 수 있습니다."));
+        }
+
+        if (origin.getIsHidden() != null && origin.getIsHidden() == 1) {
+            return ResponseEntity.status(409)
+                    .body(Map.of("success", false, "message", "신고된 공고는 수정할 수 없습니다."));
+        }
 
         JobPostingDTO dto = req.getJob();
         dto.setJobId(jobId);
+        dto.setMemberId(loginMemberId);
 
         int n = service.updateJobPosting(dto, req.getSkillIds());
-        return ResponseEntity.ok(Map.of("success", n == 1));
+
+        return ResponseEntity.ok(Map.of(
+                "success", n == 1,
+                "message", n == 1 ? "수정되었습니다." : "수정에 실패했습니다."
+        ));
     }
+    
+    
 
     //공고 삭제하기
     @Operation(summary = "채용공고 삭제", description = "jobId의 채용공고를 삭제(소프트삭제)한다.")
     @DeleteMapping("/jobs/{jobId}")
-    public ResponseEntity<Map<String, Object>> deleteJob(@PathVariable("jobId") Long jobId) {
-        int n = service.deleteJobPosting(jobId);
-        return ResponseEntity.ok(Map.of("success", n == 1));
+    public ResponseEntity<Map<String, Object>> deleteJob(@PathVariable("jobId") Long jobId,
+                                                         Authentication authentication) {
+
+        String loginMemberId = authentication.getName();
+        JobPostingDTO origin = service.getJobPostingOne(jobId);
+
+        if (origin == null) {
+            return ResponseEntity.status(404)
+                    .body(Map.of("success", false, "message", "존재하지 않는 공고입니다."));
+        }
+
+        if (!loginMemberId.equals(origin.getMemberId())) {
+            return ResponseEntity.status(403)
+                    .body(Map.of("success", false, "message", "본인 공고만 삭제할 수 있습니다."));
+        }
+
+        int n = service.deleteJobPosting(jobId, loginMemberId);
+
+        return ResponseEntity.ok(Map.of(
+                "success", n == 1,
+                "message", n == 1 ? "삭제되었습니다." : "삭제에 실패했습니다."
+        ));
     }
 }

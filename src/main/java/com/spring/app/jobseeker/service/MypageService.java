@@ -34,4 +34,7 @@ public interface MypageService {
     
     // 최근 본 공고 조회
     List<Map<String, Object>> getRecentViewedPosts(String memberId);
+
+    // 캘린더 이벤트 조회
+    List<Map<String, Object>> getCalendarEvents(String memberId);
 }
