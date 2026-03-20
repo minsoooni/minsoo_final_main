@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @RequestMapping("/")
 public class IndexController {
+	
 	private final IndexService indexService;
 	private final NotificationService notificationService;
 	private final JobPostingService jobPostingService;
@@ -39,35 +40,22 @@ public class IndexController {
 		String memberId = null;
 		
 		if (principal != null) {
-		    memberId = principal.getName();
+			memberId = principal.getName();
 
-		    List<NotificationDTO> notificationList =
-		            notificationService.getMyNotifications(memberId);
+			List<NotificationDTO> notificationList =
+					notificationService.getMyNotifications(memberId);
 
-		    int unreadCount =
-		            notificationService.getUnreadNotificationCount(memberId);
+			int unreadCount =
+					notificationService.getUnreadNotificationCount(memberId);
 
-		    model.addAttribute("notificationList", notificationList);
-		    model.addAttribute("unreadNotificationCount", unreadCount);
+			model.addAttribute("notificationList", notificationList);
+			model.addAttribute("unreadNotificationCount", unreadCount);
 		}
 
 		model.addAttribute("categoryList", indexService.getParentJobCategories());
 
-		boolean isLoggedIn = (memberId != null);
-		boolean hasResume = false;
-		List<JobPostingListDTO> recommendedList = java.util.Collections.emptyList();
-
-		if (isLoggedIn) {
-			hasResume = jobPostingService.hasPrimaryResume(memberId);
-
-			if (hasResume) {
-				recommendedList = jobPostingService.getRecommendedJobPostings(memberId);
-			}
-		}
-
-		model.addAttribute("recommendedJobList", recommendedList);
-		model.addAttribute("hasResume", hasResume);
-		model.addAttribute("isLoggedIn", isLoggedIn);
+		List<JobPostingListDTO> popularJobList = jobPostingService.getPopularJobPostings();
+		model.addAttribute("popularJobList", popularJobList);
 		
 		List<Map<String, Object>> hotCompanyList = indexService.getHotCompanies();
 		model.addAttribute("hotCompanyList", hotCompanyList);

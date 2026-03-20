@@ -479,19 +479,19 @@
     </div>
   </section>
 
-  <!-- 오늘의 추천 공고 -->
+  <!-- 인기 채용공고 -->
   <section class="jp-section jp-section--last">
     <div class="container-fluid jp-container">
       <div class="jp-section__head">
         <div>
-          <h2 class="jp-section__title">⭐ 오늘의 추천 공고</h2>
-          <div class="jp-section__desc">회원님의 이력서를 바탕으로 분석한 맞춤 정보입니다.</div>
+          <h2 class="jp-section__title">🔥 인기 채용공고</h2>
+          <div class="jp-section__desc">지원자 수와 조회수를 반영한 인기 공고입니다.</div>
         </div>
         <a class="jp-link" th:href="@{/job/list}">전체보기 <i class="fa-solid fa-chevron-right ml-1"></i></a>
       </div>
 
-      <div class="row" th:if="${recommendedJobList != null and !#lists.isEmpty(recommendedJobList)}">
-        <div class="col-md-3 mb-3" th:each="job : ${recommendedJobList}">
+      <div class="row" th:if="${popularJobList != null and !#lists.isEmpty(popularJobList)}">
+        <div class="col-md-3 mb-3" th:each="job : ${popularJobList}">
           <a th:href="@{/job/detail/{id}(id=${job.jobId})}"
              style="text-decoration:none; color:inherit;">
             <div class="jp-card">
@@ -532,37 +532,13 @@
       </div>
 
       <div class="jp-empty-wrap"
-           th:if="${recommendedJobList == null or #lists.isEmpty(recommendedJobList)}">
+           th:if="${popularJobList == null or #lists.isEmpty(popularJobList)}">
 
-        <div class="jp-empty-box" th:if="${!isLoggedIn}">
-          <div class="jp-empty-icon">
-            <i class="fa-regular fa-user"></i>
-          </div>
-          <div class="jp-empty-title">로그인하고 맞춤 추천 공고를 확인해보세요</div>
-          <div class="jp-empty-desc">
-            이력서와 관심 직무를 바탕으로<br/>
-            나에게 맞는 공고를 추천해드려요.
-          </div>
-          <a class="jp-empty-btn" th:href="@{/member/login}">로그인 하러가기</a>
-        </div>
-
-        <div class="jp-empty-box" th:if="${isLoggedIn and !hasResume}">
-          <div class="jp-empty-icon">
-            <i class="fa-regular fa-file-lines"></i>
-          </div>
-          <div class="jp-empty-title">대표 이력서를 등록하면 맞춤 공고를 추천해드려요</div>
-          <div class="jp-empty-desc">
-            이력서를 등록하면 경력, 희망직무, 기술스택을 바탕으로<br/>
-            더 잘 맞는 공고를 추천받을 수 있어요.
-          </div>
-          <a class="jp-empty-btn" th:href="@{/resume}">이력서 작성하기</a>
-        </div>
-
-        <div class="jp-empty-box" th:if="${isLoggedIn and hasResume}">
+        <div class="jp-empty-box">
           <div class="jp-empty-icon">
             <i class="fa-regular fa-compass"></i>
           </div>
-          <div class="jp-empty-title">조건에 맞는 추천 공고가 아직 없어요</div>
+          <div class="jp-empty-title">아직 인기 채용공고가 없습니다</div>
           <div class="jp-empty-desc">
             조금 더 다양한 채용공고를 둘러보면서<br/>
             관심 있는 포지션을 찾아보세요.
