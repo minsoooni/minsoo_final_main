@@ -75,7 +75,8 @@ public interface CompanyService {
 	int getJobPostingCount(String memberId); //공고 전체갯수
 	
 	//채용공고 삭제하기
-	int deleteJobPosting(Long jobId);
+	//int deleteJobPosting(Long jobId);
+	int deleteJobPosting(Long jobId, String memberId);
 	
 	//선택된 공고 상세정보 조회하기
 	JobPostingDTO getJobPostingOne(Long jobId);
@@ -202,6 +203,12 @@ public interface CompanyService {
 	
 	//배너 등록 화면용 포인트 정보 조회 메서드
 	Map<String, Object> getBannerPaymentInfo(String memberId);
+	
+	// 배너 종료일 기준 상태 동기화(마감 처리)
+	void refreshBannerStatuses();
+	
+	// 마감된 배너 삭제 처리
+	boolean deleteBanner(Long bannerId, String memberId);
 	
 	
 	

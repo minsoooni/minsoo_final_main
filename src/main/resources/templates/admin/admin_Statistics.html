@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout/layout_admin :: layout(~{::title},~{::link},~{::style},~{::script},~{::section})}">
+      th:replace="~{layout/layout_admin :: layout(~{::title}, ~{::link}, ~{::style}, ~{::script}, ~{::section})}">
 
 <head>
   <meta charset="UTF-8">
@@ -114,8 +114,9 @@
     .report-section.active { display: block; }
 
     .chart-row     { display: grid; gap: 14px; margin-bottom: 14px; }
-    .chart-row.col-2  { grid-template-columns: 1fr 1fr; }
-    .chart-row.col-1  { grid-template-columns: 1fr; }
+    /* ▼ 3열 가로 레이아웃 추가 */
+    .chart-row.col-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .chart-row.col-1  { grid-template-columns: 1fr 1fr; }
     .chart-row.col-13 {
       display: flex; flex-direction: row; align-items: stretch;
       justify-content: flex-start; gap: 14px; margin-bottom: 14px;
@@ -164,6 +165,7 @@
     }
 
     @media (max-width: 1100px) {
+      .chart-row.col-3  { grid-template-columns: 1fr; }
       .chart-row.col-2  { grid-template-columns: 1fr; }
       .chart-row.col-13 { flex-direction: column; }
       .chart-row.col-13 > .chart-card:first-child { max-width: 100%; }
@@ -228,7 +230,8 @@
 
   <!-- 회원 리포트 -->
   <div class="report-section active" id="sec-member">
-    <div class="chart-row col-2">
+    <!-- ▼ 기존 2개 chart-row → 1개 col-3 row로 통합 -->
+    <div class="chart-row col-3">
       <div class="chart-card">
         <div class="chart-card-header">
           <div>
@@ -251,8 +254,6 @@
         </div>
         <div class="chart-wrap tall"><canvas id="memberDayChart"></canvas></div>
       </div>
-    </div>
-    <div class="chart-row col-1">
       <div class="chart-card">
         <div class="chart-card-header">
           <div>
@@ -260,7 +261,7 @@
             <div class="chart-card-sub">최근 12개월 누적 추이</div>
           </div>
         </div>
-        <div class="chart-wrap"><canvas id="memberGrowthChart"></canvas></div>
+        <div class="chart-wrap tall"><canvas id="memberGrowthChart"></canvas></div>
       </div>
     </div>
   </div>
@@ -281,7 +282,6 @@
         </div>
         <div class="chart-wrap tall"><canvas id="jobTrendChart"></canvas></div>
       </div>
-      
     </div>
   </div>
 
@@ -306,9 +306,9 @@
 
   <script th:inline="javascript">
   (function() {
-	  
-	const contextPath = /*[[@{/}]]*/ "";
-	  
+
+    const contextPath = /*[[@{/}]]*/ "";
+
     let currentPeriod  = 'daily';
     let charts         = {};
     let lastData       = null;
@@ -336,26 +336,23 @@
       }
     };
 
-    /* 해당 섹션 차트만 destroy */
     function destroySection(sec) {
-	  const canvasIds = {
-	    member: ['memberTrendChart', 'memberDayChart', 'memberGrowthChart'],
-	    job:    ['jobTrendChart', 'salaryChart'],
-	    board:  ['boardTrendChart']
-	  };
-	  (canvasIds[sec] || []).forEach(id => {
-	    const canvas = document.getElementById(id);
-	    if (canvas) {
-	      const existing = Chart.getChart(canvas);
-	      if (existing) existing.destroy();
-	    }
-	  });
-	  // charts 객체도 초기화
-	  const keys = { member: ['memberTrend','memberDay','memberGrowth'], job: ['jobTrend','salary'], board: ['boardTrend'] };
-	  (keys[sec] || []).forEach(k => delete charts[k]);
-	}
+      const canvasIds = {
+        member: ['memberTrendChart', 'memberDayChart', 'memberGrowthChart'],
+        job:    ['jobTrendChart', 'salaryChart'],
+        board:  ['boardTrendChart']
+      };
+      (canvasIds[sec] || []).forEach(id => {
+        const canvas = document.getElementById(id);
+        if (canvas) {
+          const existing = Chart.getChart(canvas);
+          if (existing) existing.destroy();
+        }
+      });
+      const keys = { member: ['memberTrend','memberDay','memberGrowth'], job: ['jobTrend','salary'], board: ['boardTrend'] };
+      (keys[sec] || []).forEach(k => delete charts[k]);
+    }
 
-    /* ── 회원 차트만 렌더링 ── */
     function renderMember(d, from, to) {
       destroySection('member');
       document.getElementById('memberTrendSub').textContent  = `${from} ~ ${to}`;
@@ -407,7 +404,6 @@
       });
     }
 
-    /* ── 채용공고 차트만 렌더링 ── */
     function renderJob(d, from, to) {
       destroySection('job');
       document.getElementById('jobTrendSub').textContent = `${from} ~ ${to}`;
@@ -434,7 +430,6 @@
       });
     }
 
-    /* ── 게시판 차트만 렌더링 ── */
     function renderBoard(d, from, to) {
       destroySection('board');
       document.getElementById('boardTrendSub').textContent = `${from} ~ ${to}`;
@@ -456,7 +451,6 @@
       });
     }
 
-    /* 현재 탭만 렌더링 */
     function renderCurrentSection() {
       if (!lastData) return;
       if (currentSection === 'member') renderMember(lastData, lastFrom, lastTo);
@@ -478,7 +472,7 @@
         .then(data => {
           lastData = data; lastFrom = from; lastTo = to;
           document.getElementById('currentRangeLabel').textContent = `${from} ~ ${to}`;
-          renderCurrentSection(); // 현재 탭 차트만 그리기
+          renderCurrentSection();
         })
         .catch(err => alert('데이터 로드 실패: ' + err.message))
         .finally(() => {
@@ -487,7 +481,6 @@
         });
     }
 
-    /* 탭 클릭 시 해당 섹션 차트만 렌더링 */
     window.switchSection = function(el, sec) {
       document.querySelectorAll('.report-nav-tab').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.report-section').forEach(s => s.classList.remove('active'));
@@ -523,7 +516,7 @@
       from.setDate(from.getDate() - 30);
       document.getElementById('date-to').value   = today.toISOString().split('T')[0];
       document.getElementById('date-from').value = from.toISOString().split('T')[0];
-      fetchAndRender(); // 최초 로드 시 회원 탭(currentSection = 'member')만 렌더링
+      fetchAndRender();
     });
   })();
   </script>

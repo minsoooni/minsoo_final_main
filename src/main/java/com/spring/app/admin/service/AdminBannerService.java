@@ -5,9 +5,11 @@ import com.spring.app.admin.domain.AdminBannerDTO;
 
 public interface AdminBannerService {
     // 배너 목록 조회 (페이징)
-    List<AdminBannerDTO> getBannerList(int page, int limit);
+	List<AdminBannerDTO> getBannerList(int page, int limit, String status);
     // 전체 건수
-    int getBannerCount();
+	int getBannerCount(String status);
+	// 전체 개수
+	int getBannerTotalCount();	
     // 상태별 건수 (통계 카드용)
     int getBannerCountByStatus(String status);
     // 배너 승인
@@ -20,4 +22,5 @@ public interface AdminBannerService {
     int unstoppedBanner(Long bannerId); 
     // 승인된 배너
     List<AdminBannerDTO> getActiveBanners();
+    
 }

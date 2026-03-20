@@ -431,10 +431,12 @@
 	
 	<!-- 공고 수정 시 기존 공고 데이터 조회하기 -->
 	<select id="getJobPostingForEdit"
-        parameterType="long"
-        resultType="com.spring.app.company.domain.JobPostingEditResponseDTO">
+	        parameterType="long"
+	        resultType="com.spring.app.company.domain.JobPostingEditResponseDTO">
 	  SELECT
 	      j.job_id           AS jobId,
+	      j.fk_memberid      AS memberId,
+	      j.is_hidden        AS isHidden,
 	      j.title            AS title,
 	
 	      j.work_type        AS workType,
@@ -513,14 +515,14 @@
 	    <if test="headcount != null">headcount = #{headcount},</if>
 	    <if test="status != null">status = #{status},</if>
 	    <if test="deadlineType != null">deadline_type = #{deadlineType},</if>
-	
 	    <if test="deadlineAt != null">deadline_at = #{deadlineAt},</if>
 	    <if test="openedAt != null">opened_at = #{openedAt},</if>
 	    <if test="closedAt != null">closed_at = #{closedAt},</if>
-	
 	    updated_at = SYSDATE
 	  </set>
 	  WHERE job_id = #{jobId}
+	    AND fk_memberid = #{memberId}
+	    AND NVL(is_hidden, 0) = 0
 	</update>
 
 
@@ -542,10 +544,12 @@
 	
 	
 	<!-- 채용공고 삭제하기(소프트 삭제) -->
-	<update id="deleteJobPosting" parameterType="Long">
+	<update id="deleteJobPosting" parameterType="map">
 	  UPDATE tbl_job_posting
-	  SET status = '삭제됨', updated_at = SYSDATE
+	  SET status = '삭제됨',
+	      updated_at = SYSDATE
 	  WHERE job_id = #{jobId}
+	    AND fk_memberid = #{memberId}
 	</update>
 	
 	

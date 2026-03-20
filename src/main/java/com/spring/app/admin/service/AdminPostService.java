@@ -26,4 +26,5 @@ public interface AdminPostService {
 
     int updateCommentHidden(Long commentId, int isHidden);
     List<AdminPostDTO> getDeletedPagedPosts(String search, int page, int limit);
+    List<AdminCommentDTO> getDeletedPagedComments(String search, int page, int limit);
 }

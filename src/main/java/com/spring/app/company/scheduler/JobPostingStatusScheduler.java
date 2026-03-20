@@ -19,5 +19,6 @@ public class JobPostingStatusScheduler {
 	@Scheduled(cron = "0 * * * * *")
     public void refreshJobPostingStatuses() {
         companyService.refreshJobPostingStatuses();
+        companyService.refreshBannerStatuses();
     }
 }

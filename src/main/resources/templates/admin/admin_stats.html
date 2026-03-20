@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout/layout_admin :: layout(~{::title},~{::link},~{::style},~{::script},~{::section})}">
-<!-- 뷰 경로: templates/admin/admin_stats.html | 접근 URL: /admin/stats -->
+      th:replace="~{layout/layout_admin :: layout(~{::title}, ~{::link}, ~{::style}, ~{::script}, ~{::section})}">
 
 <head>
   <meta charset="UTF-8">
@@ -129,7 +128,7 @@
     .rank.r3 { background: #FDEBD0; color: #CA6F1E; }
     .rank.rn { background: var(--bg); color: var(--text-muted); }
 
-    /* ✅ 반응형 */
+    /* 반응형 */
     @media (max-width: 1280px) {
       .kpi-grid { grid-template-columns: repeat(2, 1fr); }
       .chart-row.col-13 { grid-template-columns: 1fr; }

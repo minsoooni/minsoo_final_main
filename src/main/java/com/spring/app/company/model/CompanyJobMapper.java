@@ -26,7 +26,9 @@ public interface CompanyJobMapper {
 	int getJobPostingCount(String memberId); //공고 전체갯수
 	
 	//채용공고 삭제하기
-	int deleteJobPosting(Long jobId);
+	//int deleteJobPosting(Long jobId);
+	int deleteJobPosting(@Param("jobId") Long jobId,
+            @Param("memberId") String memberId);
 	
 	//선택한 공고 상세정보
 	JobPostingDTO getJobPostingOne(Long jobId);

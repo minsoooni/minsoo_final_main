@@ -55,8 +55,12 @@
                         AND j.STATUS != '마감'
                         AND j.STATUS != '삭제됨'
                         AND j.STATUS != '임시저장'
+                        AND j.STATUS != '대기'
                     </when>
-                    <!-- ✅ 추가 -->
+                    <!-- 추가 -->
+                    <when test="status == 'waiting'">
+					    AND j.STATUS = '대기'
+					</when>
                     <when test="status == 'deleted'">
                         AND j.STATUS = '삭제됨'
                     </when>
@@ -94,11 +98,15 @@
                     AND j.STATUS != '마감'
                     AND j.STATUS != '삭제됨'
                     AND j.STATUS != '임시저장'
+                    AND j.STATUS != '대기'
                 </when>
+                <when test="status == 'waiting'">
+				    AND j.STATUS = '대기'
+				</when>
                 <when test="status == 'closed'">
                     AND j.STATUS = '마감'
                 </when>
-                <!-- ✅ 추가 -->
+                <!-- 추가 -->
                 <when test="status == 'deleted'">
                     AND j.STATUS = '삭제됨'
                 </when>
@@ -117,11 +125,15 @@
         <when test="status == 'active'">
             WHERE STATUS = '게시중' AND IS_HIDDEN = 0
         </when>
+        <when test="status == 'waiting'">
+		    WHERE STATUS = '대기'
+		</when>
         <when test="status == 'hidden'">
             WHERE IS_HIDDEN = 1
             AND STATUS != '마감'
             AND STATUS != '삭제됨'
             AND STATUS != '임시저장'
+            AND STATUS != '대기'
         </when>
         <when test="status == 'closed'">
             WHERE STATUS = '마감'
@@ -129,7 +141,7 @@
         <when test="status == 'deleted'">
             WHERE STATUS = '삭제됨'
         </when>
-        <!-- ✅ 추가 -->
+        <!-- 추가 -->
         <when test="status == 'temp'">
             WHERE STATUS = '임시저장'
         </when>

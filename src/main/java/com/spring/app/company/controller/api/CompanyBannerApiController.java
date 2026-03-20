@@ -6,8 +6,10 @@ import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -21,6 +23,7 @@ import com.spring.app.company.service.CompanyService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -34,7 +37,7 @@ public class CompanyBannerApiController {
     private final CompanyService service;
     
     
-
+    //배너를 등록하기 위한 게시중인 공고 조회
     @Operation(summary = "배너 등록용 공고 목록 조회", description = "로그인한 기업의 공고 목록을 반환한다.")
     @GetMapping("/jobs")
     public ResponseEntity<Map<String, Object>> getMyJobPostingList(Authentication authentication) {
@@ -59,7 +62,7 @@ public class CompanyBannerApiController {
     }
     
     
-    
+    //배너 등록하기
     @Operation(summary = "배너 등록", description = "배너 정보와 이미지를 함께 등록한다.")
     @PostMapping
     public ResponseEntity<Map<String, Object>> insertBanner(
@@ -106,8 +109,8 @@ public class CompanyBannerApiController {
     }
 
     
-    
-    
+    //배너 목록 조회
+    @Operation(summary = "배너 목록 조회", description = "로그인한 기업의 모든 배너를 조회한다.")
     @GetMapping("/list")
     public ResponseEntity<Map<String, Object>> getBannerList(Authentication authentication) {
 
@@ -130,6 +133,39 @@ public class CompanyBannerApiController {
         }
     }
     
+    
+    
+    
+    
+    
+    
+    @Operation(summary = "배너 삭제", description = "로그인한 기업의 배너를 삭제한다.")
+    @DeleteMapping("/{bannerId}")
+    public ResponseEntity<Map<String, Object>> deleteBanner(@PathVariable("bannerId") Long bannerId,
+                                                            HttpServletRequest request) {
+
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            String memberId = request.getUserPrincipal().getName(); // 프로젝트 로그인 구조에 맞게 변경
+            boolean success = service.deleteBanner(bannerId, memberId);
+
+            if(success) {
+                result.put("success", true);
+                result.put("message", "배너가 삭제되었습니다.");
+                return ResponseEntity.ok(result);
+            }
+
+            result.put("success", false);
+            result.put("message", "삭제 가능한 배너가 아니거나 권한이 없습니다.");
+            return ResponseEntity.badRequest().body(result);
+
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "배너 삭제 중 오류가 발생했습니다.");
+            return ResponseEntity.internalServerError().body(result);
+        }
+    }
     
     
     //포인트 정보 조회
