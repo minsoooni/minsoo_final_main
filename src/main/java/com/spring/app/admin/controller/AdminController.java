@@ -344,7 +344,7 @@ public class AdminController {
 	        ? ResponseEntity.ok("승인 완료")
 	        : ResponseEntity.badRequest().body("승인 실패");
 	}
-
+	/* 0320 merge 확인 */
 	@PostMapping("/banners/{bannerId}/reject")
 	@ResponseBody
 	public ResponseEntity<String> rejectBanner(@PathVariable("bannerId") Long bannerId,
