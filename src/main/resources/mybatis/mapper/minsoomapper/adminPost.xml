@@ -162,5 +162,30 @@
 	    
 	</select>
 	
+	<!-- 삭제된 댓글 목록 조회 -->
+<select id="selectDeletedPagedComments" resultType="com.spring.app.admin.domain.AdminCommentDTO">
+    SELECT * FROM (
+        SELECT
+            c.COMMENT_ID            AS commentId,
+            c.FK_POST_ID            AS postId,
+            c.FK_MEMBERID           AS memberId,
+            c.CONTENT               AS content,
+            c.FK_PARENT_COMMENT_ID  AS parentCommentId,
+            c.STATUS                AS status,
+            c.CREATED_AT            AS createdAt,
+            c.UPDATED_AT            AS updatedAt,
+            c.IS_HIDDEN             AS isHidden,
+            ROW_NUMBER() OVER (ORDER BY c.CREATED_AT DESC) AS rn
+        FROM TBL_COMMENT c
+        <where>
+            AND c.STATUS = 'DELETED'
+            <if test="search != null and search != ''">
+                AND (c.CONTENT LIKE '%' || #{search} || '%'
+                OR c.FK_MEMBERID LIKE '%' || #{search} || '%')
+            </if>
+        </where>
+    )
+    WHERE rn BETWEEN #{offset}+1 AND #{offset}+#{limit}
+</select>
 
 </mapper>

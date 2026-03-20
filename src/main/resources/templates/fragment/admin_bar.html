@@ -1,4 +1,4 @@
-<!--/* Fragment 코드 */-->
+<!--/* Fragment 코드 - 기업 측 디자인 통일 */-->
 <div xmlns:th="http://www.thymeleaf.org"
      th:fragment="admin_layout(content)"
      class="admin-wrapper">
@@ -6,25 +6,39 @@
   <!-- 상단 -->
   <header class="admin-topbar">
     <div class="topbar-left">
-      <i class="fa-solid fa-shield-halved"></i>
-      <span class="logo">JobKorea</span>
-      <span class="sub">관리자 콘솔</span>
-      <a th:href="@{/index}">메인페이지[임시]</a>
+      <a th:href="@{/admin/dashboard}" class="topbar-brand">
+        <span class="topbar-brand-icon">
+          <i class="fa-solid fa-shield-halved"></i>
+        </span>
+        <span class="topbar-brand-text">
+          <span class="logo">잡파인더</span>
+          <span class="sub">관리자</span>
+        </span>
+      </a>
+
+      <!-- 메인페이지 링크 별도 -->
+      <a th:href="@{/index}" class="topbar-main-link">
+        메인페이지
+      </a>
     </div>
 
     <div class="topbar-right">
-      <i class="fa-regular fa-bell"></i>
       <div class="profile">
-        <div class="avatar">A</div>
-        <div>
-          <div class="admin-name" th:text="${adminName} ?: '관리자'">관리자</div>
-          <div class="email" th:text="${adminEmail} ?: 'admin@jobkorea.com'">admin@jobkorea.com</div>
+        <div class="topbar-avatar"
+             th:text="${adminInitial != null ? adminInitial : 'A'}">A</div>
+        <div class="profile-meta">
+          <div class="admin-name"
+               th:text="${adminName != null ? adminName : '관리자'}">관리자</div>
+          <div class="email"
+               th:text="${adminEmail != null ? adminEmail : 'admin@jobkorea.com'}">admin@jobkorea.com</div>
         </div>
       </div>
     </div>
   </header>
 
   <div class="admin-body">
+
+    <!-- 사이드바 -->
     <aside class="admin-sidebar">
       <ul>
         <li th:classappend="${activeMenu}=='dashboard' ? ' active' : ''">
@@ -42,8 +56,8 @@
             <i class="fa-regular fa-building"></i><span>기업 관리</span>
           </a>
         </li>
-        <li th:classappend="${activeMenu}=='jobs' ? ' active' : ''">
-          <a th:href="@{/admin/job-posts(menu='jobs')}">
+        <li th:classappend="${activeMenu}=='job-posts' ? ' active' : ''">
+          <a th:href="@{/admin/job-posts(menu='job-posts')}">
             <i class="fa-regular fa-file-lines"></i><span>채용공고 관리</span>
           </a>
         </li>
@@ -74,12 +88,14 @@
         </li>
         <li th:classappend="${activeMenu}=='reports' ? ' active' : ''">
           <a th:href="@{/admin/reports(menu='reports')}">
-            <i class="fa-regular fa-bell"></i><span>신고 관리</span>
+            <i class="fa-regular fa-flag"></i><span>신고 관리</span>
           </a>
         </li>
       </ul>
     </aside>
 
+    <!-- 콘텐츠 -->
     <div class="admin-content" th:replace="${content}"></div>
+
   </div>
 </div>

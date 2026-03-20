@@ -1,0 +1,65 @@
+@charset "UTF-8";
+
+/* ===== 기본 리셋 ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Noto Sans KR', sans-serif; background-color: #f9fafb; color: #1f2937; }
+
+/* ===== 레이아웃 ===== */
+.dash { padding: 24px; width: 100%; box-sizing: border-box; }
+
+/* ===== 통계 카드 ===== */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px 24px; }
+.stat-card .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.stat-card .label { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #6b7280; }
+.stat-card .label .icon { font-size: 16px; }
+.stat-card .value { font-size: 32px; font-weight: 700; color: #1f2937; margin-bottom: 4px; }
+.stat-card .sub-text { font-size: 13px; color: #9ca3af; }
+
+/* ===== 차트 ===== */
+.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.chart-card { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; }
+.chart-card .title { font-size: 16px; font-weight: 600; color: #1f2937; margin-bottom: 20px; }
+.chart-container { position: relative; height: 250px; }
+
+/* ===== 알림 카드 ===== */
+.alerts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+.alert-card { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; }
+.alert-card .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.alert-card .header .title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: #1f2937; }
+.alert-card .header .count { display: flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 8px; color: white; border-radius: 12px; font-size: 12px; font-weight: 600; }
+.alert-card .header .count.red  { background: #ef4444; }
+.alert-card .header .count.gray { background: #6b7280; }
+.alert-item { display: flex; align-items: flex-start; justify-content: space-between; padding: 12px; border: 1px solid #f3f4f6; border-radius: 6px; margin-bottom: 8px; }
+.alert-item:last-child { margin-bottom: 0; }
+.alert-item .info .name { font-size: 14px; font-weight: 500; color: #1f2937; margin-bottom: 2px; }
+.alert-item .info .detail { font-size: 13px; color: #6b7280; }
+.alert-item .info .reason { font-size: 12px; color: #ef4444; margin-top: 4px; }
+.alert-item .info .date { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+.alert-item .action { font-size: 13px; color: #374151; white-space: nowrap; }
+.empty-msg { font-size: 13px; color: #9ca3af; text-align: center; padding: 20px 0; }
+
+/* ===== 테이블 섹션 ===== */
+.table-section { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 24px; }
+.table-section .title { font-size: 16px; font-weight: 600; color: #1f2937; margin-bottom: 16px; }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th { padding: 12px 8px; text-align: left; font-weight: 500; color: #6b7280; font-size: 13px; border-bottom: 1px solid #e5e7eb; }
+.data-table td { padding: 14px 8px; font-size: 14px; color: #374151; border-bottom: 1px solid #f3f4f6; }
+.data-table tbody tr:hover { background: #f9fafb; }
+.data-table tbody tr:last-child td { border-bottom: none; }
+
+/* ===== 배지 ===== */
+.status-badge { display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+.status-badge.active { background: #d1fae5; color: #065f46; }
+.status-badge.closed { background: #f3f4f6; color: #6b7280; }
+.amount { font-weight: 600; color: #1f2937; }
+
+/* ===== 반응형 ===== */
+@media (max-width: 1200px) {
+  .stats-grid  { grid-template-columns: repeat(2, 1fr); }
+  .charts-grid { grid-template-columns: 1fr; }
+  .alerts-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  .stats-grid { grid-template-columns: 1fr; }
+}

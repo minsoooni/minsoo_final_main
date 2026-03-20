@@ -4,34 +4,59 @@
 <mapper namespace="com.spring.app.admin.model.AdminBannerDAO">
 
   <select id="selectBannerList" resultType="com.spring.app.admin.domain.AdminBannerDTO">
-    SELECT * FROM (
-        SELECT ROWNUM AS rn, a.* FROM (
-            SELECT b.BANNER_ID     AS bannerId,
-                   b.FK_MEMBERID   AS fkMemberId,
-                   b.TITLE         AS title,
-                   b.IMAGE_FILE_ID AS imageFileId,
-                   img.FILE_URL    AS imageFileUrl,
-                   b.START_AT      AS startAt,
-                   b.END_AT        AS endAt,
-                   b.STATUS        AS status,
-                   b.REJECT_REASON AS rejectReason,
-                   c.COMPANY_NAME  AS companyName,
-                   pt.created_at   AS createdAt
-            FROM TBL_BANNER b
-            LEFT JOIN TBL_COMPANY c ON b.FK_MEMBERID = c.FK_MEMBERID
-            LEFT JOIN TBL_IMAGE_FILE img ON img.FILE_ID = b.IMAGE_FILE_ID
-            LEFT JOIN (
-                SELECT FK_BANNER_ID, MIN(CREATED_AT) AS created_at
-                FROM TBL_POINT_TRANSACTION
-                GROUP BY FK_BANNER_ID
-            ) pt ON pt.FK_BANNER_ID = b.BANNER_ID
-            WHERE b.STATUS != '임시저장'
-            ORDER BY b.BANNER_ID DESC
-        ) a WHERE ROWNUM &lt;= #{offset} + #{limit}
-    ) WHERE rn > #{offset}
-  </select>
-
-  <select id="selectBannerCount" resultType="int">
+	  SELECT * FROM (
+	      SELECT ROWNUM AS rn, a.* FROM (
+	          SELECT b.BANNER_ID     AS bannerId,
+	                 b.FK_MEMBERID   AS fkMemberId,
+	                 b.TITLE         AS title,
+	                 b.IMAGE_FILE_ID AS imageFileId,
+	                 img.FILE_URL    AS imageFileUrl,
+	                 b.START_AT      AS startAt,
+	                 b.END_AT        AS endAt,
+	                 b.STATUS        AS status,
+	                 b.REJECT_REASON AS rejectReason,
+	                 c.COMPANY_NAME  AS companyName,
+	                 pt.created_at   AS createdAt
+	          FROM TBL_BANNER b
+	          LEFT JOIN TBL_COMPANY c ON b.FK_MEMBERID = c.FK_MEMBERID
+	          LEFT JOIN TBL_IMAGE_FILE img ON img.FILE_ID = b.IMAGE_FILE_ID
+	          LEFT JOIN (
+	              SELECT FK_BANNER_ID, MIN(CREATED_AT) AS created_at
+	              FROM TBL_POINT_TRANSACTION
+	              GROUP BY FK_BANNER_ID
+	          ) pt ON pt.FK_BANNER_ID = b.BANNER_ID
+	          WHERE b.STATUS != '임시저장'
+	          <choose>
+	            <when test="status != null and status != ''">
+	              AND b.STATUS = #{status}
+	            </when>
+	            <otherwise>
+	              AND b.STATUS != '마감'
+	              AND b.STATUS != '삭제됨'
+	            </otherwise>
+	          </choose>
+	          ORDER BY b.BANNER_ID DESC
+	      ) a WHERE ROWNUM &lt;= #{offset} + #{limit}
+	  ) WHERE rn > #{offset}
+	</select>
+	
+	<!-- 페이지네이션 테이블 기준 -->
+	<select id="selectBannerCount" resultType="int">
+	  SELECT COUNT(*) FROM TBL_BANNER
+	  WHERE STATUS != '임시저장'
+	  <choose>
+	    <when test="status != null and status != ''">
+	      AND STATUS = #{status}
+	    </when>
+	    <otherwise>
+	      AND STATUS != '마감'
+	      AND STATUS != '삭제됨'
+	    </otherwise>
+	  </choose>
+	</select>
+	
+	<!-- 전체 배너 수 (임시저장만 제외) -->
+  <select id="selectBannerTotalCount" resultType="int">
     SELECT COUNT(*) FROM TBL_BANNER
     WHERE STATUS != '임시저장'
   </select>

@@ -8,9 +8,11 @@ import java.util.List;
 @Mapper
 public interface AdminBannerDAO {
     // 배너 목록 조회 (페이징)
-    List<AdminBannerDTO> selectBannerList(@Param("offset") int offset, @Param("limit") int limit);
+	List<AdminBannerDTO> selectBannerList(@Param("offset") int offset, @Param("limit") int limit, @Param("status") String status);
     // 전체 건수
-    int selectBannerCount();
+	int selectBannerCount(@Param("status") String status);
+	// 전체 개수
+	int selectBannerTotalCount();
     // 승인
     int updateBannerApprove(@Param("bannerId") Long bannerId);
     // 거절 (사유 포함)
@@ -47,4 +49,6 @@ public interface AdminBannerDAO {
 
     // 환불용 - 지갑 ID 조회 (fkMemberId로)
     Long selectWalletIdByMemberId(@Param("fkMemberId") String fkMemberId);
+
+    
 }

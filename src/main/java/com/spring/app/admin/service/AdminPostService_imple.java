@@ -88,4 +88,11 @@ public class AdminPostService_imple implements AdminPostService {
         int offset = (page - 1) * limit;
         return adminPostDAO.selectDeletedPagedPosts(search, offset, limit);
     }
+
+ // 수정 ✅
+    @Override
+    public List<AdminCommentDTO> getDeletedPagedComments(String search, int page, int limit) {
+        int offset = (page - 1) * limit;
+        return adminPostDAO.selectDeletedPagedComments(search, offset, limit);
+    }
 }

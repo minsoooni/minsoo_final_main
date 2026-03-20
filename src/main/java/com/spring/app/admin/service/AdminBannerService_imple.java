@@ -18,14 +18,19 @@ public class AdminBannerService_imple implements AdminBannerService {
     private final NotificationDAO notificationDAO;
 
     @Override
-    public List<AdminBannerDTO> getBannerList(int page, int limit) {
+    public List<AdminBannerDTO> getBannerList(int page, int limit, String status) {
         int offset = (page - 1) * limit;
-        return bannerAdminDao.selectBannerList(offset, limit);
+        return bannerAdminDao.selectBannerList(offset, limit, status);
     }
 
     @Override
-    public int getBannerCount() {
-        return bannerAdminDao.selectBannerCount();
+    public int getBannerCount(String status) {
+        return bannerAdminDao.selectBannerCount(status);
+    }
+    
+    @Override
+    public int getBannerTotalCount() {
+        return bannerAdminDao.selectBannerTotalCount();
     }
 
     @Override

@@ -44,4 +44,9 @@ public interface AdminPostDAO {
 		    @Param("offset") int offset,
 		    @Param("limit") int limit
 		);
+	List<AdminCommentDTO> selectDeletedPagedComments(
+		    @Param("search") String search,
+		    @Param("offset") int offset,
+		    @Param("limit")  int limit
+		);
 }

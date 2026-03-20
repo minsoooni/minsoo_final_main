@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.spring.app.admin.domain.AdminBannerDTO;
+import com.spring.app.admin.domain.AdminCommentDTO;
 import com.spring.app.admin.domain.AdminCompanyDTO;
 import com.spring.app.admin.domain.AdminDashboardDTO;
 import com.spring.app.admin.domain.AdminJobPostDTO;
@@ -282,10 +283,12 @@ public class AdminController {
 	    model.addAttribute("totalPages",   totalPages);
 	    model.addAttribute("totalCount",   totalCount);
 	    model.addAttribute("activeCount",  adminJobPostService.getJobCountByStatus("active"));
+	    model.addAttribute("waitingCount", adminJobPostService.getJobCountByStatus("waiting"));
 	    model.addAttribute("hiddenCount",  adminJobPostService.getJobCountByStatus("hidden"));
 	    model.addAttribute("closedCount",  adminJobPostService.getJobCountByStatus("closed"));
 	    model.addAttribute("deletedCount",  adminJobPostService.getJobCountByStatus("deleted")); 
 	    model.addAttribute("tempCount",     adminJobPostService.getJobCountByStatus("temp"));
+	    
 	    
 	    return "admin/admin_job_posts";
 	}		
@@ -309,21 +312,26 @@ public class AdminController {
 	@GetMapping("/banners")
 	public String banners(@RequestParam(value="menu", defaultValue="banners") String menu,
 	                      @RequestParam(value="page", defaultValue="1") int page,
+	                      @RequestParam(value="status", required=false) String status,
 	                      Model model) {
 	    int limit = 10;
-	    List<AdminBannerDTO> banners = bannerAdminService.getBannerList(page, limit);
-	    int totalCount = bannerAdminService.getBannerCount();
+	    List<AdminBannerDTO> banners = bannerAdminService.getBannerList(page, limit, status);
+	    int totalCount = bannerAdminService.getBannerCount(status);
 	    int totalPages = (int) Math.ceil((double) totalCount / limit);
 	    if (totalPages == 0) totalPages = 1;
 
-	    model.addAttribute("activeMenu",     menu);
-	    model.addAttribute("banners",        banners);
-	    model.addAttribute("totalCount",     totalCount);
-	    model.addAttribute("pendingCount",   bannerAdminService.getBannerCountByStatus("처리중"));   // ← 수정
-	    model.addAttribute("activeCount",    bannerAdminService.getBannerCountByStatus("승인완료"));
-	    model.addAttribute("rejectedCount",  bannerAdminService.getBannerCountByStatus("반려"));
-	    model.addAttribute("currentPage",    page);
-	    model.addAttribute("totalPages",     totalPages);
+	    model.addAttribute("activeMenu",    menu);
+	    model.addAttribute("banners",       banners);
+	    model.addAttribute("totalCount",	bannerAdminService.getBannerTotalCount());
+	    model.addAttribute("pendingCount",  bannerAdminService.getBannerCountByStatus("처리중"));
+	    model.addAttribute("activeCount",   bannerAdminService.getBannerCountByStatus("승인완료"));
+	    model.addAttribute("rejectedCount", bannerAdminService.getBannerCountByStatus("반려"));
+	    model.addAttribute("stoppedCount",  bannerAdminService.getBannerCountByStatus("정지"));
+	    model.addAttribute("closedCount",   bannerAdminService.getBannerCountByStatus("마감"));
+	    model.addAttribute("deletedCount",  bannerAdminService.getBannerCountByStatus("삭제됨"));
+	    model.addAttribute("currentPage",   page);
+	    model.addAttribute("totalPages",    totalPages);
+	    model.addAttribute("currentStatus", status);
 
 	    return "admin/admin_banners";
 	}
@@ -604,12 +612,20 @@ public class AdminController {
 	    model.addAttribute("currentPage",  page);
 	    model.addAttribute("totalPages",   totalPages);
 
-	    // 댓글 (기존 유지)
-	    int commentTotal = adminPostService.getCommentCount(search, isHidden);
+	    int commentTotal;
+	    List<AdminCommentDTO> comments;
+	    if ("deleted".equals(status)) {
+	        commentTotal = adminPostService.getDeletedCommentCount();
+	        comments = adminPostService.getDeletedPagedComments(search, page, limit);
+	    } else {
+	        commentTotal = adminPostService.getCommentCount(search, isHidden);
+	        comments = adminPostService.getPagedComments(search, isHidden, page, limit);
+	    }
 	    int commentPages = (int) Math.ceil((double) commentTotal / limit);
 	    if (commentPages == 0) commentPages = 1;
-	    model.addAttribute("comments",      adminPostService.getPagedComments(search, isHidden, page, limit));
-	    model.addAttribute("commentTotal",  commentTotal);
+	    model.addAttribute("comments", comments);
+	    model.addAttribute("commentTotal", commentTotal);
+	    	    
 	    model.addAttribute("commentActive",  adminPostService.getActiveCommentCount());
 	    model.addAttribute("commentHidden",  adminPostService.getHiddenCommentCount());
 	    model.addAttribute("commentDeleted", adminPostService.getDeletedCommentCount());
