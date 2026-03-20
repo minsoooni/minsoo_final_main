@@ -180,6 +180,9 @@
 	    )
 	</select>
 	
+	<select id="getClosedJobCount" resultType="int">
+	    SELECT COUNT(*) FROM TBL_JOB_POSTING WHERE STATUS = '마감'
+	</select>
   
 
 </mapper>

@@ -29,5 +29,7 @@ public interface AdminJobPostDAO {
     int updateJobHidden(
     	    @Param("jobId") Long jobId,
     	    @Param("isHidden") Integer isHidden
-    );   
+    );
+
+	int countJobsExcludeClosedDeleted(String search);   
 }

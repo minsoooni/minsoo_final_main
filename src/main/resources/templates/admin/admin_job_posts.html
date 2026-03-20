@@ -100,7 +100,7 @@
         <div class="value yellow" th:text="${hiddenCount}">0</div>
       </div>
       <div class="stat-card">
-        <div class="label">마감 공고</div>
+        <div class="label">임시저장</div>
         <div class="value gray" th:text="${closedCount}">0</div>
       </div>
       <div class="stat-card">
@@ -108,8 +108,8 @@
         <div class="value" style="color:#ef4444;" th:text="${deletedCount}">0</div>
       </div>
       <div class="stat-card">
-        <div class="label">임시저장</div>
-        <div class="value" style="color:#6366f1;" th:text="${tempCount}">0</div>
+        <div class="label">마감 공고</div>
+        <div class="value" style="color:rgb(128, 0, 128);" th:text="${tempCount}">0</div>
       </div>
     </div>
 
@@ -123,15 +123,16 @@
         <option value="active"  th:selected="${param.status != null and param.status[0] == 'active'}">활성</option>
 		<option value="waiting"  th:selected="${param.status != null and param.status[0] == 'waiting'}">대기</option>
 		<option value="hidden"  th:selected="${param.status != null and param.status[0] == 'hidden'}">숨김</option>
+        <option value="temp"    th:selected="${param.status != null and param.status[0] == 'temp'}">임시저장</option>
         <option value="closed"  th:selected="${param.status != null and param.status[0] == 'closed'}">마감</option>
         <option value="deleted" th:selected="${param.status != null and param.status[0] == 'deleted'}">삭제됨</option>
-        <option value="temp"    th:selected="${param.status != null and param.status[0] == 'temp'}">임시저장</option>
+        
       </select>
     </div>
 
-	<p th:if="${param.status == null or param.status[0] != 'closed'}"
-	   style="font-size:12px; color:#9ca3af; margin-bottom:12px;">
-	  📌 마감 공고는 상태 필터에서 <strong>마감</strong> 선택 시 확인할 수 있습니다.
+	<p th:if="${param.status == null or (param.status[0] != 'closed' and param.status[0] != 'deleted')}"
+   		style="font-size:12px; color:#9ca3af; margin-bottom:12px;">
+	  📌 마감·삭제 공고는 상태 필터에서 해당 상태 선택 시 확인할 수 있습니다.
 	</p>
 	
     <!-- 테이블 -->
@@ -156,7 +157,8 @@
       </thead>
       <tbody>
 		<tr th:each="job : ${jobs}"
-		    th:if="${job.status != '마감' or (param.status != null and param.status[0] == 'closed')}">
+    		th:if="${(job.status != '마감' and job.status != '삭제됨') 
+             or (param.status != null and (param.status[0] == 'closed' or param.status[0] == 'deleted'))}">
           <td th:text="${job.jobId}"></td>
           <td><span class="company-name" th:text="${job.companyName} ?: '-'"></span></td>
           <td><span class="job-title" th:text="${job.title} ?: '-'"></span></td>
@@ -215,7 +217,7 @@
     <!-- 페이지바 -->
     <div class="table-footer">
       <span class="total-count">
-        총 <span th:text="${totalCount}"></span>개의 채용공고
+        총 <span th:text="${filteredCount}"></span>개의 채용공고
       </span>
       <div class="pagination">
         <a th:href="@{job-posts(page=1,search=${param.search},status=${param.status})}"

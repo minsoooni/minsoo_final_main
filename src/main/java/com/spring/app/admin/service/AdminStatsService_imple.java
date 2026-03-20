@@ -1,12 +1,12 @@
 package com.spring.app.admin.service;
 
-import com.spring.app.admin.domain.AdminBannerDTO;
-import com.spring.app.admin.model.AdminStatsDAO;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
+import com.spring.app.admin.model.AdminStatsDAO;
 
 @Service
 public class AdminStatsService_imple implements AdminStatsService {
@@ -111,5 +111,10 @@ public class AdminStatsService_imple implements AdminStatsService {
     public int getInactiveBoardCount() {
         return adminStatsDAO.getInactiveBoardCount();
     }
+
+	@Override
+	public int getClosedJobCount() {
+	    return adminStatsDAO.getClosedJobCount();
+	}
    
 }

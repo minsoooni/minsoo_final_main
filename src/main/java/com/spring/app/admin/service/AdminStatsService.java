@@ -42,4 +42,7 @@ public interface AdminStatsService {
     List<Map<String, Object>> getPostCountByBoard();
     int getInactiveBoardCount();
 
+    // 도넛 그래프 분류
+	int getClosedJobCount();
+
 }

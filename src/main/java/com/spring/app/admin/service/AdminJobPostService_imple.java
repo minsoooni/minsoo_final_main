@@ -40,5 +40,10 @@ public class AdminJobPostService_imple implements AdminJobPostService {
 
         return jobPostAdminDao.updateJobHidden(jobId, isHidden);
     }
+
+    @Override
+    public int getJobCountExcludeClosedDeleted(String search) {
+        return jobPostAdminDao.countJobsExcludeClosedDeleted(search);
+    }
 				
 }

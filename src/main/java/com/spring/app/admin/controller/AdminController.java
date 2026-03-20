@@ -43,7 +43,6 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/admin")
 public class AdminController {
 	//private final 
-	/* 확인용2 */
 	private final AdminCompanyService companyAdminService;
 	private final AdminMemberService memberAdminService;
 	private final AdminJobPostService adminJobPostService;
@@ -273,8 +272,12 @@ public class AdminController {
 	    int limit = 10;
 
 	    List<AdminJobPostDTO> jobs = adminJobPostService.getPagedJobs(search, status, page, limit);
-	    int totalCount = adminJobPostService.getJobCount(search, status);
-	    int totalPages = (int) Math.ceil((double) totalCount / limit);
+	    int totalCount = adminJobPostService.getJobCount(search, status);  // 상단 카드용 (전체 28)
+	    int filteredCount = (status == null || status.isEmpty()) 
+	        ? adminJobPostService.getJobCountExcludeClosedDeleted(search)  // 전체 탭: 마감·삭제 제외
+	        : totalCount;
+	    int totalPages = (int) Math.ceil((double) filteredCount / limit);
+	    
 	    if (totalPages == 0) totalPages = 1;
 
 	    model.addAttribute("activeMenu",   menu);
@@ -282,6 +285,7 @@ public class AdminController {
 	    model.addAttribute("currentPage",  page);
 	    model.addAttribute("totalPages",   totalPages);
 	    model.addAttribute("totalCount",   totalCount);
+	    model.addAttribute("filteredCount", filteredCount);
 	    model.addAttribute("activeCount",  adminJobPostService.getJobCountByStatus("active"));
 	    model.addAttribute("waitingCount", adminJobPostService.getJobCountByStatus("waiting"));
 	    model.addAttribute("hiddenCount",  adminJobPostService.getJobCountByStatus("hidden"));
@@ -408,8 +412,9 @@ public class AdminController {
 	 // 수정
 	    model.addAttribute("jobCountActive",  adminStatsService.getJobCountByStatus(0));  // 활성
 	    model.addAttribute("jobCountHidden",  adminStatsService.getJobCountByStatus(1));  // 숨김
-	    model.addAttribute("jobCountClosed",  adminStatsService.getJobCountByStatus(2));  // 마감
 	   
+	    model.addAttribute("jobCountClosed", adminStatsService.getClosedJobCount());
+	    
 	    model.addAttribute("dailyJobReg",        adminStatsService.getDailyJobRegLast30());
 	    model.addAttribute("dailyJobClosed",     adminStatsService.getDailyJobClosedLast30());
 
@@ -578,9 +583,9 @@ public class AdminController {
 
 	    int limit = 10;
 
-	    // 삭제됨 필터일 때는 POST_STATUS='DELETED' 기준으로 별도 조회
 	    List<AdminPostDTO> posts;
 	    int filteredCount;
+
 	    if ("deleted".equals(status)) {
 	        posts = adminPostService.getDeletedPagedPosts(search, page, limit);
 	        filteredCount = adminPostService.getDeletedPostCount();
@@ -589,7 +594,18 @@ public class AdminController {
 	        filteredCount = adminPostService.getPostCount(search, isHidden);
 	    }
 
-	    int totalPages = (int) Math.ceil((double) filteredCount / limit);
+	 // 변경
+	    int displayCount;
+	    if ("deleted".equals(status)) {
+	        displayCount = filteredCount;
+	    } else if (status == null || status.isEmpty()) {
+	        displayCount = adminPostService.getPostCount(search, null); 
+	    } else {
+	        // 활성/숨김 개별 필터: filteredCount 그대로
+	        displayCount = filteredCount;
+	    }
+
+	    int totalPages = (int) Math.ceil((double) displayCount / limit);
 	    if (totalPages == 0) totalPages = 1;
 
 	    model.addAttribute("activeMenu",   menu);
@@ -599,13 +615,12 @@ public class AdminController {
 	        adminPostService.getHiddenCommentCount() +
 	        adminPostService.getDeletedCommentCount()
 	    );
-	    
 	    model.addAttribute("totalCount",
-	    	    adminPostService.getActivePostCount() +
-	    	    adminPostService.getHiddenPostCount() +
-	    	    adminPostService.getDeletedPostCount()
-	    	);
-	    
+	        adminPostService.getActivePostCount() +
+	        adminPostService.getHiddenPostCount() +
+	        adminPostService.getDeletedPostCount()
+	    );
+	    model.addAttribute("filteredCount", displayCount);
 	    model.addAttribute("activeCount",  adminPostService.getActivePostCount());
 	    model.addAttribute("hiddenCount",  adminPostService.getHiddenPostCount());
 	    model.addAttribute("deletedCount", adminPostService.getDeletedPostCount());
@@ -613,23 +628,34 @@ public class AdminController {
 	    model.addAttribute("totalPages",   totalPages);
 
 	    int commentTotal;
+	    int commentDisplayCount;
 	    List<AdminCommentDTO> comments;
 	    if ("deleted".equals(status)) {
 	        commentTotal = adminPostService.getDeletedCommentCount();
+	        commentDisplayCount = commentTotal;
 	        comments = adminPostService.getDeletedPagedComments(search, page, limit);
 	    } else {
 	        commentTotal = adminPostService.getCommentCount(search, isHidden);
 	        comments = adminPostService.getPagedComments(search, isHidden, page, limit);
+	        
+	        if (status == null || status.isEmpty()) {
+	            // 전체 탭: 삭제됨 제외
+	        	commentDisplayCount = adminPostService.getCommentCount(search, null);
+	        } else {
+	            // 활성/숨김 개별 필터: 그대로
+	            commentDisplayCount = commentTotal;
+	        }
 	    }
-	    int commentPages = (int) Math.ceil((double) commentTotal / limit);
+	    int commentPages = (int) Math.ceil((double) commentDisplayCount / limit);
 	    if (commentPages == 0) commentPages = 1;
-	    model.addAttribute("comments", comments);
-	    model.addAttribute("commentTotal", commentTotal);
-	    	    
+	    
+	    model.addAttribute("commentDisplayCount", commentDisplayCount);
+	    model.addAttribute("comments",       comments);
+	    model.addAttribute("commentTotal",   commentTotal);
 	    model.addAttribute("commentActive",  adminPostService.getActiveCommentCount());
 	    model.addAttribute("commentHidden",  adminPostService.getHiddenCommentCount());
 	    model.addAttribute("commentDeleted", adminPostService.getDeletedCommentCount());
-	    model.addAttribute("commentPages",  commentPages);
+	    model.addAttribute("commentPages",   commentPages);
 
 	    return "admin/admin_posts";
 	}

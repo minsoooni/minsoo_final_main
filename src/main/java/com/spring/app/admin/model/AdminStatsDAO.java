@@ -65,6 +65,9 @@ public interface AdminStatsDAO {
 
     // 게시판별 게시글 수 (FK_BOARD_ID 기준)
     int getInactiveBoardCount();
+
+    // 도넛 그래프 분류
+	int getClosedJobCount();
    
 
 

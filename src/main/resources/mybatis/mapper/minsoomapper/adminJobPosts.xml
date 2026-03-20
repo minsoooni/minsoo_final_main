@@ -156,5 +156,19 @@
     WHERE JOB_ID = #{jobId}
   </update>
   
-
+  <!-- 전체 탭용 건수 (마감·삭제됨 제외) -->
+	<select id="countJobsExcludeClosedDeleted" resultType="int">
+	  SELECT COUNT(*)
+	  FROM TBL_JOB_POSTING j
+	  JOIN TBL_MEMBER m ON j.FK_MEMBERID = m.MEMBERID
+	  JOIN TBL_COMPANY c ON m.MEMBERID = c.FK_MEMBERID
+	  WHERE j.STATUS NOT IN ('마감', '삭제됨')
+	  <if test="search != null and search != ''">
+	      AND (
+	          c.COMPANY_NAME LIKE '%' || #{search} || '%'
+	          OR j.TITLE LIKE '%' || #{search} || '%'
+	      )
+	  </if>
+	</select>
+  
 </mapper>

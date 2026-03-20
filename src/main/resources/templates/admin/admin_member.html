@@ -134,8 +134,8 @@
                 <option value="" th:selected="${param.status == null or param.status == ''}">전체 상태</option>
                 <option value="0" th:selected="${param.status != null and param.status[0] == '0'}">정지</option>
                 <option value="1" th:selected="${param.status != null and param.status[0] == '1'}">활성</option>
-                  <option value="2" th:selected="${param.status != null and param.status[0] == '2'}">탈퇴</option> -->
-                 <option value="2" th:selected="${param.status != null and param.status[0] == '3'}">휴면</option>  -->
+                  <option value="2" th:selected="${param.status != null and param.status[0] == '2'}">탈퇴</option> 
+                 <option value="3" th:selected="${param.status != null and param.status[0] == '3'}">휴면</option>  
             </select>
         </div>
 

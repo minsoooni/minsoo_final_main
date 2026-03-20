@@ -106,10 +106,13 @@
         <option value="deleted"  th:selected="${param.status != null and param.status[0] == 'deleted'}">삭제됨</option>
       </select>
     </div>
-
+ 
     <!-- 3. 게시글 탭 -->
     <div id="postTab">
-
+		<p th:if="${param.status == null or param.status[0] != 'deleted'}"
+	  	 style="font-size:12px; color:#9ca3af; margin-bottom:12px;">
+		  📌 삭제된 게시글은 상태 필터에서 <strong>삭제됨</strong> 선택 시 확인할 수 있습니다.
+		</p>
       <!-- 통계: 4열 (삭제됨 추가) -->
       <div class="stats-grid">
         <div class="stat-card">
@@ -144,7 +147,9 @@
         </thead>
         <tbody>
          <tr th:each="post : ${posts}"
-    		th:classappend="${post.postStatus == 'DELETED'} ? 'deleted-row'">
+		    th:if="${post.postStatus != 'DELETED' or (param.status != null and param.status[0] == 'deleted')}"
+		    th:classappend="${post.postStatus == 'DELETED'} ? 'deleted-row'">
+
             <td th:text="${post.postId}"></td>
             <td th:text="${post.memberId}"></td>
             <td th:text="${post.title} ?: '-'"></td>
@@ -183,7 +188,7 @@
       </table>
 
       <div class="table-footer">
-        <span class="total-count">총 <span th:text="${totalCount}"></span>개의 게시글</span>
+        <span class="total-count">총 <span th:text="${filteredCount}"></span>개의 게시글</span>
         <div class="pagination">
           <a th:href="@{posts(page=1,search=${param.search},status=${param.status})}"
              th:classappend="${currentPage == 1} ? 'disabled'">«</a>
@@ -203,13 +208,16 @@
 
     <!-- 4. 댓글 탭 -->
     <div id="commentTab" style="display:none;">
-
+		<p th:if="${param.status == null or param.status[0] != 'deleted'}"
+	  	 style="font-size:12px; color:#9ca3af; margin-bottom:12px;">
+		  📌 삭제된 댓글은 상태 필터에서 <strong>삭제됨</strong> 선택 시 확인할 수 있습니다.
+		</p>
       <!-- 통계: 4열 (삭제됨 추가) -->
       <div class="stats-grid">
         <div class="stat-card">
-          <div class="label">총 댓글</div>
-          <div class="value" th:text="${commentTotal}">0</div>
-        </div>
+		  <div class="label">총 댓글</div>
+		  <div class="value" th:text="${commentActive + commentHidden + commentDeleted}">0</div>
+		</div>
         <div class="stat-card">
           <div class="label">활성</div>
           <div class="value green" th:text="${commentActive}">0</div>
@@ -237,8 +245,9 @@
           </tr>
         </thead>
         <tbody>
-          <tr th:each="comment : ${comments}"
-              th:classappend="${comment.status == 'DELETED'} ? 'deleted-row'">
+         <tr th:each="comment : ${comments}"
+		    th:if="${comment.status != 'DELETED' or (param.status != null and param.status[0] == 'deleted')}"
+		    th:classappend="${comment.status == 'DELETED'} ? 'deleted-row'">
             <td th:text="${comment.commentId}"></td>
             <td th:text="${comment.memberId}"></td>
             <td th:text="${comment.content} ?: '-'"></td>
@@ -277,7 +286,7 @@
       </table>
 
       <div class="table-footer">
-        <span class="total-count">총 <span th:text="${commentTotal}"></span>개의 댓글</span>
+        <span class="total-count">총 <span th:text="${commentDisplayCount}"></span>개의 댓글</span>
         <div class="pagination">
           <a th:href="@{posts(tab='comment',page=1,search=${param.search},status=${param.status})}"
              th:classappend="${currentPage == 1} ? 'disabled'">«</a>
