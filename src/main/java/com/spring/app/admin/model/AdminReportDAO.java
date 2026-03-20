@@ -32,5 +32,9 @@ public interface AdminReportDAO {
         @Param("reason") String reason
     );
 
-    AdminReportDTO selectReportById(@Param("reportId") Long reportId); 
+    int updatePostHidden(@Param("postId") Long targetId);
+    int updateCommentHidden(@Param("commentId") Long targetId);
+    int updateJobHidden(@Param("jobId") Long targetId);
+
+    AdminReportDTO selectReportById(@Param("reportId") Long reportId);
 }

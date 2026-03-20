@@ -16,6 +16,5 @@ public interface AdminJobPostService {
 
     // 상태 변경
 	int updateJobHidden(Long jobId, Integer isHidden);
-
-	void updateExpiredJobsClosed();
+	
 }

@@ -7,5 +7,5 @@ public interface AdminReportService {
     List<AdminReportDTO> getPagedReports(String search, String type, String reason, String status, int page, int limit);
     int getReportCount(String search, String type, String reason, String status);
     int getReportCountByType(int type);
-	int updateProcessStatus(Long reportId, String status, String reason);
+	int updateProcessStatus(Long reportId, String status, String reason);	
 }

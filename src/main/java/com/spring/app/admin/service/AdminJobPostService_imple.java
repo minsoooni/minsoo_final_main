@@ -40,10 +40,5 @@ public class AdminJobPostService_imple implements AdminJobPostService {
 
         return jobPostAdminDao.updateJobHidden(jobId, isHidden);
     }
-	
-	@Transactional
-	@Override
-	public void updateExpiredJobsClosed() {
-	    jobPostAdminDao.updateExpiredJobsClosed();
-	}
+				
 }

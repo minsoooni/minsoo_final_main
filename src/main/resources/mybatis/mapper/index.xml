@@ -85,7 +85,31 @@
     )
     WHERE ROWNUM &lt;= 4
   </select>
-	
+
+  <select id="selectMainBannerList" resultType="map">
+    SELECT
+        b.banner_id         AS "bannerId",
+        b.fk_memberid       AS "fkMemberId",
+        b.fk_job_id         AS "fkJobId",
+        b.title             AS "title",
+        b.image_file_id     AS "imageFileId",
+        TO_CHAR(b.start_at, 'YYYY-MM-DD') AS "startAt",
+        TO_CHAR(b.end_at,   'YYYY-MM-DD') AS "endAt",
+        b.status            AS "status",
+        f.file_url          AS "fileUrl",
+        f.original_filename AS "originalFilename",
+        j.title             AS "jobTitle"
+    FROM tbl_banner b
+    JOIN tbl_job_posting j
+      ON j.job_id = b.fk_job_id
+    LEFT JOIN tbl_image_file f
+      ON f.file_id = b.image_file_id
+    WHERE b.status = '승인완료'
+      AND b.image_file_id IS NOT NULL
+      AND TRUNC(SYSDATE) BETWEEN TRUNC(b.start_at) AND TRUNC(b.end_at)
+    ORDER BY b.created_at DESC, b.banner_id DESC
+</select>
+
 </mapper>
 
 

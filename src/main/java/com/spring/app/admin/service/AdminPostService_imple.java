@@ -24,7 +24,6 @@ public class AdminPostService_imple implements AdminPostService {
         return adminPostDAO.selectPostCount(search, isHidden);
     }
 
-    @Override
     public int getPostCountByHidden(int isHidden) {
         return adminPostDAO.selectPostCountByHidden(isHidden);
     }
@@ -45,7 +44,6 @@ public class AdminPostService_imple implements AdminPostService {
         return adminPostDAO.selectCommentCount(search, isHidden);
     }
 
-    @Override
     public int getCommentCountByHidden(int isHidden) {
         return adminPostDAO.selectCommentCountByHidden(isHidden);
     }
@@ -53,5 +51,41 @@ public class AdminPostService_imple implements AdminPostService {
     @Override
     public int updateCommentHidden(Long commentId, int isHidden) {
         return adminPostDAO.updateCommentHidden(commentId, isHidden);
+    }
+
+    @Override
+    public int getActivePostCount() {
+        return adminPostDAO.selectPostCountByHidden(0);
+    }
+
+    @Override
+    public int getHiddenPostCount() {
+        return adminPostDAO.selectPostCountByHidden(1);
+    }
+
+    @Override
+    public int getDeletedPostCount() {
+        return adminPostDAO.selectDeletedPostCount();
+    }
+
+    @Override
+    public int getActiveCommentCount() {
+        return adminPostDAO.selectCommentCountByHidden(0);
+    }
+
+    @Override
+    public int getHiddenCommentCount() {
+        return adminPostDAO.selectCommentCountByHidden(1);
+    }
+
+    @Override
+    public int getDeletedCommentCount() {
+        return adminPostDAO.selectDeletedCommentCount();
+    }
+    
+    @Override
+    public List<AdminPostDTO> getDeletedPagedPosts(String search, int page, int limit) {
+        int offset = (page - 1) * limit;
+        return adminPostDAO.selectDeletedPagedPosts(search, offset, limit);
     }
 }
