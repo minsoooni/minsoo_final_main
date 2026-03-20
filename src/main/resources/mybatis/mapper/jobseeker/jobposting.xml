@@ -347,7 +347,7 @@
 
 
 
-    <!-- ======= 인기 채용공고 조회 (지원자수 많은순 → 조회수순 → 최신순, 3건) ======= -->
+    <!-- ======= 인기 채용공고 조회 (지원자수 많은순 → 조회수순 → 최신순, n건) ======= -->
     <select id="selectPopularJobPostings"
             resultType="com.spring.app.jobseeker.domain.JobPostingListDTO">
         SELECT * FROM (
@@ -397,7 +397,7 @@
               AND (JP.deadline_type = 'always' OR JP.deadline_at >= TRUNC(SYSDATE))
             ORDER BY applyCount DESC, JP.view_count DESC, JP.created_at DESC
         )
-        WHERE ROWNUM &lt;= 3
+        WHERE ROWNUM &lt;= #{limit}
     </select>
 
 

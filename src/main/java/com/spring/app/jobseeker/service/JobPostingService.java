@@ -19,8 +19,8 @@ public interface JobPostingService {
     // 추천 채용공고 조회 (대표이력서 기반)
     List<JobPostingListDTO> getRecommendedJobPostings(String memberId);
 
-    // 인기 채용공고 조회 (조회수 높은순 3건)
-    List<JobPostingListDTO> getPopularJobPostings();
+    // 인기 채용공고 조회 (조회수 높은순 n건)
+    List<JobPostingListDTO> getPopularJobPostings(int limit);
 
     // 대표이력서 존재 여부 확인
     boolean hasPrimaryResume(String memberId);

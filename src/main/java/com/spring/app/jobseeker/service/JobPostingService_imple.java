@@ -75,10 +75,10 @@ public class JobPostingService_imple implements JobPostingService {
         return list;
     }
 
-    // 인기 채용공고 조회 (조회수 높은순 3건)
+    // 인기 채용공고 조회 (조회수 높은순 n건)
     @Override
-    public List<JobPostingListDTO> getPopularJobPostings() {
-        List<JobPostingListDTO> list = jobPostingDAO.selectPopularJobPostings();
+    public List<JobPostingListDTO> getPopularJobPostings(int limit) {
+        List<JobPostingListDTO> list = jobPostingDAO.selectPopularJobPostings(limit);
         for (JobPostingListDTO dto : list) {
             convertSkillNames(dto);
         }

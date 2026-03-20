@@ -168,9 +168,9 @@
             <div class="d-flex justify-content-between align-items-start">
                 <div>
                     <span class="detail-item-title" th:text="${edu.schoolname}">학교명</span>
-                    <span class="detail-badge badge-graduated" th:if="${edu.status == 0}">졸업</span>
-                    <span class="detail-badge badge-enrolled" th:if="${edu.status == 1}">재학</span>
-                    <span class="detail-badge badge-dropped" th:if="${edu.status == 2}">중퇴</span>
+                    <span class="detail-badge badge-graduated" th:if="${edu.status == '0'}">졸업</span>
+                    <span class="detail-badge badge-enrolled" th:if="${edu.status == '1'}">재학</span>
+                    <span class="detail-badge badge-dropped" th:if="${edu.status == '2'}">중퇴</span>
                     <div class="detail-item-sub">
                         <span th:if="${edu.educationLevelName != null}" th:text="${edu.educationLevelName}">학력수준</span>
                         <span th:if="${edu.major != null and !#strings.isEmpty(edu.major)}"> · <span th:text="${edu.major}">전공</span></span>
@@ -179,7 +179,7 @@
                 <span class="detail-period" th:if="${edu.enrolldate != null}">
                     <span th:text="${edu.enrolldate}"></span>
                     <span th:if="${edu.graduationdate != null}"> ~ <span th:text="${edu.graduationdate}"></span></span>
-                    <span th:if="${edu.graduationdate == null and edu.status == 1}"> ~ 현재</span>
+                    <span th:if="${edu.graduationdate == null and edu.status == '1'}"> ~ 현재</span>
                 </span>
             </div>
         </div>
