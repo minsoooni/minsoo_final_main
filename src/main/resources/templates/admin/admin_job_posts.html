@@ -101,7 +101,7 @@
       </div>
       <div class="stat-card">
         <div class="label">임시저장</div>
-        <div class="value gray" th:text="${closedCount}">0</div>
+        <div class="value gray" th:text="${tempCount}">0</div>
       </div>
       <div class="stat-card">
         <div class="label">삭제 공고</div>
@@ -109,7 +109,7 @@
       </div>
       <div class="stat-card">
         <div class="label">마감 공고</div>
-        <div class="value" style="color:rgb(128, 0, 128);" th:text="${tempCount}">0</div>
+        <div class="value" style="color:rgb(128, 0, 128);" th:text="${closedCount}">0</div>
       </div>
     </div>
 
@@ -123,9 +123,9 @@
         <option value="active"  th:selected="${param.status != null and param.status[0] == 'active'}">활성</option>
 		<option value="waiting"  th:selected="${param.status != null and param.status[0] == 'waiting'}">대기</option>
 		<option value="hidden"  th:selected="${param.status != null and param.status[0] == 'hidden'}">숨김</option>
-        <option value="temp"    th:selected="${param.status != null and param.status[0] == 'temp'}">임시저장</option>
-        <option value="closed"  th:selected="${param.status != null and param.status[0] == 'closed'}">마감</option>
+        <option value="temp"    th:selected="${param.status != null and param.status[0] == 'temp'}">임시저장</option>   
         <option value="deleted" th:selected="${param.status != null and param.status[0] == 'deleted'}">삭제됨</option>
+        <option value="closed"  th:selected="${param.status != null and param.status[0] == 'closed'}">마감</option>
         
       </select>
     </div>
@@ -156,9 +156,7 @@
         </tr>
       </thead>
       <tbody>
-		<tr th:each="job : ${jobs}"
-    		th:if="${(job.status != '마감' and job.status != '삭제됨') 
-             or (param.status != null and (param.status[0] == 'closed' or param.status[0] == 'deleted'))}">
+		<tr th:each="job : ${jobs}">   		
           <td th:text="${job.jobId}"></td>
           <td><span class="company-name" th:text="${job.companyName} ?: '-'"></span></td>
           <td><span class="job-title" th:text="${job.title} ?: '-'"></span></td>

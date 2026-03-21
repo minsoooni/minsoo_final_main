@@ -13,22 +13,35 @@
 	    )
 	</insert>
 	
-		<select id="selectNotificationsByMemberId" parameterType="String" resultType="com.spring.app.notification.domain.NotificationDTO">
-        SELECT *
-        FROM (
-            SELECT
-                NOTI_ID AS notiId,
-                FK_MEMBERID AS fkMemberId,
-                TITLE AS title,
-                MESSAGE AS message,
-                LINK_URL AS linkUrl,
-                IS_READ AS isRead
-            FROM TBL_NOTIFICATION
-            WHERE FK_MEMBERID = #{fkMemberId}
-            ORDER BY NOTI_ID DESC
-        )
-        WHERE ROWNUM &lt;= 10
-    </select>
+	<select id="selectNotificationsByMemberId" parameterType="String" resultType="com.spring.app.notification.domain.NotificationDTO">
+	    SELECT notiId, fkMemberId, title, message, linkUrl, isRead FROM (
+	        SELECT
+	            NOTI_ID AS notiId,
+	            FK_MEMBERID AS fkMemberId,
+	            TITLE AS title,
+	            MESSAGE AS message,
+	            LINK_URL AS linkUrl,
+	            IS_READ AS isRead
+	        FROM TBL_NOTIFICATION
+	        WHERE FK_MEMBERID = #{fkMemberId} AND IS_READ = 0
+	
+	        UNION ALL
+	
+	        SELECT * FROM (
+	            SELECT
+	                NOTI_ID AS notiId,
+	                FK_MEMBERID AS fkMemberId,
+	                TITLE AS title,
+	                MESSAGE AS message,
+	                LINK_URL AS linkUrl,
+	                IS_READ AS isRead
+	            FROM TBL_NOTIFICATION
+	            WHERE FK_MEMBERID = #{fkMemberId} AND IS_READ = 1
+	            ORDER BY NOTI_ID DESC
+	        ) WHERE ROWNUM &lt;= 5
+	    )
+	    ORDER BY isRead ASC, notiId DESC
+	</select>
     
     <select id="countUnreadNotifications" parameterType="String" resultType="int">
         SELECT COUNT(*)

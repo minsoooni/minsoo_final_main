@@ -146,7 +146,7 @@
     <div class="summary-card"><div class="s-label">승인 대기</div><div class="s-value yellow"                   th:text="${pendingCount}">0</div></div>
     <div class="summary-card"><div class="s-label">승인 완료</div><div class="s-value green"                    th:text="${activeCount}">0</div></div>
     <div class="summary-card"><div class="s-label">반려</div>     <div class="s-value red"                      th:text="${rejectedCount}">0</div></div>
-    <div class="summary-card"><div class="s-label">정지</div>     <div class="s-value" style="color:#f59e0b;"   th:text="${stoppedCount}">0</div></div>
+    <div class="summary-card"><div class="s-label">정지</div>     <div class="s-value" style="color:rgb(128, 0, 128);"   th:text="${stoppedCount}">0</div></div>
     <div class="summary-card"><div class="s-label">마감</div>     <div class="s-value" style="color:#6b7280;"   th:text="${closedCount}">0</div></div>
 	<div class="summary-card"><div class="s-label">삭제됨</div>   <div class="s-value" style="color:#ef4444;"  th:text="${deletedCount}">0</div></div>  <!-- 추가 -->
 	</div>
@@ -176,7 +176,10 @@
     </div>
 
     <div class="banner-list">
-
+	<p th:if="${currentStatus == null}"
+	   style="font-size:12px; color:#9ca3af; margin:8px 0 12px;">
+	  📌 마감·삭제 배너는 해당 탭 선택 시 확인할 수 있습니다.
+	</p>
       <div th:if="${#lists.isEmpty(banners)}" class="empty-state">
         등록된 배너 신청이 없습니다.
       </div>
@@ -256,7 +259,7 @@
     <!-- 페이지바 -->
     <div class="table-footer">
       <span class="total-count">
-        총 <span th:text="${totalCount}"></span>개의 배너
+        총 <span th:text="${filteredCount}"></span>개의 배너
       </span>
       <div class="pagination">
         <a th:href="@{banners(page=1, status=${currentStatus})}"

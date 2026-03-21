@@ -4,10 +4,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -35,6 +37,7 @@ import com.spring.app.admin.service.AdminPostService;
 import com.spring.app.admin.service.AdminReportService;
 import com.spring.app.admin.service.AdminStatisticsservice;
 import com.spring.app.admin.service.AdminStatsService;
+import com.spring.app.notification.service.NotificationService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -53,6 +56,7 @@ public class AdminController {
 	private final AdminStatsService adminStatsService;
 	private final AdminStatisticsservice adminStatisticsservice;
 	private final AdminDashboardService adminDashboardService;
+	private final NotificationService notificationService;
 	
 	/*
 	@GetMapping("/dashboard")
@@ -327,6 +331,7 @@ public class AdminController {
 	    model.addAttribute("activeMenu",    menu);
 	    model.addAttribute("banners",       banners);
 	    model.addAttribute("totalCount",	bannerAdminService.getBannerTotalCount());
+	    model.addAttribute("filteredCount", bannerAdminService.getBannerCount(status));
 	    model.addAttribute("pendingCount",  bannerAdminService.getBannerCountByStatus("처리중"));
 	    model.addAttribute("activeCount",   bannerAdminService.getBannerCountByStatus("승인완료"));
 	    model.addAttribute("rejectedCount", bannerAdminService.getBannerCountByStatus("반려"));
@@ -678,6 +683,17 @@ public class AdminController {
 
 	    int result = adminPostService.updateCommentHidden(commentId, body.get("isHidden"));
 	    return result > 0 ? ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
+	}
+	
+	@ModelAttribute
+	public void addNotifications(Authentication authentication, Model model) {
+	    if (authentication == null || authentication.getName() == null) return;
+	    
+	    String memberId = authentication.getName();
+	    if (memberId.equals("anonymousUser")) return;
+	    
+	    model.addAttribute("notificationList", notificationService.getMyNotifications(memberId));
+	    model.addAttribute("unreadNotificationCount", notificationService.getUnreadNotificationCount(memberId));
 	}
 }
 	

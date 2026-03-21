@@ -57,9 +57,11 @@
 	
 	<!-- 전체 배너 수 (임시저장만 제외) -->
   <select id="selectBannerTotalCount" resultType="int">
-    SELECT COUNT(*) FROM TBL_BANNER
-    WHERE STATUS != '임시저장'
-  </select>
+	  SELECT COUNT(*) FROM TBL_BANNER
+	  WHERE STATUS != '임시저장'
+	  AND STATUS != '마감'
+	  AND STATUS != '삭제됨'
+	</select>
 
   <update id="updateBannerApprove">
     UPDATE TBL_BANNER SET STATUS = '승인완료' WHERE BANNER_ID = #{bannerId}

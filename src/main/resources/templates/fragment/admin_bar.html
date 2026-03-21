@@ -2,6 +2,47 @@
 <div xmlns:th="http://www.thymeleaf.org"
      th:fragment="admin_layout(content)"
      class="admin-wrapper">
+     
+     <script>
+  const adminGatewayOrigin = window.location.origin;
+  const adminUserServiceBase = adminGatewayOrigin + '/user-service';
+  const adminBoardServiceBase = adminGatewayOrigin + '/board-service';
+
+  function adminMoveAfterRead(event, notiId, url) {
+    event.preventDefault();
+
+    fetch(adminUserServiceBase + '/notification/api/read/' + notiId, {
+      method: 'POST',
+      credentials: 'include'
+    })
+    .catch(() => {})
+    .finally(() => {
+      const badge = document.getElementById("adminNotificationBadge");
+      if (badge) {
+        let count = parseInt(badge.innerText || "0");
+        if (count > 1) {
+          badge.innerText = count - 1;
+        } else {
+          badge.style.display = "none";
+        }
+      }
+
+      if (!url || url.trim() === '') return false;
+
+      if (url.startsWith('/board-service/')) {
+        window.location.href = adminGatewayOrigin + url;
+      } else if (url.startsWith('/user-service/')) {
+        window.location.href = adminGatewayOrigin + url;
+      } else if (url.startsWith('/community')) {
+        window.location.href = adminBoardServiceBase + url;
+      } else {
+        window.location.href = adminUserServiceBase + url;
+      }
+    });
+
+    return false;
+  }
+</script>
 
   <!-- 상단 -->
   <header class="admin-topbar">
@@ -23,6 +64,36 @@
     </div>
 
     <div class="topbar-right">
+    <div class="admin-noti dropdown" th:if="${notificationList != null}">
+        <button class="admin-noti-btn dropdown-toggle"
+	                type="button"
+	                id="adminNotificationDropdown"
+	                data-toggle="dropdown"
+	                aria-haspopup="true"
+	                aria-expanded="false">
+	            <i class="fa-regular fa-bell"></i>
+	            <span class="admin-noti-badge"
+	                  id="adminNotificationBadge"
+	                  th:if="${unreadNotificationCount > 0}"
+	                  th:text="${unreadNotificationCount}">0</span>
+	        </button>
+	        <div class="dropdown-menu dropdown-menu-right admin-noti-menu"
+	             aria-labelledby="adminNotificationDropdown">
+	            <div class="admin-noti-head">알림</div>
+	            <div th:if="${#lists.isEmpty(notificationList)}" class="admin-noti-empty">
+	                알림이 없습니다.
+	            </div>
+	            <a th:each="noti : ${notificationList}"
+	               href="javascript:void(0)"
+	               th:attr="data-noti-id=${noti.notiId}, data-url=${noti.linkUrl}"
+	               onclick="return adminMoveAfterRead(event, this.dataset.notiId, this.dataset.url)"
+	               th:class="'dropdown-item admin-noti-item ' + (${noti.isRead} == 1 ? 'is-read' : '')">
+	                <div class="admin-noti-title" th:text="${noti.title}">알림 제목</div>
+	                <div class="admin-noti-message" th:text="${noti.message}">알림 내용</div>
+	            </a>
+	        </div>
+	    </div>
+    
       <div class="profile">
         <div class="topbar-avatar"
              th:text="${adminInitial != null ? adminInitial : 'A'}">A</div>

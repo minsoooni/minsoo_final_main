@@ -35,13 +35,17 @@
         JOIN TBL_COMPANY c ON m.MEMBERID = c.FK_MEMBERID
         LEFT JOIN TBL_JOB_CATEGORY jc ON j.FK_CATEGORY_ID = jc.CATEGORY_ID
         <where>
+	        <if test="status == null or status == ''">
+		        AND j.STATUS NOT IN ('마감', '삭제됨')
+		    </if>	
+        
             <if test="search != null and search != ''">
                 AND (
                     c.COMPANY_NAME LIKE '%' || #{search} || '%'
                     OR j.TITLE LIKE '%' || #{search} || '%'
                 )
             </if>
-            <if test="status != null and status != ''">
+            <if test="status != null and status != ''">           
                 <choose>
                     <when test="status == 'closed'">
                         AND j.STATUS = '마감'
