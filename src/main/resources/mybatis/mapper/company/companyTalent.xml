@@ -47,88 +47,9 @@
 	
 	
 	
-	<!-- 목록 조회용 -->
-	<select id="selectPublicPrimaryResumeList"
-	        parameterType="com.spring.app.company.domain.TalentSearchConditionDTO"
-	        resultType="com.spring.app.company.domain.TalentResumeDTO">
 	
-		SELECT
-	        r.RESUME_ID          AS resumeId,
-	        r.FK_MEMBERID        AS memberId,
-	        m.NAME               AS name,
-	        r.TITLE              AS resumeTitle,
-	        r.FK_CATEGORY_ID     AS categoryId,
-	        jc.CATEGORY_NAME     AS categoryName,
-	        r.FK_REGION_CODE     AS regionCode,
-	        rg.REGION_NAME       AS regionName,
-	        r.ADDRESS            AS address,
-	        r.SELF_INTRO         AS selfIntro,
-	        r.PHOTO_PATH         AS photoPath,
-	        r.DESIRED_SALARY     AS desiredSalary,
-	        r.UPLOADED_AT        AS uploadedAt,
-	        r.IS_PRIMARY         AS isPrimary,
-	        r.ALLOW_SCOUT        AS allowScout,
-	        r.IS_DELETED         AS isDeleted,
-	
-	        /* 대표 학력 1건 */
-	        (
-	            SELECT el.EDU_LEVEL_NAME
-	            FROM TBL_RESUME_EDUCATION re
-	            LEFT JOIN TBL_EDUCATION_LEVEL el
-	              ON re.FK_EDU_LEVEL_CODE = el.EDU_LEVEL_CODE
-	            WHERE re.FK_RESUME_ID = r.RESUME_ID
-	            ORDER BY re.SORT ASC, re.GRADUATIONDATE DESC NULLS LAST
-	            FETCH FIRST 1 ROWS ONLY
-	        ) AS education,
-	
-	        /* 총 경력 연수 */ 
-	        CASE
-	            WHEN EXISTS (
-	                SELECT 1
-	                FROM TBL_RESUME_CAREER c
-	                WHERE c.FK_RESUME_ID = r.RESUME_ID
-	            )
-	            THEN
-	                '경력 ' ||
-	                (
-	                    SELECT NVL(FLOOR(SUM(MONTHS_BETWEEN(NVL(c.LEAVEDATE, SYSDATE), c.JOINDATE)) / 12), 0)
-	                    FROM TBL_RESUME_CAREER c
-	                    WHERE c.FK_RESUME_ID = r.RESUME_ID
-	                ) || '년'
-	            ELSE '신입'
-	        END AS career,
-	
-	        /* 기술스택 문자열 */ 
-	        (
-	            SELECT LISTAGG(s.SKILL_NAME, '||') WITHIN GROUP (ORDER BY s.SKILL_NAME)
-	            FROM TBL_RESUME_TECHSTACK rt
-	            JOIN TBL_SKILL s
-	              ON rt.FK_SKILL_ID = s.SKILL_ID
-	            WHERE rt.FK_RESUME_ID = r.RESUME_ID
-	        ) AS techStackNamesRaw,
-	
-	        /* 기술스택 개수 */
-	        (
-	            SELECT COUNT(*)
-	            FROM TBL_RESUME_TECHSTACK rt
-	            WHERE rt.FK_RESUME_ID = r.RESUME_ID
-	        ) AS techStackCount,
-	
-	        /* 포트폴리오 개수 */
-	        (
-	            SELECT COUNT(*)
-	            FROM TBL_RESUME_PORTFOLIO p
-	            WHERE p.FK_RESUME_ID = r.RESUME_ID
-	        ) AS portfolioCount
-	
-	    FROM TBL_RESUME r
-	    JOIN TBL_MEMBER m
-	      ON m.MEMBERID = r.FK_MEMBERID
-	    LEFT JOIN TBL_JOB_CATEGORY jc
-	      ON jc.CATEGORY_ID = r.FK_CATEGORY_ID
-	    LEFT JOIN TBL_REGION rg
-	      ON rg.REGION_CODE = r.FK_REGION_CODE
-	
+	<!-- 인재검색 공통 조건 -->
+	<sql id="talentSearchWhere">
 	    WHERE r.IS_PRIMARY = 1
 	      AND r.IS_DELETED = 0
 	      AND r.ALLOW_SCOUT = 1
@@ -159,8 +80,8 @@
 	    <if test="salaryMax != null">
 	      AND r.DESIRED_SALARY <![CDATA[<=]]> #{salaryMax}
 	    </if>
-	    
-        <if test="skillIds != null and skillIds.size() > 0">
+	
+	    <if test="skillIds != null and skillIds.size() > 0">
 	      AND EXISTS (
 	        SELECT 1
 	        FROM TBL_RESUME_TECHSTACK rt
@@ -210,6 +131,89 @@
 	        WHERE p.FK_RESUME_ID = r.RESUME_ID
 	      )
 	    </if>
+	</sql>
+	
+	
+	
+	
+	<!-- 목록 조회용 -->
+	<select id="selectPublicPrimaryResumeList"
+	        parameterType="com.spring.app.company.domain.TalentSearchConditionDTO"
+	        resultType="com.spring.app.company.domain.TalentResumeDTO">
+	
+	    SELECT
+	        r.RESUME_ID          AS resumeId,
+	        r.FK_MEMBERID        AS memberId,
+	        m.NAME               AS name,
+	        r.TITLE              AS resumeTitle,
+	        r.FK_CATEGORY_ID     AS categoryId,
+	        jc.CATEGORY_NAME     AS categoryName,
+	        r.FK_REGION_CODE     AS regionCode,
+	        rg.REGION_NAME       AS regionName,
+	        r.ADDRESS            AS address,
+	        r.SELF_INTRO         AS selfIntro,
+	        r.PHOTO_PATH         AS photoPath,
+	        r.DESIRED_SALARY     AS desiredSalary,
+	        r.UPLOADED_AT        AS uploadedAt,
+	        r.IS_PRIMARY         AS isPrimary,
+	        r.ALLOW_SCOUT        AS allowScout,
+	        r.IS_DELETED         AS isDeleted,
+	
+	        (
+	            SELECT el.EDU_LEVEL_NAME
+	            FROM TBL_RESUME_EDUCATION re
+	            LEFT JOIN TBL_EDUCATION_LEVEL el
+	              ON re.FK_EDU_LEVEL_CODE = el.EDU_LEVEL_CODE
+	            WHERE re.FK_RESUME_ID = r.RESUME_ID
+	            ORDER BY re.SORT ASC, re.GRADUATIONDATE DESC NULLS LAST
+	            FETCH FIRST 1 ROWS ONLY
+	        ) AS education,
+	
+	        CASE
+	            WHEN EXISTS (
+	                SELECT 1
+	                FROM TBL_RESUME_CAREER c
+	                WHERE c.FK_RESUME_ID = r.RESUME_ID
+	            )
+	            THEN
+	                '경력 ' ||
+	                (
+	                    SELECT NVL(FLOOR(SUM(MONTHS_BETWEEN(NVL(c.LEAVEDATE, SYSDATE), c.JOINDATE)) / 12), 0)
+	                    FROM TBL_RESUME_CAREER c
+	                    WHERE c.FK_RESUME_ID = r.RESUME_ID
+	                ) || '년'
+	            ELSE '신입'
+	        END AS career,
+	
+	        (
+	            SELECT LISTAGG(s.SKILL_NAME, '||') WITHIN GROUP (ORDER BY s.SKILL_NAME)
+	            FROM TBL_RESUME_TECHSTACK rt
+	            JOIN TBL_SKILL s
+	              ON rt.FK_SKILL_ID = s.SKILL_ID
+	            WHERE rt.FK_RESUME_ID = r.RESUME_ID
+	        ) AS techStackNamesRaw,
+	
+	        (
+	            SELECT COUNT(*)
+	            FROM TBL_RESUME_TECHSTACK rt
+	            WHERE rt.FK_RESUME_ID = r.RESUME_ID
+	        ) AS techStackCount,
+	
+	        (
+	            SELECT COUNT(*)
+	            FROM TBL_RESUME_PORTFOLIO p
+	            WHERE p.FK_RESUME_ID = r.RESUME_ID
+	        ) AS portfolioCount
+	
+	    FROM TBL_RESUME r
+	    JOIN TBL_MEMBER m
+	      ON m.MEMBERID = r.FK_MEMBERID
+	    LEFT JOIN TBL_JOB_CATEGORY jc
+	      ON jc.CATEGORY_ID = r.FK_CATEGORY_ID
+	    LEFT JOIN TBL_REGION rg
+	      ON rg.REGION_CODE = r.FK_REGION_CODE
+	
+	    <include refid="talentSearchWhere" />
 	
 	    <choose>
 	      <when test="sort == 'career'">
@@ -229,7 +233,11 @@
 	      </otherwise>
 	    </choose>
 	
+	    OFFSET #{offset} ROWS FETCH NEXT #{size} ROWS ONLY
+	
 	</select>
+	
+	
 	
 	
 	<!-- 목록 개수 조회 -->
@@ -243,36 +251,10 @@
 	      ON m.MEMBERID = r.FK_MEMBERID
 	    LEFT JOIN TBL_JOB_CATEGORY jc
 	      ON jc.CATEGORY_ID = r.FK_CATEGORY_ID
-	    WHERE r.IS_PRIMARY = 1
-	      AND r.IS_DELETED = 0
-	      AND r.ALLOW_SCOUT = 1
+	    LEFT JOIN TBL_REGION rg
+	      ON rg.REGION_CODE = r.FK_REGION_CODE
 	
-	    <if test="keyword != null and keyword != ''">
-	      AND (
-	            LOWER(m.NAME) LIKE '%' || LOWER(#{keyword}) || '%'
-	         OR LOWER(r.TITLE) LIKE '%' || LOWER(#{keyword}) || '%'
-	         OR LOWER(jc.CATEGORY_NAME) LIKE '%' || LOWER(#{keyword}) || '%'
-	      )
-	    </if>
-	
-	    <if test="jobCategoryIds != null and jobCategoryIds.size() > 0">
-	      AND r.FK_CATEGORY_ID IN
-	      <foreach collection="jobCategoryIds" item="categoryId" open="(" separator="," close=")">
-	        #{categoryId}
-	      </foreach>
-	    </if>
-	
-	    <if test="regionCode != null and regionCode != ''">
-	      AND r.FK_REGION_CODE = #{regionCode}
-	    </if>
-	
-	    <if test="salaryMin != null">
-	      AND r.DESIRED_SALARY <![CDATA[>=]]> #{salaryMin}
-	    </if>
-	
-	    <if test="salaryMax != null">
-	      AND r.DESIRED_SALARY <![CDATA[<=]]> #{salaryMax}
-	    </if>
+	    <include refid="talentSearchWhere" />
 	
 	</select>
 	

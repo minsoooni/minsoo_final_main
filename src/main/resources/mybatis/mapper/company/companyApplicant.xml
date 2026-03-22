@@ -34,6 +34,7 @@
 	
 	
 	<!-- 지원자 목록 조회 -->
+	<!--  
 	<select id="selectApplicantList" parameterType="map" resultMap="applicantListMap">
 	    SELECT
 	        A.APPLICATION_ID,
@@ -79,6 +80,99 @@
 	
 	    ORDER BY A.APPLIED_AT DESC, A.APPLICATION_ID DESC
 	</select>
+	-->
+	
+	
+	
+	<!-- 지원자 목록 총 개수 -->
+	<select id="selectApplicantCount" parameterType="map" resultType="int">
+	    SELECT COUNT(*)
+	    FROM TBL_JOB_APPLICATION A
+	    INNER JOIN TBL_JOB_POSTING J
+	        ON A.FK_JOB_ID = J.JOB_ID
+	    LEFT JOIN TBL_SUBMITTED_RESUME SR
+	        ON A.FK_SUBMITTED_RESUME_ID = SR.SUBMITTED_RESUME_ID
+	    WHERE J.FK_MEMBERID = #{memberId}
+	      AND A.APPLICATION_STATUS = 0
+	
+	    <if test="keyword != null and keyword != ''">
+	        AND (
+	            A.NAME LIKE '%' || #{keyword} || '%'
+	            OR A.EMAIL LIKE '%' || #{keyword} || '%'
+	        )
+	    </if>
+	
+	    <if test="processStatus != null">
+	        AND A.PROCESS_STATUS = #{processStatus}
+	    </if>
+	
+	    <if test="jobId != null">
+	        AND A.FK_JOB_ID = #{jobId}
+	    </if>
+	</select>
+	
+	
+	<!-- 지원자 목록 페이징 조회 -->
+	<select id="selectApplicantListPaging" parameterType="map" resultMap="applicantListMap">
+	    SELECT *
+	    FROM (
+	        SELECT
+	            ROW_NUMBER() OVER (ORDER BY A.APPLIED_AT DESC, A.APPLICATION_ID DESC) AS RNO,
+	            A.APPLICATION_ID,
+	            A.FK_JOB_ID,
+	            A.FK_MEMBERID,
+	            A.FK_SUBMITTED_RESUME_ID,
+	            A.NAME,
+	            A.BIRTH_DATE,
+	            A.GENDER,
+	            A.PHONE,
+	            A.EMAIL,
+	            A.APPLICATION_ROUND,
+	            A.APPLICATION_STATUS,
+	            A.PROCESS_STATUS,
+	            A.APPLIED_AT,
+	            A.CANCELLED_AT,
+	            A.VIEWED_AT,
+	            J.TITLE AS JOB_TITLE,
+	            SR.TITLE AS RESUME_TITLE,
+	            SR.DESIRED_SALARY AS DESIRED_SALARY
+	        FROM TBL_JOB_APPLICATION A
+	        INNER JOIN TBL_JOB_POSTING J
+	            ON A.FK_JOB_ID = J.JOB_ID
+	        LEFT JOIN TBL_SUBMITTED_RESUME SR
+	            ON A.FK_SUBMITTED_RESUME_ID = SR.SUBMITTED_RESUME_ID
+	        WHERE J.FK_MEMBERID = #{memberId}
+	          AND A.APPLICATION_STATUS = 0
+	
+	        <if test="keyword != null and keyword != ''">
+	            AND (
+	                A.NAME LIKE '%' || #{keyword} || '%'
+	                OR A.EMAIL LIKE '%' || #{keyword} || '%'
+	            )
+	        </if>
+	
+	        <if test="processStatus != null">
+	            AND A.PROCESS_STATUS = #{processStatus}
+	        </if>
+	
+	        <if test="jobId != null">
+	            AND A.FK_JOB_ID = #{jobId}
+	        </if>
+	    )
+	    WHERE RNO BETWEEN #{startRow} AND #{endRow}
+	</select>
+	
+	
+	
+	<!-- 현재 지원자의 진행 상태 조회 -->
+	<!-- 
+	<select id="getApplicantProcessStatus" parameterType="long" resultType="int">
+	    SELECT PROCESS_STATUS
+	    FROM TBL_JOB_APPLICATION
+	    WHERE APPLICATION_ID = #{applicationId}
+	      AND APPLICATION_STATUS = 0
+	</select> -->
+	
 	
 	
 	

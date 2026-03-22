@@ -371,6 +371,11 @@
           조회 가능한 공개 대표이력서가 없습니다.
         </div>
       </div>
+      
+      <!-- 페이지바 -->
+      <div th:if="${pageBar != null and pageBar != ''}"
+           th:utext="${pageBar}">
+      </div>
 
     </div>
   </div>

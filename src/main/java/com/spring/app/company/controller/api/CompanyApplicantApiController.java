@@ -45,15 +45,18 @@ public class CompanyApplicantApiController {
     }
     
     
-    // 지원가 목록 조회
-    @Operation(summary = "지원자 목록 조회", description = "기업 회원이 등록한 공고에 지원한 지원자 목록을 조회한다.")
+    // 지원자 목록 조회(페이징 처리)
+    @Operation(summary = "지원자 목록 조회", description = "기업 회원이 등록한 공고에 지원한 지원자 목록을 페이징 처리하여 조회한다.")
     @GetMapping("/list")
-    public List<ApplicantListDTO> applicantList(Authentication authentication,
-                                                @RequestParam(value = "keyword", required = false) String keyword,
-                                                @RequestParam(value = "processStatus", required = false) Integer processStatus,
-                                                @RequestParam(value = "jobId", required = false) Long jobId) {
+    public Map<String, Object> applicantList(Authentication authentication,
+                                             @RequestParam(value = "keyword", required = false) String keyword,
+                                             @RequestParam(value = "processStatus", required = false) Integer processStatus,
+                                             @RequestParam(value = "jobId", required = false) Long jobId,
+                                             @RequestParam(value = "pageNo", required = false, defaultValue = "1") int pageNo) {
 
         String memberId = authentication.getName();
+
+        int sizePerPage = 10;
 
         Map<String, Object> paraMap = new HashMap<>();
         paraMap.put("memberId", memberId);
@@ -61,7 +64,32 @@ public class CompanyApplicantApiController {
         paraMap.put("processStatus", processStatus);
         paraMap.put("jobId", jobId);
 
-        return service.selectApplicantList(paraMap);
+        int totalCount = service.selectApplicantCount(paraMap);
+        int totalPage = (int) Math.ceil((double) totalCount / sizePerPage);
+
+        if (pageNo < 1) {
+            pageNo = 1;
+        }
+        if (totalPage > 0 && pageNo > totalPage) {
+            pageNo = totalPage;
+        }
+
+        int startRow = ((pageNo - 1) * sizePerPage) + 1;
+        int endRow = startRow + sizePerPage - 1;
+
+        paraMap.put("startRow", startRow);
+        paraMap.put("endRow", endRow);
+
+        List<ApplicantListDTO> list = service.selectApplicantListPaging(paraMap);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("list", list);
+        result.put("totalCount", totalCount);
+        result.put("sizePerPage", sizePerPage);
+        result.put("currentShowPageNo", pageNo);
+        result.put("totalPage", totalPage);
+
+        return result;
     }
 
     

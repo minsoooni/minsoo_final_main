@@ -14,10 +14,19 @@ import com.spring.app.company.domain.ImageFileDTO;
 public interface CompanyApplicantMapper {
 
 	// 지원자 목록 조회
-    List<ApplicantListDTO> selectApplicantList(Map<String, Object> paraMap);
+    //List<ApplicantListDTO> selectApplicantList(Map<String, Object> paraMap);
+    
+    // 지원자 목록 총 개수
+    int selectApplicantCount(Map<String, Object> paraMap);
+
+    // 지원자 목록 페이징 조회
+    List<ApplicantListDTO> selectApplicantListPaging(Map<String, Object> paraMap);
 
     // 지원자 상세를 클릭했을 때 읽었음으로 상태 변경
     int updateApplicantReadStatus(Map<String, Object> paraMap);
+    
+    // 상태변경 전 DB의 실제 현재 상태를 검증하기 위한 조회
+    //Integer getApplicantProcessStatus(Long applicationId);
     
     // 현재 상태 조회
     Integer selectApplicantCurrentStatus(Map<String, Object> paraMap);

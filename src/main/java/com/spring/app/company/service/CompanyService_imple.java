@@ -725,10 +725,25 @@ public class CompanyService_imple implements CompanyService {
     
     
     //========================= [지원자 관리] =========================//
+    /*
     @Override
     public List<ApplicantListDTO> selectApplicantList(Map<String, Object> paraMap) {
         return applicantMapper.selectApplicantList(paraMap);
     }
+    */
+    // 지원자 목록 총 개수
+    @Override
+    public int selectApplicantCount(Map<String, Object> paraMap) {
+        return applicantMapper.selectApplicantCount(paraMap);
+    }
+
+    // 지원자 목록 페이징 조회
+    @Override
+    public List<ApplicantListDTO> selectApplicantListPaging(Map<String, Object> paraMap) {
+        return applicantMapper.selectApplicantListPaging(paraMap);
+    }
+    
+    
 
     //지원자 상세를 클릭했을 때 읽었음으로 상태 변경
     @Override
@@ -762,6 +777,7 @@ public class CompanyService_imple implements CompanyService {
 
         return true;
     }
+    
     
     //지원자 상태 업데이트
     @Override
@@ -1496,9 +1512,21 @@ public class CompanyService_imple implements CompanyService {
 	
 	
 	//배너 목록 조회
+	/*
 	@Override
 	public List<BannerListDTO> getBannerListByMemberId(String memberId) {
 	    return bannerMapper.selectBannerListByMemberId(memberId);
+	}
+	*/
+	//배너 갯수 조회하기
+	@Override
+	public int getBannerCountByMemberId(String memberId) {
+	    return bannerMapper.getBannerCountByMemberId(memberId);
+	}
+	//페이징처리를 위한 배너 리스트 조회하기
+	@Override
+	public List<BannerListDTO> getBannerListByMemberIdPaging(Map<String, Object> paraMap) {
+	    return bannerMapper.selectBannerListByMemberIdPaging(paraMap);
 	}
 	
 

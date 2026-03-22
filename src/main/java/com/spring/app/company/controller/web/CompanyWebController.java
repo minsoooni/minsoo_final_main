@@ -1,6 +1,8 @@
 package com.spring.app.company.controller.web;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
@@ -380,11 +382,16 @@ public class CompanyWebController {
     // 제안서 관리 리스트 페이지
     @GetMapping("/offer/list")
     public String offers(Model model,
-    					 Authentication authentication) {
+                         Authentication authentication,
+                         @RequestParam(value = "targetMemberId", required = false) String targetMemberId,
+                         @RequestParam(value = "targetMemberName", required = false) String targetMemberName,
+                         @RequestParam(value = "targetResumeId", required = false) Long targetResumeId,
+                         @RequestParam(value = "openOfferSend", defaultValue = "0") int openOfferSend) {
+
         model.addAttribute("activeMenu", "offer");
 
         String memberId = authentication.getName();
-        
+
         // 1. 제안서 리스트
         List<OfferListDTO> offerList = service.selectOfferList(memberId);
         model.addAttribute("offerList", offerList);
@@ -397,6 +404,12 @@ public class CompanyWebController {
         List<MemberSimpleDTO> receiverList = service.getReceiverList();
         model.addAttribute("receiverList", receiverList);
 
+        // 4. 인재 상세에서 넘어온 자동 선택 대상
+        model.addAttribute("scoutTargetMemberId", targetMemberId);
+        model.addAttribute("scoutTargetMemberName", targetMemberName);
+        model.addAttribute("scoutTargetResumeId", targetResumeId);
+        model.addAttribute("openOfferSendFromTalent", openOfferSend == 1);
+
         return "company/offer/offer_list";
     }
     // ============================== 제안서 ============================== //
@@ -407,26 +420,57 @@ public class CompanyWebController {
     
     
     // ============================== 배너 ============================== //
-    // 배너 광고 페이지
+    // 배너 목록 조회 페이지(페이징 처리)
     @GetMapping("/banner/list")
-    public String ads(Model model, Authentication authentication,
-    				  HttpServletRequest request) {
+    public String ads(@RequestParam(value = "currentShowPageNo", required = false, defaultValue = "1") String currentShowPageNo,
+                      Model model,
+                      Authentication authentication,
+                      HttpServletRequest request) {
+
         model.addAttribute("activeMenu", "banner");
-      //기업Id 알아오기
+
+        service.refreshBannerStatuses();
+
         String memberId = authentication.getName();
-        
-        List<BannerListDTO> bannerList = service.getBannerListByMemberId(memberId);
+
+        int sizePerPage = 5;
+        int totalCount = service.getBannerCountByMemberId(memberId);
+        int totalPage = (int) Math.ceil((double) totalCount / sizePerPage);
+
+        int pageNo;
+        try {
+            pageNo = Integer.parseInt(currentShowPageNo);
+            if (pageNo < 1) {
+                pageNo = 1;
+            }
+            if (totalPage > 0 && pageNo > totalPage) {
+                pageNo = totalPage;
+            }
+        } catch (NumberFormatException e) {
+            pageNo = 1;
+        }
+
+        if (totalPage == 0) {
+            pageNo = 1;
+        }
+
+        int startRow = ((pageNo - 1) * sizePerPage) + 1;
+        int endRow = startRow + sizePerPage - 1;
+
+        Map<String, Object> paraMap = new HashMap<>();
+        paraMap.put("memberId", memberId);
+        paraMap.put("startRow", startRow);
+        paraMap.put("endRow", endRow);
+
+        List<BannerListDTO> bannerList = service.getBannerListByMemberIdPaging(paraMap);
+
         model.addAttribute("bannerList", bannerList);
-        //System.out.println(bannerList);
-        /*
-        [BannerListDTO(bannerId=7, fkMemberId=TESTC, fkJobId=1018, title=api 적용 후 공고 등록입니다! 테스트로 기술을 수정해보겠습니다. ,imageFileId=6, startAt=2026-03-08 00:00, endAt=2026-03-15 00:00, status=승인완료, rejectReason=null, jobTitle=api 적용 후 공고 등록입니다! 테스트로 기술을 수정해보겠습니다., fileUrl=/images/banner/20260308202127_1df9fed2223a478aad831c2764272be6.jpg, originalFilename=minsoocap.jpg), 
-        BannerListDTO(bannerId=6, fkMemberId=TESTC, fkJobId=1013, title=김스트 공고 모집입니다!!!, imageFileId=5, startAt=2026-03-08 00:00, endAt=2026-03-15 00:00, status=승인완료, rejectReason=null, jobTitle=테스트 공고 모집입니다!!!, fileUrl=/images/banner/20260308193446_7eb2f75ca1ee4573baba68caae4594e4.jpg, originalFilename=minsooyellow.jpg), 
-        BannerListDTO(bannerId=5, fkMemberId=TESTC, fkJobId=1015, title=세 번째 테스트 공고등록, imageFileId=4, startAt=2026-03-08 00:00, endAt=2026-03-15 00:00, status=반려, rejectReason=죄송합니다., jobTitle=세 번째 테스트 공고등록, fileUrl=/images/banner/20260308191118_e28c59ba30474b54a0a0867819cebc52.png, originalFilename=스크린샷 2025-12-29 231208.png), 
-        BannerListDTO(bannerId=4, fkMemberId=TESTC, fkJobId=1022, title=임시상태에 대한 공고입니다, imageFileId=3, startAt=2026-03-07 00:00, endAt=2026-03-14 00:00, status=반려, rejectReason=테스트 거절입니다., jobTitle=임시상태에 대한 공고입니다, fileUrl=/images/banner/20260307213000_106734c083f04c0793b2d01c0f20afa4.png, originalFilename=KakaoTalk_20260220_124013670.png), 
-        BannerListDTO(bannerId=3, fkMemberId=TESTC, fkJobId=1023, title=임시저장 두 번째, imageFileId=2, startAt=2026-03-06 00:00, endAt=2026-03-13 00:00, status=승인완료, rejectReason=null, jobTitle=임시저장 두 번째, fileUrl=/file_images/banner/20260306170938_c450a100645a41cb8583f0df3d70eca7.jpg, originalFilename=blue.jpg)]
-        */
+        model.addAttribute("totalCount", totalCount);
+        model.addAttribute("sizePerPage", sizePerPage);
+        model.addAttribute("currentShowPageNo", pageNo);
+        model.addAttribute("totalPage", totalPage);
         model.addAttribute("contextPath", request.getContextPath());
-        
+
         return "company/banner/banner_list";
     }
 
@@ -438,6 +482,9 @@ public class CompanyWebController {
         
         return "company/banner/banner_write";
     }
+    
+    
+    
     // ============================== 배너 ============================== //
     
     
@@ -474,26 +521,140 @@ public class CompanyWebController {
     
 
 
+    // ============================== 인재 검색 ============================== //
+    private String buildTalentPageBar(TalentSearchConditionDTO searchDto, int totalCount, HttpServletRequest request) {
+        int sizePerPage = (searchDto.getSize() == null || searchDto.getSize() < 1) ? 10 : searchDto.getSize();
+        int currentShowPageNo = (searchDto.getPage() == null || searchDto.getPage() < 1) ? 1 : searchDto.getPage();
+
+        int totalPage = (int) Math.ceil((double) totalCount / sizePerPage);
+        if (totalPage == 0) {
+            return "";
+        }
+
+        int blockSize = 10;
+        int pageNo = ((currentShowPageNo - 1) / blockSize) * blockSize + 1;
+        int loop = 1;
+
+        String baseUrl = request.getContextPath() + "/company/talent";
+        String queryString = buildTalentQueryString(request);
+
+        StringBuilder pageBar = new StringBuilder();
+        pageBar.append("<div class='talent-pagebar-wrap'>");
+        pageBar.append("<ul class='talent-pagebar'>");
+
+        // 이전 블록
+        if (pageNo != 1) {
+            pageBar.append("<li>")
+                   .append("<a href='").append(baseUrl).append("?menu=talent&page=").append(pageNo - 1).append(queryString).append("'>")
+                   .append("&laquo;")
+                   .append("</a>")
+                   .append("</li>");
+        }
+
+        while (!(loop > blockSize || pageNo > totalPage)) {
+            if (pageNo == currentShowPageNo) {
+                pageBar.append("<li>")
+                       .append("<span class='is-current'>").append(pageNo).append("</span>")
+                       .append("</li>");
+            } else {
+                pageBar.append("<li>")
+                       .append("<a href='").append(baseUrl).append("?menu=talent&page=").append(pageNo).append(queryString).append("'>")
+                       .append(pageNo)
+                       .append("</a>")
+                       .append("</li>");
+            }
+
+            loop++;
+            pageNo++;
+        }
+
+        // 다음 블록
+        if (pageNo <= totalPage) {
+            pageBar.append("<li>")
+                   .append("<a href='").append(baseUrl).append("?menu=talent&page=").append(pageNo).append(queryString).append("'>")
+                   .append("&raquo;")
+                   .append("</a>")
+                   .append("</li>");
+        }
+
+        pageBar.append("</ul>");
+        pageBar.append("</div>");
+
+        return pageBar.toString();
+    }
+
+    private String buildTalentQueryString(HttpServletRequest request) {
+        StringBuilder sb = new StringBuilder();
+
+        Map<String, String[]> paraMap = request.getParameterMap();
+
+        paraMap.forEach((key, values) -> {
+            // page는 pageBar에서 새로 붙이므로 제외
+            if ("page".equals(key) || "menu".equals(key)) {
+                return;
+            }
+
+            if (values == null) {
+                return;
+            }
+
+            for (String value : values) {
+                if (value == null || value.isBlank()) {
+                    continue;
+                }
+
+                try {
+                    sb.append("&")
+                      .append(java.net.URLEncoder.encode(key, java.nio.charset.StandardCharsets.UTF_8))
+                      .append("=")
+                      .append(java.net.URLEncoder.encode(value, java.nio.charset.StandardCharsets.UTF_8));
+                } catch (Exception e) {
+                    // 인코딩 실패 시 해당 파라미터만 무시
+                }
+            }
+        });
+
+        return sb.toString();
+    }
+    
+    
+    
     // 인재검색 페이지
     @GetMapping("/talent")
     public String talent(@RequestParam(value = "menu", defaultValue = "talent") String menu,
-    					 @ModelAttribute TalentSearchConditionDTO searchDto,
-                         Model model) {
+                         @ModelAttribute TalentSearchConditionDTO searchDto,
+                         Model model,
+                         HttpServletRequest request) {
+
         model.addAttribute("activeMenu", menu);
-        
+
+        // 기본 페이징 값 고정
+        if (searchDto.getPage() == null || searchDto.getPage() < 1) {
+            searchDto.setPage(1);
+        }
+        searchDto.setSize(10); // 한 페이지당 10명 고정
+
         // 필터 데이터
         model.addAttribute("jobCategoryList", service.getJobCategoryList());
         model.addAttribute("skillCategoryList", service.getSkillCategoryList());
         model.addAttribute("skillList", service.getSkillList());
-        
-        
-        // 공개 대표이력서 목록
+
+        int totalCount = service.getPublicPrimaryResumeCount(searchDto);
+        int totalPage = (int) Math.ceil((double) totalCount / searchDto.getSize());
+
+        // 요청 페이지가 총 페이지보다 크면 마지막 페이지로 보정
+        if (totalPage > 0 && searchDto.getPage() > totalPage) {
+            searchDto.setPage(totalPage);
+        }
+
         model.addAttribute("resumeList", service.getPublicPrimaryResumeList(searchDto));
-        model.addAttribute("totalCount", service.getPublicPrimaryResumeCount(searchDto));
+        model.addAttribute("totalCount", totalCount);
         model.addAttribute("searchDto", searchDto);
-        
+        model.addAttribute("pageBar", buildTalentPageBar(searchDto, totalCount, request));
+
         return "company/talent/talent_search";
     }
+    
     
     // 공개 이력서 상세
     @GetMapping("/talent/detail")
@@ -511,6 +672,8 @@ public class CompanyWebController {
 
         return "company/talent/talent_detail";
     }
+    
+    // ============================== 인재 검색 ============================== //
     
     
 }

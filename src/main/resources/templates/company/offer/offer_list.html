@@ -8,12 +8,28 @@
   <style type="text/css"></style>
 
   <script th:inline="javascript">
+  const contextPath = /*[[@{/}]]*/ "";
+
+  const scoutTargetMemberId = /*[[${scoutTargetMemberId}]]*/ "";
+  const scoutTargetMemberName = /*[[${scoutTargetMemberName}]]*/ "";
+  const scoutTargetResumeId = /*[[${scoutTargetResumeId}]]*/ "";
+  const openOfferSendFromTalent = /*[[${openOfferSendFromTalent}]]*/ false;
+
+  let pendingScoutTargetMemberId = scoutTargetMemberId || "";
+  let pendingScoutTargetMemberName = scoutTargetMemberName || "";
+
+  // 삭제된 제안서를 담아줄 전역변수
+  let deletedOfferHistoryItems = [];
+
   $(function(){
     refreshOfferMetrics();
     loadDeletedOfferHistory();
-  });
+    resetRecipientDetailSection();
 
-  const contextPath = /*[[@{/}]]*/ "";
+    if(openOfferSendFromTalent && pendingScoutTargetMemberId){
+      showOfferPageScoutBanner();
+    }
+  });
 
   // ==============================
   // API Endpoints
@@ -31,6 +47,21 @@
   }
   function deletedOfferHistoryApi(){
     return `${contextPath}company/api/offers/deleted-history`;
+  }
+
+  // ==============================
+  // 목록 상단 타겟 배너
+  // ==============================
+  function showOfferPageScoutBanner(){
+    const $banner = $("#offerPageScoutBanner");
+
+    if(!$banner.length || !pendingScoutTargetMemberId){
+      return;
+    }
+
+    $banner
+      .html(`<strong>${pendingScoutTargetMemberName || '선택한 인재'}</strong> 님에게 보낼 기존 제안서를 선택한 뒤, 해당 제안서의 <strong>발송하기</strong> 버튼을 눌러주세요.`)
+      .show();
   }
 
   // ==============================
@@ -60,13 +91,12 @@
     $("#ofm_title").val("");
     $("#ofm_message").val("");
     $("#ofm_expire").val("");
-    
+
     // 동적으로 생성한 옵션 삭제
     $("#ofm_jobId option[data-temp='true']").remove();
 
-    $(".ofm-check").prop("checked", false).prop("disabled", false);
-    $(".ofm-sent-badge").hide();
-    $(".ofm-recvlist label").removeClass("is-sent");
+    resetReceiverCheckboxUI();
+    $("#scoutTargetNotice").hide().text("");
   }
 
   document.addEventListener("keydown", function(e){
@@ -128,6 +158,57 @@
   }
 
   // ==============================
+  // 안내문 표시
+  // ==============================
+  function showScoutTargetNotice(mode){
+    const $notice = $("#scoutTargetNotice");
+
+    if(!$notice.length){
+      return;
+    }
+
+    if(!pendingScoutTargetMemberId){
+      $notice.hide().text("");
+      return;
+    }
+
+    if(mode === "send"){
+      $notice
+        .text(`발송 대상: ${pendingScoutTargetMemberName || '선택한 인재'} 님`)
+        .show();
+    }
+    else{
+      $notice.hide().text("");
+    }
+  }
+
+  // ==============================
+  // 자동 선택 적용
+  // ==============================
+  function applyPendingScoutTargetSelection(){
+    $(".ofm-recvlist label").removeClass("is-target");
+
+    if(!pendingScoutTargetMemberId){
+      return;
+    }
+
+    const $chk = $(`.ofm-check[data-member-id='${pendingScoutTargetMemberId}']`);
+
+    if(!$chk.length){
+      alert("선택한 인재가 현재 발송 대상 목록에 없습니다.");
+      return;
+    }
+
+    if($chk.prop("disabled")){
+      alert("해당 인재는 이미 이 제안서를 발송받아 다시 선택할 수 없습니다.");
+      return;
+    }
+
+    $chk.prop("checked", true);
+    $chk.closest("label").addClass("is-target");
+  }
+
+  // ==============================
   // textarea 자동 높이 조절
   // ==============================
   function autoResizeTextarea(el){
@@ -159,6 +240,7 @@
 
     autoResizeTextarea(document.getElementById("ofm_message"));
     resetReceiverCheckboxUI();
+    showScoutTargetNotice("");
   }
 
   // ==============================
@@ -196,31 +278,18 @@
       const offerLetterId = offer.offerLetterId ?? id;
       const jobId = offer.jobId != null ? String(offer.jobId) : "";
 
-      console.log("offer.jobId =", offer.jobId);
-      console.log("select option exists =", $("#ofm_jobId option[value='" + offer.jobId + "']").length);
-      console.log("all option values =",
-        $("#ofm_jobId option").map(function(){ return $(this).val(); }).get()
-      );
-      
-      //console.log("edit id =", id);
-      //console.log("edit offer =", offer);
-      //console.log("edit offerLetterId =", offerLetterId);
-      //console.log("edit jobId =", jobId);
-
-      // hidden 값
       $("#hiddenOfferLetterId").val(offerLetterId);
       $("#hiddenJobId").val(jobId);
-      
-	  // 옵션이 없으면 동적으로 추가
-      ensureJobOption(jobId, offer.jobTitle)
 
-      // 화면 표시값
+      ensureJobOption(jobId, offer.jobTitle);
+
       $("#ofm_jobId").val(jobId);
       $("#ofm_title").val(offer.title ?? "");
       $("#ofm_message").val(offer.message ?? "");
       $("#ofm_expire").val("");
 
       autoResizeTextarea(document.getElementById("ofm_message"));
+      showScoutTargetNotice("");
     });
   }
 
@@ -237,8 +306,7 @@
 
       $("#hiddenOfferLetterId").val(offerLetterId);
       $("#hiddenJobId").val(jobId);
-      
-   	  // 옵션이 없으면 동적으로 추가
+
       ensureJobOption(jobId, offer.jobTitle);
 
       $("#ofm_jobId").val(jobId);
@@ -249,6 +317,7 @@
       autoResizeTextarea(document.getElementById("ofm_message"));
       setExpireMinToday();
       resetReceiverCheckboxUI();
+      showScoutTargetNotice("send");
       markAlreadySentReceivers(offerLetterId);
     });
   }
@@ -257,7 +326,31 @@
   // 상세보기 버튼
   // ==============================
   function showOfferRecipients(offerLetterId){
+    $("#recipientDetailTitle").text("제안서 수신자 상세");
     loadRecipientDetails(offerLetterId);
+
+    const target = document.getElementById("recipientDetailSection");
+    if(target){
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+
+  // ==============================
+  // 제안서 상세 내역 초기화 함수
+  // ==============================
+  function resetRecipientDetailSection(message){
+    const $title = $("#recipientDetailTitle");
+    const $tbody = $("#recipientDetailBody");
+
+    $title.text("제안서 수신자 상세");
+
+    $tbody.html(`
+      <tr>
+        <td colspan="6" style="text-align:center; color:#6b7280;">
+          ${message || "제안서를 선택하면 수신자 상세가 표시됩니다."}
+        </td>
+      </tr>
+    `);
   }
 
   // ==============================
@@ -301,8 +394,7 @@
       }),
       success: function(res){
         alert("제안서 등록 완료");
-        closeOfferModal();
-        location.reload();
+        window.location.href = `${contextPath}company/offer/list`;
       },
       error: function(xhr){
         console.log("create error =", xhr.responseText);
@@ -326,11 +418,6 @@
     const jobId = $("#hiddenJobId").val() || $("#ofm_jobId").val();
     const title = $("#ofm_title").val()?.trim();
     const msg   = $("#ofm_message").val()?.trim();
-
-    //console.log("update offerLetterId =", offerLetterId);
-    //console.log("update jobId =", jobId);
-    //console.log("update title =", title);
-    //console.log("update message =", msg);
 
     if(!offerLetterId){
       alert("offerLetterId가 없습니다.");
@@ -370,8 +457,7 @@
       }),
       success: function(res){
         alert("수정 완료");
-        closeOfferModal();
-        location.reload();
+        window.location.href = `${contextPath}company/offer/list`;
       },
       error: function(xhr){
         console.log("update error =", xhr.responseText);
@@ -403,7 +489,7 @@
       success: function(res){
         if(res && res.result === "ok"){
           alert("삭제 완료");
-          location.reload();
+          window.location.href = `${contextPath}company/offer/list`;
         } else {
           alert("삭제 실패");
         }
@@ -463,8 +549,7 @@
       success: function(res){
         if(res && res.result === "ok"){
           alert("발송 완료");
-          closeOfferModal();
-          location.reload();
+          window.location.href = `${contextPath}company/offer/list`;
         } else {
           alert(res?.message || "발송 실패");
         }
@@ -497,20 +582,24 @@
       dataType: "json",
       success: function(res){
         const sentIds = (res && res.sentMemberIds) ? res.sentMemberIds : [];
-        if(sentIds.length === 0) return;
 
-        sentIds.forEach(function(memberId){
-          const $chk = $(`.ofm-check[data-member-id='${memberId}']`);
-          if($chk.length){
-            $chk.prop("checked", false);
-            $chk.prop("disabled", true);
-            $chk.closest("label").find(".ofm-sent-badge").show();
-            $chk.closest("label").addClass("is-sent");
-          }
-        });
+        if(sentIds.length > 0){
+          sentIds.forEach(function(memberId){
+            const $chk = $(`.ofm-check[data-member-id='${memberId}']`);
+            if($chk.length){
+              $chk.prop("checked", false);
+              $chk.prop("disabled", true);
+              $chk.closest("label").find(".ofm-sent-badge").show();
+              $chk.closest("label").addClass("is-sent");
+            }
+          });
+        }
+
+        applyPendingScoutTargetSelection();
       },
       error: function(xhr){
         console.log("발송완료 수신자 조회 실패:", xhr.status);
+        applyPendingScoutTargetSelection();
       }
     });
   }
@@ -521,7 +610,7 @@
   function resetReceiverCheckboxUI(){
     $(".ofm-check").prop("checked", false).prop("disabled", false);
     $(".ofm-sent-badge").hide();
-    $(".ofm-recvlist label").removeClass("is-sent");
+    $(".ofm-recvlist label").removeClass("is-sent").removeClass("is-target");
   }
 
   // ==============================
@@ -649,9 +738,11 @@
   // 삭제된 제안서 발송 내역 로딩
   // ==============================
   function loadDeletedOfferHistory(){
-    const $box = $("#deletedOfferHistoryList");
+    const $preview = $("#deletedOfferHistoryPreview");
+    const $select = $("#deletedOfferSelect");
 
-    $box.html(`<div class="preview-empty">불러오는 중...</div>`);
+    $preview.html(`<div class="preview-empty">불러오는 중...</div>`);
+    $select.html(`<option value="">불러오는 중...</option>`);
 
     $.ajax({
       url: deletedOfferHistoryApi(),
@@ -659,53 +750,32 @@
       dataType: "json",
       success: function(res){
         if(!res || res.result !== "ok"){
-          $box.html(`<div class="preview-empty" style="color:#ef4444;">삭제된 제안서 발송 내역을 불러오지 못했습니다.</div>`);
+          $preview.html(`<div class="preview-empty" style="color:#ef4444;">삭제된 제안서 발송 내역을 불러오지 못했습니다.</div>`);
+          $select.html(`<option value="">불러오기 실패</option>`);
           return;
         }
 
         const items = res.items || [];
         if(items.length === 0){
-          $box.html(`<div class="preview-empty">삭제된 제안서의 발송 내역이 없습니다.</div>`);
+          deletedOfferHistoryItems = [];
+          $preview.html(`<div class="preview-empty">삭제된 제안서의 발송 내역이 없습니다.</div>`);
+          $select.html(`<option value="">삭제된 제안서 없음</option>`);
           return;
         }
 
-        let html = "";
-        items.forEach(function(item){
-          html += `
-            <div class="of-item deleted-history-item" data-offer-letter-id="${item.offerLetterId}">
-              <div class="of-item__row">
-                <div>
-                  <p class="of-item__title">
-                    ${item.title ?? "-"}
-                    <span class="badge" style="margin-left:8px; background:#f3f4f6; color:#6b7280; border:1px solid #e5e7eb;">삭제된 원본</span>
-                  </p>
-                  <div class="of-item__sub">
-                    공고 ID: ${item.jobId ?? "-"} · 마지막 발송일: ${formatDateTime(item.lastSendAt)}
-                  </div>
-
-                  <div class="of-metrics">
-                    <span><b>발송</b> ${item.totalSent ?? 0}</span>
-                    <span><b>열람</b> ${item.viewedCnt ?? 0}</span>
-                    <span><b>미열람</b> ${item.unreadCnt ?? 0}</span>
-                    <span><b>수락</b> ${item.acceptCnt ?? 0}</span>
-                    <span><b>거절</b> ${item.rejectCnt ?? 0}</span>
-                  </div>
-                </div>
-
-                <div style="display:flex; gap:8px;">
-                  <button type="button" class="of-btn" onclick="openDeletedOfferHistory(${item.offerLetterId})">
-                    발송 내역 보기
-                  </button>
-                </div>
-              </div>
-            </div>
-          `;
+        deletedOfferHistoryItems = items.slice().sort(function(a, b){
+          const aTime = a.lastSendAt ? new Date(a.lastSendAt).getTime() : 0;
+          const bTime = b.lastSendAt ? new Date(b.lastSendAt).getTime() : 0;
+          return bTime - aTime;
         });
 
-        $box.html(html);
+        renderDeletedOfferHistoryOptions(deletedOfferHistoryItems);
+        renderDeletedOfferHistoryPreview(deletedOfferHistoryItems[0]);
       },
       error: function(xhr){
-        $box.html(`<div class="preview-empty" style="color:#ef4444;">삭제된 제안서 발송 내역을 불러오지 못했습니다.</div>`);
+        deletedOfferHistoryItems = [];
+        $preview.html(`<div class="preview-empty" style="color:#ef4444;">삭제된 제안서 발송 내역을 불러오지 못했습니다.</div>`);
+        $select.html(`<option value="">불러오기 실패</option>`);
       }
     });
   }
@@ -714,12 +784,96 @@
   // 삭제된 제안서 발송 내역 상세 보기
   // ==============================
   function openDeletedOfferHistory(offerLetterId){
+    $("#recipientDetailTitle").text("삭제된 제안서 발송 내역 상세");
     loadRecipientDetails(offerLetterId);
 
     const target = document.getElementById("recipientDetailSection");
     if(target){
       target.scrollIntoView({ behavior: "smooth", block: "start" });
     }
+  }
+
+  // ======================================
+  // 선택된 제안서 1개를 화면에 카드 형태로 출력하는 함수
+  // ======================================
+  function renderDeletedOfferHistoryPreview(item){
+    const $box = $("#deletedOfferHistoryPreview");
+
+    if(!item){
+      $box.html(`<div class="preview-empty">표시할 삭제된 제안서가 없습니다.</div>`);
+      return;
+    }
+
+    $box.html(`
+      <div class="of-item deleted-history-item" data-offer-letter-id="${item.offerLetterId}">
+        <div class="of-item__row">
+          <div>
+            <p class="of-item__title">
+              ${item.title ?? "-"}
+              <span class="badge" style="margin-left:8px; background:#f3f4f6; color:#6b7280; border:1px solid #e5e7eb;">삭제된 원본</span>
+            </p>
+
+            <div class="of-item__sub">
+              공고 ID: ${item.jobId ?? "-"} · 마지막 발송일: ${formatDateTime(item.lastSendAt)}
+            </div>
+
+            <div class="of-metrics">
+              <span><b>발송</b> ${item.totalSent ?? 0}</span>
+              <span><b>열람</b> ${item.viewedCnt ?? 0}</span>
+              <span><b>미열람</b> ${item.unreadCnt ?? 0}</span>
+              <span><b>수락</b> ${item.acceptCnt ?? 0}</span>
+              <span><b>거절</b> ${item.rejectCnt ?? 0}</span>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:8px;">
+            <button type="button" class="of-btn" onclick="openDeletedOfferHistory(${item.offerLetterId})">
+              발송 내역 보기
+            </button>
+          </div>
+        </div>
+      </div>
+    `);
+  }
+
+  // =========================================
+  // 삭제된 제안서 목록 전체를 드롭다운(select)에 넣는 함수
+  // =========================================
+  function renderDeletedOfferHistoryOptions(items){
+    const $select = $("#deletedOfferSelect");
+
+    if(!items || items.length === 0){
+      $select.html(`<option value="">삭제된 제안서 없음</option>`);
+      return;
+    }
+
+    let options = "";
+    items.forEach(function(item, idx){
+      const sendDate = formatDateTime(item.lastSendAt);
+      const title = item.title ?? "-";
+      options += `
+        <option value="${item.offerLetterId}" ${idx === 0 ? "selected" : ""}>
+          ${title} (${sendDate})
+        </option>
+      `;
+    });
+
+    $select.html(options);
+  }
+
+  // ==============================
+  // 삭제된 제안서 드롭다운 변경 함수
+  // ==============================
+  function changeDeletedOfferHistory(){
+    const selectedId = $("#deletedOfferSelect").val();
+    if(!selectedId) return;
+
+    const selectedItem = deletedOfferHistoryItems.find(function(item){
+      return String(item.offerLetterId) === String(selectedId);
+    });
+
+    renderDeletedOfferHistoryPreview(selectedItem);
+    resetRecipientDetailSection("다른 삭제된 제안서가 선택되었습니다. 아래 발송 내역 보기 버튼을 누르면 수신자 상세가 표시됩니다.");
   }
 
   // ==============================
@@ -739,20 +893,20 @@
 
     return `${yyyy}.${mm}.${dd} ${hh}:${mi}`;
   }
-  
+
   // 공고 option 보장 함수 추가
   function ensureJobOption(jobId, jobTitle){
     if(!jobId) return;
-  
+
     const jobIdStr = String(jobId);
     const $select = $("#ofm_jobId");
     const exists = $select.find(`option[value='${jobIdStr}']`).length > 0;
-  
+
     if(!exists){
       const label = jobTitle
         ? `${jobTitle} (기존 연결 공고)`
         : `기존 연결 공고 (ID: ${jobIdStr})`;
-  
+
       $select.append(
         $("<option>", {
           value: jobIdStr,
@@ -776,6 +930,14 @@
     <button type="button" class="of-primary" onclick="openOfferModalForCreate()">
       <i class="fa-solid fa-plus"></i> 새 제안서 작성
     </button>
+  </div>
+
+  <div id="offerPageScoutBanner" class="offer-page-scout-banner" style="display:none;"></div>
+
+  <div th:if="${openOfferSendFromTalent and #lists.isEmpty(offerList)}"
+       class="offer-page-scout-banner">
+    <strong th:text="${scoutTargetMemberName}">선택한 인재</strong>
+    님에게 보낼 제안서가 아직 없습니다. 먼저 제안서를 작성한 뒤 발송해주세요.
   </div>
 
   <div class="of-stats">
@@ -909,11 +1071,21 @@
   </div>
 
   <div class="panel" style="margin-top:20px;">
-    <div class="panel-head">
-      <h3>삭제된 제안서의 발송 내역</h3>
+    <div class="panel-head of-history-head">
+      <div>
+        <h3>삭제된 제안서의 발송 내역</h3>
+        <p class="of-history-desc">가장 최근 삭제된 제안서가 기본으로 표시됩니다.</p>
+      </div>
+
+      <div class="of-history-filter">
+        <label for="deletedOfferSelect" class="of-history-label">삭제된 제안서 선택</label>
+        <select id="deletedOfferSelect" class="of-history-select" onchange="changeDeletedOfferHistory()">
+          <option value="">불러오는 중...</option>
+        </select>
+      </div>
     </div>
 
-    <div id="deletedOfferHistoryList" class="of-list">
+    <div id="deletedOfferHistoryPreview" class="of-list">
       <div class="preview-empty">불러오는 중...</div>
     </div>
   </div>
@@ -958,6 +1130,8 @@
       </div>
 
       <div class="ofm-body">
+        <div id="scoutTargetNotice" class="ofm-target-notice" style="display:none;"></div>
+
         <div class="ofm-field">
           <div class="ofm-label">연결할 공고 <span class="ofm-req">*</span></div>
           <select id="ofm_jobId" class="ofm-select">

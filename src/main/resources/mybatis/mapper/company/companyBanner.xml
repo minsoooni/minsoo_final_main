@@ -103,6 +103,7 @@
 	
 	
 	<!-- 배너 목록 조회 -->
+	<!--  
 	<select id="selectBannerListByMemberId" parameterType="string"
 	    resultType="com.spring.app.company.domain.BannerListDTO">
 	    SELECT
@@ -128,6 +129,49 @@
 	    WHERE b.FK_MEMBERID = #{memberId}
 	      AND <![CDATA[b.STATUS <> '삭제됨']]>
 	    ORDER BY b.BANNER_ID DESC
+	</select>
+	-->
+	
+	
+	<!-- 배너 전체 개수 조회 -->
+	<select id="getBannerCountByMemberId" parameterType="string" resultType="int">
+	    SELECT COUNT(*)
+	    FROM TBL_BANNER b
+	    WHERE b.FK_MEMBERID = #{memberId}
+	      AND <![CDATA[b.STATUS <> '삭제됨']]>
+	</select>
+	
+	
+	<!-- 배너 목록 페이징 조회 -->
+	<select id="selectBannerListByMemberIdPaging"
+	        parameterType="map"
+	        resultType="com.spring.app.company.domain.BannerListDTO">
+	    SELECT *
+	    FROM (
+	        SELECT ROW_NUMBER() OVER (ORDER BY b.BANNER_ID DESC) AS rno,
+	               b.BANNER_ID           AS bannerId,
+	               b.FK_MEMBERID         AS fkMemberId,
+	               b.FK_JOB_ID           AS fkJobId,
+	               b.TITLE               AS title,
+	               b.IMAGE_FILE_ID       AS imageFileId,
+	               TO_CHAR(b.START_AT, 'YYYY-MM-DD HH24:MI') AS startAt,
+	               TO_CHAR(b.END_AT,   'YYYY-MM-DD HH24:MI') AS endAt,
+	               b.STATUS              AS status,
+	               b.REJECT_REASON       AS rejectReason,
+	
+	               j.TITLE               AS jobTitle,
+	               f.FILE_URL            AS fileUrl,
+	               f.ORIGINAL_FILENAME   AS originalFilename
+	        FROM TBL_BANNER b
+	        LEFT JOIN TBL_JOB_POSTING j
+	               ON j.JOB_ID = b.FK_JOB_ID
+	        LEFT JOIN TBL_IMAGE_FILE f
+	               ON f.FILE_ID = b.IMAGE_FILE_ID
+	        WHERE b.FK_MEMBERID = #{memberId}
+	          AND <![CDATA[b.STATUS <> '삭제됨']]>
+	    )
+	    WHERE rno BETWEEN #{startRow} AND #{endRow}
+	    ORDER BY rno
 	</select>
 	
 	

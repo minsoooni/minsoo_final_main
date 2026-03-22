@@ -109,24 +109,61 @@ public class CompanyBannerApiController {
     }
 
     
-    //배너 목록 조회
-    @Operation(summary = "배너 목록 조회", description = "로그인한 기업의 모든 배너를 조회한다.")
+    //배너 목록 조회(페이징처리)
+    @Operation(summary = "배너 목록 조회", description = "로그인한 기업의 모든 배너를 페이징 처리하여 조회한다.")
     @GetMapping("/list")
-    public ResponseEntity<Map<String, Object>> getBannerList(Authentication authentication) {
+    public ResponseEntity<Map<String, Object>> getBannerList(
+            @RequestParam(value = "currentShowPageNo", required = false, defaultValue = "1") String currentShowPageNo,
+            Authentication authentication) {
 
         Map<String, Object> result = new HashMap<>();
 
         try {
+            service.refreshBannerStatuses();
+
             String memberId = authentication.getName();
 
-            List<BannerListDTO> bannerList = service.getBannerListByMemberId(memberId);
+            int sizePerPage = 5;
+            int totalCount = service.getBannerCountByMemberId(memberId);
+            int totalPage = (int) Math.ceil((double) totalCount / sizePerPage);
+
+            int pageNo;
+            try {
+                pageNo = Integer.parseInt(currentShowPageNo);
+                if (pageNo < 1) {
+                    pageNo = 1;
+                }
+                if (totalPage > 0 && pageNo > totalPage) {
+                    pageNo = totalPage;
+                }
+            } catch (NumberFormatException e) {
+                pageNo = 1;
+            }
+
+            if (totalPage == 0) {
+                pageNo = 1;
+            }
+
+            int startRow = ((pageNo - 1) * sizePerPage) + 1;
+            int endRow = startRow + sizePerPage - 1;
+
+            Map<String, Object> paraMap = new HashMap<>();
+            paraMap.put("memberId", memberId);
+            paraMap.put("startRow", startRow);
+            paraMap.put("endRow", endRow);
+
+            List<BannerListDTO> bannerList = service.getBannerListByMemberIdPaging(paraMap);
 
             result.put("success", true);
             result.put("bannerList", bannerList);
-            result.put("count", bannerList.size());
+            result.put("totalCount", totalCount);
+            result.put("sizePerPage", sizePerPage);
+            result.put("currentShowPageNo", pageNo);
+            result.put("totalPage", totalPage);
 
             return ResponseEntity.ok(result);
         } catch (Exception e) {
+            e.printStackTrace();
             result.put("success", false);
             result.put("message", "배너 목록 조회 중 오류가 발생했습니다.");
             return ResponseEntity.internalServerError().body(result);
@@ -135,10 +172,7 @@ public class CompanyBannerApiController {
     
     
     
-    
-    
-    
-    
+    //배너 삭제하기
     @Operation(summary = "배너 삭제", description = "로그인한 기업의 배너를 삭제한다.")
     @DeleteMapping("/{bannerId}")
     public ResponseEntity<Map<String, Object>> deleteBanner(@PathVariable("bannerId") Long bannerId,
