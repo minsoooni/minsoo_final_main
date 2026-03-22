@@ -96,6 +96,7 @@
 	    SELECT COUNT(*)
 	    FROM TBL_JOB_POSTING
 	    WHERE IS_HIDDEN = #{isHidden}
+	    AND STATUS != '삭제됨'
 	</select>
 
     <!-- 최근 30일 일별 등록 추이 -->
@@ -139,9 +140,10 @@
 
     <!-- 숨김 처리된 게시글 수 -->
     <select id="getHiddenPostCount" resultType="int">
-		SELECT COUNT(*)
-		FROM TBL_POST
-		WHERE IS_HIDDEN = 1
+	    SELECT COUNT(*)
+	    FROM TBL_POST
+	    WHERE IS_HIDDEN = 1
+	      AND POST_STATUS != 'DELETED'
 	</select>
 
     <!-- 최근 30일 일별 게시글 작성 추이 -->
