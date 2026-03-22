@@ -25,7 +25,6 @@
 	              FROM TBL_POINT_TRANSACTION
 	              GROUP BY FK_BANNER_ID
 	          ) pt ON pt.FK_BANNER_ID = b.BANNER_ID
-	          WHERE b.STATUS != '임시저장'
 	          <choose>
 	            <when test="status != null and status != ''">
 	              AND b.STATUS = #{status}
@@ -43,7 +42,7 @@
 	<!-- 페이지네이션 테이블 기준 -->
 	<select id="selectBannerCount" resultType="int">
 	  SELECT COUNT(*) FROM TBL_BANNER
-	  WHERE STATUS != '임시저장'
+	  where 1=1
 	  <choose>
 	    <when test="status != null and status != ''">
 	      AND STATUS = #{status}
@@ -55,12 +54,9 @@
 	  </choose>
 	</select>
 	
-	<!-- 전체 배너 수 (임시저장만 제외) -->
+	<!-- 전체 배너 수 -->
   <select id="selectBannerTotalCount" resultType="int">
 	  SELECT COUNT(*) FROM TBL_BANNER
-	  WHERE STATUS != '임시저장'
-	  AND STATUS != '마감'
-	  AND STATUS != '삭제됨'
 	</select>
 
   <update id="updateBannerApprove">

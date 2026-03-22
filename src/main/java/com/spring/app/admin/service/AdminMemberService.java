@@ -21,5 +21,7 @@ public interface AdminMemberService {
 	int getMemberCount(String search, String status);
 	
 	AdminMemberDTO getMemberById(String memberId);
+
+	int withdrawMember(String memberId);
 	
 }

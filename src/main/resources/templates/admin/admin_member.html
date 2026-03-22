@@ -37,6 +37,26 @@
                         else showToast('처리 중 오류가 발생했습니다.', 'warning');
                     });
             };
+            
+            window.openWithdrawModal = function() {
+                document.getElementById('withdrawMemberName').textContent = 
+                    document.getElementById('dName').textContent;
+                closeModal('memberDetailModal'); // 상세 모달 닫고
+                document.getElementById('withdrawModal').classList.add('active'); // 확인 모달 오픈
+            };
+            
+            window.confirmWithdraw = function() {
+                const id = document.getElementById('dMemberId').textContent;
+                const name = document.getElementById('dName').textContent;
+                fetch(contextPath + 'admin/members/' + id + '/withdraw', { method: 'POST' })
+                    .then(res => {
+                        closeModal('withdrawModal');
+                        if (res.ok) { showToast(name + ' 탈퇴 처리 완료.', 'warning'); setTimeout(() => location.reload(), 1500); }
+                        else showToast('처리 중 오류가 발생했습니다.', 'warning');
+                    });
+            };
+            
+            
 
             /* ── 정지해제 ── */
             window.openUnsuspendModal = function(id, name) {
@@ -44,6 +64,7 @@
                 document.getElementById('unsuspendMemberName').textContent = name;
                 document.getElementById('unsuspendModal').classList.add('active');
             };
+            
             window.confirmUnsuspend = function() {
                 const id = targetId; const name = targetName;
                 fetch(contextPath + 'admin/members/' + id + '/unsuspend', { method: 'POST' })
@@ -53,6 +74,8 @@
                         else showToast('처리 중 오류가 발생했습니다.', 'warning');
                     });
             };
+            
+            
 
             /* ── 공통 ── */
             window.closeModal = function(id) {
@@ -79,7 +102,7 @@
                     .then(res => res.json())
                     .then(data => {
                         const statusMap = { 0: '정지', 1: '활성', 2: '탈퇴', 3: '휴면' };
-                        const genderMap = { 0: '남성', 1: '여성', 2: '기타' };
+                        const genderMap = { 1: '남성', 2: '여성', 3: '기타' };
                      // const typeMap   = { 0: '일반회원', 1: '기업회원' };
 
                         document.getElementById('dMemberId').textContent   = data.memberId;
@@ -94,8 +117,14 @@
                         document.getElementById('dLastLogin').textContent  = data.lastLoginAt ? data.lastLoginAt.substring(0,10) : '-';
                         document.getElementById('dDormant').textContent    = data.dormantAt ? data.dormantAt.substring(0,10) : '-';
                         document.getElementById('memberDetailModal').classList.add('active');
+                        
+                        
+                        const withdrawBtn = document.getElementById('withdrawBtn');
+                        withdrawBtn.style.display = data.status === 2 ? 'none' : '';
                     });
             };
+            
+           
 
             /* ── 필터 ── */
             window.applyFilters = function() {
@@ -247,9 +276,11 @@
 	        <div class="detail-row"><span class="detail-label">가입일</span><span class="detail-value" id="dCreated"></span></div>
 	        <div class="detail-row"><span class="detail-label">최근 로그인</span><span class="detail-value" id="dLastLogin"></span></div>
 	        <div class="detail-row"><span class="detail-label">휴면 전환일</span><span class="detail-value" id="dDormant"></span></div>
+	       
 	        <div class="modal-buttons">
-	            <button class="btn-cancel" onclick="closeModal('memberDetailModal')">닫기</button>
-	        </div>
+			    <button class="btn-confirm-suspend" id="withdrawBtn" onclick="openWithdrawModal()">탈퇴 처리</button>
+			    <button class="btn-cancel" onclick="closeModal('memberDetailModal')">닫기</button>
+			</div>
 	    </div>
 	</div>
     
@@ -279,6 +310,21 @@
 	        <div class="modal-buttons">
 	            <button class="btn-cancel" onclick="closeModal('unsuspendModal')">취소</button>
 	            <button class="btn-confirm-unsuspend" onclick="confirmUnsuspend()">정지 해제</button>
+	        </div>
+	    </div>
+	</div>
+	
+	<!-- 탈퇴 모달 -->
+	<div class="modal" id="withdrawModal">
+	    <div class="modal-content">
+	        <h2>회원 탈퇴 처리</h2>
+	        <p><span class="member-name" id="withdrawMemberName"></span> 회원을 탈퇴 처리하시겠습니까?</p>
+	        <p class="warn-text">⚠️ 탈퇴 처리 시 즉시 적용되는 사항<br>
+	                            - 해당 회원 계정 로그인 차단<br>
+	                            - 탈퇴 상태로 변경 (복구 불가)</p>
+	        <div class="modal-buttons">
+	            <button class="btn-cancel" onclick="closeModal('withdrawModal')">취소</button>
+	            <button class="btn-confirm-suspend" onclick="confirmWithdraw()">탈퇴 처리</button>
 	        </div>
 	    </div>
 	</div>

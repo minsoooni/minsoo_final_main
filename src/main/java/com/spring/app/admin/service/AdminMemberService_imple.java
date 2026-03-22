@@ -52,4 +52,9 @@ public class AdminMemberService_imple implements AdminMemberService {
     public AdminMemberDTO getMemberById(String memberId) {
         return memberAdminDao.selectMemberById(memberId);
     }
+
+    @Override
+    public int withdrawMember(String memberId) {
+        return memberAdminDao.withdrawMember(memberId);
+    }
 }

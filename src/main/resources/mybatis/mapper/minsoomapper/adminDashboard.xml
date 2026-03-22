@@ -27,7 +27,7 @@
     <select id="getActiveJobPostingCount" resultType="int">
         SELECT COUNT(*)
         FROM TBL_JOB_POSTING
-        WHERE STATUS = 'ACTIVE'
+        WHERE STATUS = '게시중'
           AND IS_HIDDEN = 0
     </select>
 

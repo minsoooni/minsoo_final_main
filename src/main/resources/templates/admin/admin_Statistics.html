@@ -304,222 +304,213 @@
     </div>
   </div>
 
-  <script th:inline="javascript">
-  (function() {
-
-    const contextPath = /*[[@{/}]]*/ "";
-
-    let currentPeriod  = 'daily';
-    let charts         = {};
-    let lastData       = null;
-    let lastFrom       = '';
-    let lastTo         = '';
-    let currentSection = 'member';
-
-    const baseOpts = {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#0F1117', titleColor: '#fff',
-          bodyColor: 'rgba(255,255,255,0.75)', padding: 10, cornerRadius: 8,
-          titleFont: { size: 12, weight: '600' }, bodyFont: { size: 12 }
-        }
-      },
-      scales: {
-        x: { grid: { display: false }, border: { display: false },
-             ticks: { font: { size: 11 }, color: '#9CA3AF', maxTicksLimit: 12 } },
-        y: { grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
-             border: { display: false, dash: [4, 4] },
-             ticks: { font: { size: 11 }, color: '#9CA3AF', padding: 6 }, beginAtZero: true }
-      }
-    };
-
-    function destroySection(sec) {
-      const canvasIds = {
-        member: ['memberTrendChart', 'memberDayChart', 'memberGrowthChart'],
-        job:    ['jobTrendChart', 'salaryChart'],
-        board:  ['boardTrendChart']
-      };
-      (canvasIds[sec] || []).forEach(id => {
-        const canvas = document.getElementById(id);
-        if (canvas) {
-          const existing = Chart.getChart(canvas);
-          if (existing) existing.destroy();
-        }
-      });
-      const keys = { member: ['memberTrend','memberDay','memberGrowth'], job: ['jobTrend','salary'], board: ['boardTrend'] };
-      (keys[sec] || []).forEach(k => delete charts[k]);
-    }
-
-    function renderMember(d, from, to) {
-      destroySection('member');
-      document.getElementById('memberTrendSub').textContent  = `${from} ~ ${to}`;
-      document.getElementById('memberDayTitle').textContent  = d.dayChartTitle || '요일별 평균 가입 수';
-
-      charts.memberTrend = new Chart(document.getElementById('memberTrendChart'), {
-        type: 'line',
-        data: {
-          labels: d.joinTrend.labels,
-          datasets: [
-            { label: '신규 가입', data: d.joinTrend.data,
-              borderColor: '#2563EB', backgroundColor: 'rgba(37,99,235,0.07)',
-              fill: true, tension: 0.4,
-              pointRadius: d.joinTrend.labels.length > 60 ? 0 : 3,
-              pointHoverRadius: 5, borderWidth: 2 },
-            { label: '탈퇴', data: d.withdrawTrend.data,
-              borderColor: '#DC2626', backgroundColor: 'rgba(220,38,38,0.05)',
-              fill: true, tension: 0.4, pointRadius: 2, pointHoverRadius: 5,
-              borderDash: [5, 3], borderWidth: 1.5 }
-          ]
-        },
-        options: baseOpts
-      });
-
-      charts.memberDay = new Chart(document.getElementById('memberDayChart'), {
-        type: 'bar',
-        data: {
-          labels: d.dayChart.labels,
-          datasets: [{
-            data: d.dayChart.data,
-            backgroundColor: d.dayChart.labels.map((_, i) => i >= 5 ? '#CBD5E1' : '#0F1117'),
-            borderRadius: 6, borderSkipped: false
-          }]
-        },
-        options: baseOpts
-      });
-
-      charts.memberGrowth = new Chart(document.getElementById('memberGrowthChart'), {
-        type: 'line',
-        data: {
-          labels: d.memberGrowth.labels,
-          datasets: [{
-            data: d.memberGrowth.data,
-            borderColor: '#2563EB', backgroundColor: 'rgba(37,99,235,0.08)',
-            fill: true, tension: 0.4, pointRadius: 3, pointHoverRadius: 5, borderWidth: 2
-          }]
-        },
-        options: baseOpts
-      });
-    }
-
-    function renderJob(d, from, to) {
-      destroySection('job');
-      document.getElementById('jobTrendSub').textContent = `${from} ~ ${to}`;
-
-      charts.jobTrend = new Chart(document.getElementById('jobTrendChart'), {
-        type: 'bar',
-        data: {
-          labels: d.jobReg.labels,
-          datasets: [
-            { label: '등록', data: d.jobReg.data,    backgroundColor: '#2563EB', borderRadius: 4, borderSkipped: false },
-            { label: '마감', data: d.jobClosed.data, backgroundColor: '#CBD5E1', borderRadius: 4, borderSkipped: false }
-          ]
-        },
-        options: baseOpts
-      });
-
-      charts.salary = new Chart(document.getElementById('salaryChart'), {
-        type: 'bar',
-        data: {
-          labels: d.salary.labels,
-          datasets: [{ data: d.salary.data, backgroundColor: '#7C3AED', borderRadius: 6, borderSkipped: false }]
-        },
-        options: { ...baseOpts, layout: { padding: { right: 12 } } }
-      });
-    }
-
-    function renderBoard(d, from, to) {
-      destroySection('board');
-      document.getElementById('boardTrendSub').textContent = `${from} ~ ${to}`;
-
-      charts.boardTrend = new Chart(document.getElementById('boardTrendChart'), {
-        type: 'line',
-        data: {
-          labels: d.postTrend.labels,
-          datasets: [
-            { label: '게시글', data: d.postTrend.data,
-              borderColor: '#16A34A', backgroundColor: 'rgba(22,163,74,0.07)',
-              fill: true, tension: 0.4, pointRadius: 2, pointHoverRadius: 5, borderWidth: 2 },
-            { label: '댓글', data: d.commentTrend.data,
-              borderColor: '#D97706', backgroundColor: 'rgba(217,119,6,0.07)',
-              fill: true, tension: 0.4, pointRadius: 2, pointHoverRadius: 5, borderWidth: 2 }
-          ]
-        },
-        options: baseOpts
-      });
-    }
-
-    function renderCurrentSection() {
-      if (!lastData) return;
-      if (currentSection === 'member') renderMember(lastData, lastFrom, lastTo);
-      if (currentSection === 'job')    renderJob(lastData, lastFrom, lastTo);
-      if (currentSection === 'board')  renderBoard(lastData, lastFrom, lastTo);
-    }
-
-    function fetchAndRender() {
-      const from = document.getElementById('date-from').value;
-      const to   = document.getElementById('date-to').value;
-      if (!from || !to || from > to) { alert('날짜 범위를 올바르게 입력해주세요.'); return; }
-
-      const btn = document.querySelector('.btn-apply');
-      btn.textContent = '조회 중...'; btn.disabled = true;
-      document.getElementById('loadingOverlay').classList.add('show');
-
-      fetch(`${contextPath}admin/stats/chart-data?from=${from}&to=${to}&period=${currentPeriod}`)
-        .then(res => { if (!res.ok) throw new Error('서버 오류'); return res.json(); })
-        .then(data => {
-          lastData = data; lastFrom = from; lastTo = to;
-          document.getElementById('currentRangeLabel').textContent = `${from} ~ ${to}`;
-          renderCurrentSection();
-        })
-        .catch(err => alert('데이터 로드 실패: ' + err.message))
-        .finally(() => {
-          btn.textContent = '조회'; btn.disabled = false;
-          document.getElementById('loadingOverlay').classList.remove('show');
-        });
-    }
-
-    window.switchSection = function(el, sec) {
-      document.querySelectorAll('.report-nav-tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.report-section').forEach(s => s.classList.remove('active'));
-      el.classList.add('active');
-      document.getElementById('sec-' + sec).classList.add('active');
-      currentSection = sec;
-      renderCurrentSection();
-    };
-
-    window.setPeriod = function(el, type) {
-      document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
-      el.classList.add('active');
-      currentPeriod = type;
-    };
-
-    window.setQuick = function(el, days) {
-      document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
-      el.classList.add('active');
-      const to = new Date(), from = new Date();
-      from.setDate(from.getDate() - days);
-      document.getElementById('date-to').value   = to.toISOString().split('T')[0];
-      document.getElementById('date-from').value = from.toISOString().split('T')[0];
-      const rec = days <= 90 ? 'daily' : days <= 365 ? 'weekly' : 'monthly';
-      currentPeriod = rec;
-      const lm = { daily: '일별', weekly: '주별', monthly: '월별' };
-      document.querySelectorAll('.period-tab').forEach(t => t.classList.toggle('active', t.textContent === lm[rec]));
-    };
-
-    window.applyFilter = fetchAndRender;
-
-    document.addEventListener('DOMContentLoaded', function() {
-      const today = new Date(), from = new Date();
-      from.setDate(from.getDate() - 30);
-      document.getElementById('date-to').value   = today.toISOString().split('T')[0];
-      document.getElementById('date-from').value = from.toISOString().split('T')[0];
-      fetchAndRender();
-    });
-  })();
-  </script>
+ <script th:inline="javascript">
+	(function() {
+	
+	  const contextPath = /*[[@{/}]]*/ "";
+	
+	  let currentPeriod  = 'daily';
+	  let charts         = {};
+	  let lastData       = null;
+	  let lastFrom       = '';
+	  let lastTo         = '';
+	  let currentSection = 'member';
+	
+	  const baseOpts = {
+	    responsive: true,
+	    maintainAspectRatio: false,
+	    plugins: {
+	      legend: { display: false },
+	      tooltip: {
+	        backgroundColor: '#0F1117', titleColor: '#fff',
+	        bodyColor: 'rgba(255,255,255,0.75)', padding: 10, cornerRadius: 8,
+	        titleFont: { size: 12, weight: '600' }, bodyFont: { size: 12 }
+	      }
+	    },
+	    scales: {
+	      x: { grid: { display: false }, border: { display: false },
+	           ticks: { font: { size: 11 }, color: '#9CA3AF', maxTicksLimit: 12 } },
+	      y: { grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
+	           border: { display: false, dash: [4, 4] },
+	           ticks: { font: { size: 11 }, color: '#9CA3AF', padding: 6 }, beginAtZero: true }
+	    }
+	  };
+	
+	  function destroySection(sec) {
+	    const canvasIds = {
+	      member: ['memberTrendChart', 'memberDayChart', 'memberGrowthChart'],
+	      job:    ['jobTrendChart'],
+	      board:  ['boardTrendChart']
+	    };
+	    (canvasIds[sec] || []).forEach(id => {
+	      const canvas = document.getElementById(id);
+	      if (canvas) {
+	        const existing = Chart.getChart(canvas);
+	        if (existing) existing.destroy();
+	      }
+	    });
+	    const keys = { member: ['memberTrend','memberDay','memberGrowth'], job: ['jobTrend'], board: ['boardTrend'] };
+	    (keys[sec] || []).forEach(k => delete charts[k]);
+	  }
+	
+	  function renderMember(d, from, to) {
+	    destroySection('member');
+	    document.getElementById('memberTrendSub').textContent  = `${from} ~ ${to}`;
+	    document.getElementById('memberDayTitle').textContent  = d.dayChartTitle || '요일별 평균 가입 수';
+	
+	    charts.memberTrend = new Chart(document.getElementById('memberTrendChart'), {
+	      type: 'line',
+	      data: {
+	        labels: d.joinTrend.labels,
+	        datasets: [
+	          { label: '신규 가입', data: d.joinTrend.data,
+	            borderColor: '#2563EB', backgroundColor: 'rgba(37,99,235,0.07)',
+	            fill: true, tension: 0.4,
+	            pointRadius: d.joinTrend.labels.length > 60 ? 0 : 3,
+	            pointHoverRadius: 5, borderWidth: 2 },
+	          { label: '탈퇴', data: d.withdrawTrend.data,
+	            borderColor: '#DC2626', backgroundColor: 'rgba(220,38,38,0.05)',
+	            fill: true, tension: 0.4, pointRadius: 2, pointHoverRadius: 5,
+	            borderDash: [5, 3], borderWidth: 1.5 }
+	        ]
+	      },
+	      options: baseOpts
+	    });
+	
+	    charts.memberDay = new Chart(document.getElementById('memberDayChart'), {
+	      type: 'bar',
+	      data: {
+	        labels: d.dayChart.labels,
+	        datasets: [{
+	          data: d.dayChart.data,
+	          backgroundColor: d.dayChart.labels.map((_, i) => i >= 5 ? '#CBD5E1' : '#0F1117'),
+	          borderRadius: 6, borderSkipped: false
+	        }]
+	      },
+	      options: baseOpts
+	    });
+	
+	    charts.memberGrowth = new Chart(document.getElementById('memberGrowthChart'), {
+	      type: 'line',
+	      data: {
+	        labels: d.memberGrowth.labels,
+	        datasets: [{
+	          data: d.memberGrowth.data,
+	          borderColor: '#2563EB', backgroundColor: 'rgba(37,99,235,0.08)',
+	          fill: true, tension: 0.4, pointRadius: 3, pointHoverRadius: 5, borderWidth: 2
+	        }]
+	      },
+	      options: baseOpts
+	    });
+	  }
+	
+	  function renderJob(d, from, to) {
+	    destroySection('job');
+	    document.getElementById('jobTrendSub').textContent = `${from} ~ ${to}`;
+	
+	    charts.jobTrend = new Chart(document.getElementById('jobTrendChart'), {
+	      type: 'bar',
+	      data: {
+	        labels: d.jobReg.labels,
+	        datasets: [
+	          { label: '등록', data: d.jobReg.data, backgroundColor: '#2563EB', borderRadius: 4, borderSkipped: false },
+	          { label: '마감', data: d.jobClosed.data, backgroundColor: '#CBD5E1', borderRadius: 4, borderSkipped: false }
+	        ]
+	      },
+	      options: baseOpts
+	    });
+	  }
+	
+	  function renderBoard(d, from, to) {
+	    destroySection('board');
+	    document.getElementById('boardTrendSub').textContent = `${from} ~ ${to}`;
+	
+	    charts.boardTrend = new Chart(document.getElementById('boardTrendChart'), {
+	      type: 'line',
+	      data: {
+	        labels: d.postTrend.labels,
+	        datasets: [
+	          { label: '게시글', data: d.postTrend.data,
+	            borderColor: '#16A34A', backgroundColor: 'rgba(22,163,74,0.07)',
+	            fill: true, tension: 0.4, pointRadius: 2, pointHoverRadius: 5, borderWidth: 2 },
+	          { label: '댓글', data: d.commentTrend.data,
+	            borderColor: '#D97706', backgroundColor: 'rgba(217,119,6,0.07)',
+	            fill: true, tension: 0.4, pointRadius: 2, pointHoverRadius: 5, borderWidth: 2 }
+	        ]
+	      },
+	      options: baseOpts
+	    });
+	  }
+	
+	  function renderCurrentSection() {
+	    if (!lastData) return;
+	    if (currentSection === 'member') renderMember(lastData, lastFrom, lastTo);
+	    if (currentSection === 'job')    renderJob(lastData, lastFrom, lastTo);
+	    if (currentSection === 'board')  renderBoard(lastData, lastFrom, lastTo);
+	  }
+	
+	  function fetchAndRender() {
+	    const from = document.getElementById('date-from').value;
+	    const to   = document.getElementById('date-to').value;
+	    if (!from || !to || from > to) { alert('날짜 범위를 올바르게 입력해주세요.'); return; }
+	
+	    const btn = document.querySelector('.btn-apply');
+	    btn.textContent = '조회 중...'; btn.disabled = true;
+	    document.getElementById('loadingOverlay').classList.add('show');
+	
+	    fetch(`${contextPath}admin/stats/chart-data?from=${from}&to=${to}&period=${currentPeriod}`)
+	      .then(res => { if (!res.ok) throw new Error('서버 오류'); return res.json(); })
+	      .then(data => {
+	        lastData = data; lastFrom = from; lastTo = to;
+	        document.getElementById('currentRangeLabel').textContent = `${from} ~ ${to}`;
+	        renderCurrentSection();
+	      })
+	      .catch(err => alert('데이터 로드 실패: ' + err.message))
+	      .finally(() => {
+	        btn.textContent = '조회'; btn.disabled = false;
+	        document.getElementById('loadingOverlay').classList.remove('show');
+	      });
+	  }
+	
+	  window.switchSection = function(el, sec) {
+	    document.querySelectorAll('.report-nav-tab').forEach(t => t.classList.remove('active'));
+	    document.querySelectorAll('.report-section').forEach(s => s.classList.remove('active'));
+	    el.classList.add('active');
+	    document.getElementById('sec-' + sec).classList.add('active');
+	    currentSection = sec;
+	    renderCurrentSection();
+	  };
+	
+	  window.setPeriod = function(el, type) {
+	    document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+	    el.classList.add('active');
+	    currentPeriod = type;
+	  };
+	
+	  window.setQuick = function(el, days) {
+	    document.querySelectorAll('.quick-btn').forEach(b => b.classList.remove('active'));
+	    el.classList.add('active');
+	    const to = new Date(), from = new Date();
+	    from.setDate(from.getDate() - days);
+	    document.getElementById('date-to').value   = to.toISOString().split('T')[0];
+	    document.getElementById('date-from').value = from.toISOString().split('T')[0];
+	    const rec = days <= 90 ? 'daily' : days <= 365 ? 'weekly' : 'monthly';
+	    currentPeriod = rec;
+	    const lm = { daily: '일별', weekly: '주별', monthly: '월별' };
+	    document.querySelectorAll('.period-tab').forEach(t => t.classList.toggle('active', t.textContent === lm[rec]));
+	  };
+	
+	  window.applyFilter = fetchAndRender;
+	
+	  document.addEventListener('DOMContentLoaded', function() {
+	    const today = new Date(), from = new Date();
+	    from.setDate(from.getDate() - 30);
+	    document.getElementById('date-to').value   = today.toISOString().split('T')[0];
+	    document.getElementById('date-from').value = from.toISOString().split('T')[0];
+	    fetchAndRender();
+	  });
+	})();
+	</script>
 
 </section>
 </body>

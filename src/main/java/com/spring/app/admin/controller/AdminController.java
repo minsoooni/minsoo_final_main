@@ -145,13 +145,22 @@ public class AdminController {
 	        : ResponseEntity.badRequest().body("정지 해제 실패");
 	}
 	
+	@PostMapping("/members/{memberId}/withdraw")
+	@ResponseBody
+	public ResponseEntity<String> withdrawMember(@PathVariable("memberId") String memberId) {
+	    int result = memberAdminService.withdrawMember(memberId);
+	    return result > 0
+	        ? ResponseEntity.ok("탈퇴 처리 완료")
+	        : ResponseEntity.badRequest().body("탈퇴 처리 실패");
+	}
+	
 	@GetMapping("/members/{memberId}/detail")
 	@ResponseBody
 	public AdminMemberDTO memberDetail(@PathVariable("memberId") String memberId) {
 	    return memberAdminService.getMemberById(memberId);
 	}
 	
-	// ===========
+	// ===============================================
 	
 	
 	@GetMapping("/companies")
@@ -216,7 +225,7 @@ public class AdminController {
 	    return result > 0
 	        ? ResponseEntity.ok("정지 해제 완료")
 	        : ResponseEntity.badRequest().body("정지 해제 실패");
-	}
+	}		
 	
 	@GetMapping("/companies/{memberId}/detail")
 	@ResponseBody

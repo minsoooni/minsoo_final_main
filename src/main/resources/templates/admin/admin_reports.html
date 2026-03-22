@@ -275,6 +275,15 @@
 									    <span class="detail-meta-val" 
 									          th:text="${report.targetTitle} ?: '-'"></span>
 									</div>
+									
+									<div class="detail-meta-row">
+									    <span class="detail-meta-key">
+									        <span th:text="${report.targetType == 1} ? '공고 ID' : 
+									                       (${report.targetType == 2} ? '게시글 ID' : '댓글 ID')">
+									        </span>
+									    </span>
+									    <span class="detail-meta-val" th:text="${report.targetId} ?: '-'"></span>
+									</div>
                                     
                                     
                                     

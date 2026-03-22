@@ -31,4 +31,5 @@ public interface AdminMemberDAO {
     );
 
     AdminMemberDTO selectMemberById(@Param("memberId") String memberId);
+    int withdrawMember(@Param("memberId") String memberId);
 }

@@ -104,5 +104,13 @@
         FROM TBL_MEMBER
         WHERE MEMBERID = #{memberId}
     </select>
+    
+    <!-- 회원 탈퇴 처리 -->
+	<update id="withdrawMember">
+	    UPDATE TBL_MEMBER
+	    SET STATUS     = 2,
+	        UPDATED_AT = SYSDATE
+	    WHERE MEMBERID = #{memberId}
+	</update>
 
 </mapper>
