@@ -6,211 +6,462 @@
   <title>기업 대시보드</title>
   <link rel="stylesheet" th:href="@{/css/company/job_banner.css}">
   <style type="text/css"></style>
-  
+
   <script th:inline="javascript">
-  const contextPath = /*[[@{/}]]*/ "";
+    const contextPath = /*[[@{/}]]*/ "";
 
-  // 배너 등록 페이지로 이동
-  function goBannerCreate(){
-    location.href = contextPath + "company/banner/write"; //1
-  }
+    let bannerCache = [];
+    let openedPreviewBannerId = null;
+    
+    //페이징 처리를 위한 전역변수
+    let currentBannerPage = /*[[${currentShowPageNo != null ? currentShowPageNo : 1}]]*/ 1;
+    let totalBannerPage = /*[[${totalPage != null ? totalPage : 1}]]*/ 1;
+    let totalBannerCount = /*[[${totalCount != null ? totalCount : 0}]]*/ 0;
+    
 
-  // 배너 수정 페이지로 이동
-  function editBanner(id){
-    location.href = contextPath + "company/banner/write?bannerId=" + id;
-  }
-
-  // 배너 삭제 처리
-  function deleteBanner(id){
-    // 사용자에게 최종 확인 받기
-    if(!confirm("해당 배너를 삭제하시겠습니까?\n삭제 후 목록에서 사라집니다.")){
-      return;
+    // 배너 등록 페이지로 이동
+    function goBannerCreate(){
+      location.href = contextPath + "company/banner/write";
     }
 
-    fetch(contextPath + "company/api/banner/" + id, {
-      method: "DELETE",
-      headers: {
-        "Accept": "application/json"
-      }
-    })
-    .then(response => {
-      return response.json()
-        .then(data => ({ ok: response.ok, data }));
-    })
-    .then(({ ok, data }) => {
-      if(!ok || !data.success){
-        throw new Error(data.message || "배너 삭제 실패");
+    // 배너 삭제 처리
+    function deleteBanner(id){
+      if(!confirm("해당 배너를 삭제하시겠습니까?\n삭제 후 목록에서 사라집니다.")){
+        return;
       }
 
-      alert(data.message || "배너가 삭제되었습니다.");
+      fetch(contextPath + "company/api/banner/" + id, {
+        method: "DELETE",
+        headers: {
+          "Accept": "application/json"
+        }
+      })
+      .then(response => {
+        return response.json()
+          .then(data => ({ ok: response.ok, data }));
+      })
+      .then(({ ok, data }) => {
+        if(!ok || !data.success){
+          throw new Error(data.message || "배너 삭제 실패");
+        }
 
-      // 삭제 후 목록 다시 조회
-      loadBannerList();
-    })
-    .catch(error => {
-      console.error("배너 삭제 중 오류:", error);
-      alert(error.message || "배너 삭제 중 오류가 발생했습니다.");
-    });
-  }
+        alert(data.message || "배너가 삭제되었습니다.");
 
-  // XSS 방지를 위한 문자열 이스케이프 처리
-  function escapeHtml(str){
-    if(str == null) return "";
-    return String(str)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
+        if(String(openedPreviewBannerId) === String(id)){
+          openedPreviewBannerId = null;
+        }
 
-  // 상태값에 따라 배지 스타일 지정
-  function makeStatusHtml(status){
-    const s = (status || "").trim();
+        loadBannerList(currentBannerPage);
+      })
+      .catch(error => {
+        console.error("배너 삭제 중 오류:", error);
+        alert(error.message || "배너 삭제 중 오류가 발생했습니다.");
+      });
+    }//function deleteBanner(id){}
+    
+    
 
-    if(s === "승인완료" || s === "APPROVED" || s === "ACTIVE"){
-      return `<span class="bn-pill on">${escapeHtml(s)}</span>`;
-    }
-    else if(s === "대기" || s === "WAIT" || s === "PENDING" || s === "처리중"){
-      return `<span class="bn-pill wait">${escapeHtml(s)}</span>`;
-    }
-    else if(s === "반려" || s === "REJECTED"){
-      return `<span class="bn-pill off">${escapeHtml(s)}</span>`;
-    }
-    else if(s === "마감" || s === "CLOSED"){
-      return `<span class="bn-pill closed">${escapeHtml(s)}</span>`;
-    }
-    else{
-      return `<span class="bn-pill">${escapeHtml(s || "-")}</span>`;
-    }
-  }
-
-  // 배너 목록 렌더링
-  function renderBannerRows(bannerList){
-    const tbody = document.getElementById("bannerTbody");
-    const countEl = document.getElementById("bannerCount");
-
-    countEl.textContent = bannerList.length;
-
-    if(!bannerList || bannerList.length === 0){
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="8" class="bn-empty">
-            등록된 배너가 없습니다.
-          </td>
-        </tr>
-      `;
-      return;
+    // XSS 방지
+    function escapeHtml(str){
+      if(str == null) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
     }
 
-    let html = "";
+    
+    
+    // 파일 URL 정규화
+    function resolveFileUrl(fileUrl){
+      if(!fileUrl) return "";
+      if(/^https?:\/\//i.test(fileUrl)) return fileUrl;
 
-    bannerList.forEach(banner => {
-      const imageHtml = (banner.fileUrl && banner.fileUrl !== "")
-        ? `<img src="${escapeHtml(contextPath + banner.fileUrl)}"
-                 alt="${escapeHtml(banner.originalFilename || banner.title || '배너 이미지')}"
-                 class="bn-thumb">`
-        : `<div class="bn-thumb-empty">이미지 없음</div>`;
+      const base = contextPath.endsWith("/") ? contextPath.slice(0, -1) : contextPath;
+      return fileUrl.startsWith("/") ? (base + fileUrl) : (base + "/" + fileUrl);
+    }
 
-        const rejectReasonHtml = (banner.rejectReason && banner.rejectReason !== "")
-        ? `
-          <div class="bn-reject-wrap">
-            <div class="bn-reject">${escapeHtml(banner.rejectReason)}</div>
-            <div class="bn-reject-tooltip">${escapeHtml(banner.rejectReason)}</div>
-          </div>
-        `
-        : `-`;
+    
+    
+    // 상태값 배지
+    function makeStatusHtml(status){
+      const s = (status || "").trim();
 
-      // 마감 상태일 때는 수정 대신 삭제 버튼 표시
-      let actionHtml = `<button class="bn-link" type="button" onclick="editBanner(${banner.bannerId})">수정</button>`;
-
-      if(banner.status === "마감"){
-        actionHtml = `
-          <span class="bn-action-wrap">
-            <span class="bn-action-disabled">수정불가</span>
-            <button class="bn-link bn-link-delete" type="button" onclick="deleteBanner(${banner.bannerId})">삭제</button>
-          </span>
-        `;
+      if(s === "승인완료" || s === "APPROVED" || s === "ACTIVE"){
+        return `<span class="bn-pill on">${escapeHtml(s)}</span>`;
       }
-
-      html += `
-        <tr class="${banner.status === '마감' ? 'bn-row-closed' : ''}">
-          <td class="col-thumb">${imageHtml}</td>
-          <td class="bn-title-cell col-title" title="${escapeHtml(banner.title || "-")}">${escapeHtml(banner.title || "-")}</td>
-          <td class="bn-job-title col-job" title="${escapeHtml(banner.jobTitle || "-")}">${escapeHtml(banner.jobTitle || "-")}</td>
-          
-          <td class="col-date">
-	        <span class="bn-date">
-	          <i class="fa-regular fa-calendar"></i>
-	          <span>${escapeHtml(formatDateOnly(banner.startAt))}</span>
-	        </span>
-	      </td>
-	      
-	      <td class="col-date">
-	        <span class="bn-date">
-	          <i class="fa-regular fa-calendar"></i>
-	          <span>${escapeHtml(formatDateOnly(banner.endAt))}</span>
-	        </span>
-	      </td>
-           
-          <td class="col-status">${makeStatusHtml(banner.status)}</td>
-          <td class="col-reject">
-            ${rejectReasonHtml}
-          </td>
-          <td class="col-action">${actionHtml}</td>
-        </tr>
-      `;
-    });
-
-    tbody.innerHTML = html;
-  }
-
-  // 배너 목록 조회
-  function loadBannerList(){
-    fetch(contextPath + "company/api/banner/list", {
-      method: "GET",
-      headers: {
-        "Accept": "application/json"
+      else if(s === "대기" || s === "WAIT" || s === "PENDING" || s === "처리중"){
+        return `<span class="bn-pill wait">${escapeHtml(s)}</span>`;
       }
-    })
-    .then(response => {
-      if(!response.ok){
-        throw new Error("배너 목록 조회 실패");
+      else if(s === "반려" || s === "REJECTED"){
+        return `<span class="bn-pill off">${escapeHtml(s)}</span>`;
       }
-      return response.json();
-    })
-    .then(data => {
-      if(data.success){
-        renderBannerRows(data.bannerList || []);
+      else if(s === "마감" || s === "CLOSED"){
+        return `<span class="bn-pill closed">${escapeHtml(s)}</span>`;
       }
       else{
-        console.error(data.message || "배너 목록 조회 실패");
+        return `<span class="bn-pill">${escapeHtml(s || "-")}</span>`;
       }
-    })
-    .catch(error => {
-      console.error("배너 목록 조회 중 오류:", error);
-    });
-  }
-  
-  
-  //날짜 문자열에서 앞의 YYYY-MM-DD만 추출
-  function formatDateOnly(dateStr){
-    if(!dateStr) return "-";
-    return String(dateStr).length >= 10 ? String(dateStr).substring(0, 10) : String(dateStr);
-  }
+    }//function makeStatusHtml(status){}
+    
+    
 
-  // 페이지 진입 시 목록 자동 조회
-  document.addEventListener("DOMContentLoaded", function(){
-    loadBannerList();
-  });
+    // 날짜 문자열에서 YYYY-MM-DD 추출
+    function formatDateOnly(dateStr){
+      if(!dateStr) return "-";
+      return String(dateStr).length >= 10 ? String(dateStr).substring(0, 10) : String(dateStr);
+    }
+
+    // 미리보기 토글
+    function previewBanner(id){
+      if(String(openedPreviewBannerId) === String(id)){
+        openedPreviewBannerId = null;
+        renderBannerRows(bannerCache);
+        return;
+      }
+
+      openedPreviewBannerId = id;
+      renderBannerRows(bannerCache);
+
+      setTimeout(() => {
+        const previewRow = document.getElementById("previewRow-" + id);
+        if(previewRow){
+          previewRow.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+      }, 0);
+    }
+
+    // 인라인 미리보기 행 생성
+    function buildPreviewRowHtml(banner){
+      const fileUrl = resolveFileUrl(banner.fileUrl);
+
+      const bgHtml = fileUrl
+        ? `
+          <div class="jp-sponsored-card__bg">
+            <img src="${escapeHtml(fileUrl)}"
+                 alt="${escapeHtml(banner.originalFilename || banner.title || '배너 이미지')}">
+          </div>
+        `
+        : `
+          <div class="jp-sponsored-card__bg jp-sponsored-card__bg--empty">
+            <i class="fa-regular fa-image"></i>
+          </div>
+        `;
+
+      return `
+        <tr id="previewRow-${banner.bannerId}" class="bn-preview-row">
+          <td colspan="8" class="bn-preview-row-cell">
+            <div class="bn-inline-preview">
+              <div class="bn-inline-preview-head">
+                <div class="bn-inline-preview-title">
+                  <i class="fa-regular fa-eye"></i>
+                  배너 미리보기
+                </div>
+                <button type="button"
+                        class="bn-inline-close"
+                        onclick="previewBanner(${banner.bannerId})">
+                  닫기
+                </button>
+              </div>
+
+              <div class="bn-inline-preview-grid">
+                <div class="bn-inline-preview-card">
+                  <section class="jp-sponsored-wrap bn-preview-wrap">
+                    <div class="jp-sponsored-carousel bn-preview-carousel">
+                      <div class="jp-sponsored-viewport">
+                        <div class="jp-sponsored-track bn-preview-track">
+                          <div class="jp-sponsored-slide bn-preview-slide">
+                            <a href="${banner.fkJobId ? contextPath + "job/detail/" + banner.fkJobId : "javascript:void(0);"}"
+                               class="jp-sponsored-card-link">
+                              <article class="jp-sponsored-card">
+                                ${bgHtml}
+                                <div class="jp-sponsored-card__overlay"></div>
+
+                                <div class="jp-sponsored-card__body">
+                                  <div class="jp-sponsored-card__text">
+                                    <div class="jp-sponsored-card__subline">
+                                      <span class="jp-sponsored-card__subitem">
+                                        <i class="fa-regular fa-building"></i>
+                                        스폰서 기업 배너
+                                      </span>
+                                      <span class="jp-sponsored-card__dot"></span>
+                                      <span class="jp-sponsored-card__subitem">
+                                        <i class="fa-regular fa-rectangle-list"></i>
+                                        채용공고 바로가기
+                                      </span>
+                                    </div>
+
+                                    <h3 class="jp-sponsored-card__title">${escapeHtml(banner.title || "배너 제목")}</h3>
+                                    <p class="jp-sponsored-card__desc">${escapeHtml(banner.jobTitle || "연결된 공고 제목")}</p>
+                                  </div>
+                                </div>
+                              </article>
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                </div>
+
+                <div class="bn-inline-preview-info">
+                  <div class="bn-inline-info-card">
+                    <div class="bn-inline-info-title">노출 정보</div>
+
+                    <div class="bn-inline-info-item">
+                      <span class="bn-inline-info-label">배너 제목</span>
+                      <span class="bn-inline-info-value">${escapeHtml(banner.title || "-")}</span>
+                    </div>
+
+                    <div class="bn-inline-info-item">
+                      <span class="bn-inline-info-label">연결 공고</span>
+                      <span class="bn-inline-info-value">${escapeHtml(banner.jobTitle || "-")}</span>
+                    </div>
+
+                    <div class="bn-inline-info-item">
+                      <span class="bn-inline-info-label">노출 기간</span>
+                      <span class="bn-inline-info-value">${escapeHtml(formatDateOnly(banner.startAt))} ~ ${escapeHtml(formatDateOnly(banner.endAt))}</span>
+                    </div>
+
+                    <div class="bn-inline-info-item">
+                      <span class="bn-inline-info-label">상태</span>
+                      <span class="bn-inline-info-value">${makeStatusHtml(banner.status)}</span>
+                    </div>
+
+                    <div class="bn-inline-info-item">
+                      <span class="bn-inline-info-label">안내</span>
+                      <span class="bn-inline-info-value">메인 index 페이지 스폰서 배너 영역 기준 미리보기입니다.</span>
+                    </div>
+
+                    ${(banner.rejectReason && banner.rejectReason !== "")
+                      ? `
+                        <div class="bn-inline-info-item">
+                          <span class="bn-inline-info-label">반려사유</span>
+                          <span class="bn-inline-info-value">${escapeHtml(banner.rejectReason)}</span>
+                        </div>
+                      `
+                      : ""
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>
+      `;
+    }//function buildPreviewRowHtml(banner){}
+
+    
+    
+    // 목록 렌더링
+    function renderBannerRows(bannerList){
+      const tbody = document.getElementById("bannerTbody");
+      const countEl = document.getElementById("bannerCount");
+
+      countEl.textContent = totalBannerCount;
+
+      if(!bannerList || bannerList.length === 0){
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="bn-empty">
+              등록된 배너가 없습니다.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      let html = "";
+
+      bannerList.forEach(banner => {
+        const isOpened = String(openedPreviewBannerId) === String(banner.bannerId);
+
+        const imageHtml = (banner.fileUrl && banner.fileUrl !== "")
+          ? `<img src="${escapeHtml(resolveFileUrl(banner.fileUrl))}"
+                   alt="${escapeHtml(banner.originalFilename || banner.title || '배너 이미지')}"
+                   class="bn-thumb">`
+          : `<div class="bn-thumb-empty">이미지 없음</div>`;
+
+        const rejectReasonHtml = (banner.rejectReason && banner.rejectReason !== "")
+          ? `
+            <div class="bn-reject-wrap">
+              <div class="bn-reject">${escapeHtml(banner.rejectReason)}</div>
+              <div class="bn-reject-tooltip">${escapeHtml(banner.rejectReason)}</div>
+            </div>
+          `
+          : `-`;
+
+        let actionHtml = `
+          <span class="bn-action-wrap">
+            <button class="bn-link" type="button" onclick="previewBanner(${banner.bannerId})">
+              ${isOpened ? "닫기" : "미리보기"}
+            </button>
+          </span>
+        `;
+
+        if(banner.status === "마감"){
+          actionHtml = `
+            <span class="bn-action-wrap">
+              <button class="bn-link" type="button" onclick="previewBanner(${banner.bannerId})">
+                ${isOpened ? "닫기" : "미리보기"}
+              </button>
+              <button class="bn-link bn-link-delete" type="button" onclick="deleteBanner(${banner.bannerId})">
+                삭제
+              </button>
+            </span>
+          `;
+        }
+
+        html += `
+          <tr class="${banner.status === '마감' ? 'bn-row-closed' : ''} ${isOpened ? 'bn-row-active' : ''}">
+            <td class="col-thumb">${imageHtml}</td>
+            <td class="bn-title-cell col-title" title="${escapeHtml(banner.title || "-")}">${escapeHtml(banner.title || "-")}</td>
+            <td class="bn-job-title col-job" title="${escapeHtml(banner.jobTitle || "-")}">${escapeHtml(banner.jobTitle || "-")}</td>
+
+            <td class="col-date">
+              <span class="bn-date">
+                <i class="fa-regular fa-calendar"></i>
+                <span>${escapeHtml(formatDateOnly(banner.startAt))}</span>
+              </span>
+            </td>
+
+            <td class="col-date">
+              <span class="bn-date">
+                <i class="fa-regular fa-calendar"></i>
+                <span>${escapeHtml(formatDateOnly(banner.endAt))}</span>
+              </span>
+            </td>
+
+            <td class="col-status">${makeStatusHtml(banner.status)}</td>
+            <td class="col-reject">${rejectReasonHtml}</td>
+            <td class="col-action">${actionHtml}</td>
+          </tr>
+        `;
+
+        if(isOpened){
+          html += buildPreviewRowHtml(banner);
+        }
+      });
+
+      tbody.innerHTML = html;
+    }//function renderBannerRows(bannerList){}
+    
+    
+    
+    // 페이지 이동해주는 함수
+    function moveBannerPage(pageNo){
+   	  if(pageNo < 1 || pageNo > totalBannerPage){
+   	    return;
+   	  }
+
+   	  openedPreviewBannerId = null;
+   	  loadBannerList(pageNo);
+   	}//function moveBannerPage(pageNo){}
+    
+    
+    
+    //페이지네이션 렌더링 함수
+    function renderBannerPagination(){
+   	  const pageEl = document.getElementById("bannerPagination");
+   	  if(!pageEl) return;
+
+   	  if(totalBannerPage <= 1){
+   	    pageEl.innerHTML = "";
+   	    return;
+   	  }
+
+   	  let html = `<div class="bn-pagination">`;
+
+   	  html += `
+   	    <button type="button"
+   	            class="bn-page-btn"
+   	            onclick="moveBannerPage(${currentBannerPage - 1})"
+   	            ${currentBannerPage <= 1 ? "disabled" : ""}>
+   	      이전
+   	    </button>
+   	  `;
+
+   	  const blockSize = 5;
+   	  const startPage = Math.floor((currentBannerPage - 1) / blockSize) * blockSize + 1;
+   	  const endPage = Math.min(startPage + blockSize - 1, totalBannerPage);
+
+   	  for(let i = startPage; i <= endPage; i++){
+   	    html += `
+   	      <button type="button"
+   	              class="bn-page-num ${i === currentBannerPage ? "active" : ""}"
+   	              onclick="moveBannerPage(${i})">
+   	        ${i}
+   	      </button>
+   	    `;
+   	  }
+
+   	  html += `
+   	    <button type="button"
+   	            class="bn-page-btn"
+   	            onclick="moveBannerPage(${currentBannerPage + 1})"
+   	            ${currentBannerPage >= totalBannerPage ? "disabled" : ""}>
+   	      다음
+   	    </button>
+   	  `;
+
+   	  html += `</div>`;
+   	  pageEl.innerHTML = html;
+   	}//function renderBannerPagination(){}
+    
+    
+
+    // 목록 조회
+    function loadBannerList(pageNo = 1){
+      fetch(contextPath + "company/api/banner/list?currentShowPageNo=" + pageNo, {
+        method: "GET",
+        headers: {
+          "Accept": "application/json"
+        }
+      })
+      .then(response => {
+        if(!response.ok){
+          throw new Error("배너 목록 조회 실패");
+        }
+        return response.json();
+      })
+      .then(data => {
+        if(data.success){
+          bannerCache = data.bannerList || [];
+          currentBannerPage = data.currentShowPageNo || 1;
+          totalBannerPage = data.totalPage || 1;
+          totalBannerCount = data.totalCount || 0;
+    
+          if(openedPreviewBannerId != null){
+            const exists = bannerCache.some(item => String(item.bannerId) === String(openedPreviewBannerId));
+            if(!exists){
+              openedPreviewBannerId = null;
+            }
+          }
+    
+          renderBannerRows(bannerCache);
+          renderBannerPagination();
+        }
+        else{
+          console.error(data.message || "배너 목록 조회 실패");
+        }
+      })
+      .catch(error => {
+        console.error("배너 목록 조회 중 오류:", error);
+      });
+    }//function loadBannerList(pageNo = 1){}
+
+    
+    document.addEventListener("DOMContentLoaded", function(){
+    	loadBannerList(currentBannerPage);
+    });
   </script>
-  
 </head>
 
 <body>
 <section class="dash">
 
-  <!-- header -->
   <div class="bn-head">
     <div>
       <h3 class="bn-title">배너 광고 관리</h3>
@@ -222,134 +473,140 @@
     </button>
   </div>
 
-
-  <!-- Registered banner table -->
   <div class="panel">
     <div class="panel-head">
       <h3>
         등록된 배너
-        (<span id="bannerCount" th:text="${bannerList != null ? #lists.size(bannerList) : 0}">0</span>건)
+        (<span id="bannerCount" th:text="${totalCount != null ? totalCount : 0}">0</span>건)
       </h3>
     </div>
 
-    <div class="table-responsive">
+    <div class="bn-table-wrap">
       <table class="table bn-table bn-table-fixed mb-0">
         <thead>
-		  <tr>
-		    <th class="col-thumb">배너 이미지</th>
-		    <th class="col-title">배너 제목</th>
-		    <th class="col-job">연결된 공고</th>
-		    <th class="col-date">시작일</th>
-		    <th class="col-date">종료일</th>
-		    <th class="col-status">상태</th>
-		    <th class="col-reject">반려사유</th>
-		    <th class="col-action">&nbsp;</th>
-		  </tr>
-		</thead>
-        
+          <tr>
+            <th class="col-thumb">배너 이미지</th>
+            <th class="col-title">배너 제목</th>
+            <th class="col-job">연결된 공고</th>
+            <th class="col-date">시작일</th>
+            <th class="col-date">종료일</th>
+            <th class="col-status">상태</th>
+            <th class="col-reject">반려사유</th>
+            <th class="col-action">&nbsp;</th>
+          </tr>
+        </thead>
 
         <tbody id="bannerTbody">
-          <!-- Thymeleaf 초기 렌더링 -->
           <tr th:if="${bannerList == null or #lists.isEmpty(bannerList)}">
             <td colspan="8" class="bn-empty">등록된 배너가 없습니다.</td>
           </tr>
 
-          <tr th:each="banner : ${bannerList}">
-            <td>
-              <img th:if="${banner.fileUrl != null and banner.fileUrl != ''}"
-                   th:src="${contextPath + banner.fileUrl}"
-                   th:alt="${banner.originalFilename != null ? banner.originalFilename : banner.title}"
-                   class="bn-thumb">
+          <th:block th:each="banner : ${bannerList}">
+            <tr>
+              <td class="col-thumb">
+                <img th:if="${banner.fileUrl != null and banner.fileUrl != ''}"
+                     th:src="${banner.fileUrl}"
+                     th:alt="${banner.originalFilename != null ? banner.originalFilename : banner.title}"
+                     class="bn-thumb">
 
-              <div th:if="${banner.fileUrl == null or banner.fileUrl == ''}"
-                   class="bn-thumb-empty">
-                이미지 없음
-              </div>
-            </td>
+                <div th:if="${banner.fileUrl == null or banner.fileUrl == ''}"
+                     class="bn-thumb-empty">
+                  이미지 없음
+                </div>
+              </td>
 
-            <td class="bn-title-cell col-title" th:text="${banner.title}">배너 제목</td>
+              <td class="bn-title-cell col-title"
+                  th:title="${banner.title}"
+                  th:text="${banner.title}">
+                배너 제목
+              </td>
 
-		    <td class="bn-job-title col-job" th:text="${banner.jobTitle != null ? banner.jobTitle : '-'}">연결 공고</td>
-		    
-		    
-		    <!-- 시작일 -->
-		    <td class="col-date">
-			  <span class="bn-date">
-			    <i class="fa-regular fa-calendar"></i>
-			    <span th:text="${banner.startAt != null and #strings.length(banner.startAt) >= 10 ? #strings.substring(banner.startAt, 0, 10) : '-'}">
-			      2026-03-08
-			    </span>
-			  </span>
-			</td>
-		    
-		    <!-- 종료일 -->
-			<td class="col-date">
-			  <span class="bn-date">
-			    <i class="fa-regular fa-calendar"></i>
-			    <span th:text="${banner.endAt != null and #strings.length(banner.endAt) >= 10 ? #strings.substring(banner.endAt, 0, 10) : '-'}">
-			      2026-03-15
-			    </span>
-			  </span>
-			</td>
-			
-			
-					    
-		    <td class="col-status">
-		      <span class="bn-pill"
-		            th:text="${banner.status}"
-		            th:classappend="${banner.status == '승인완료' ? ' on' : 
-		                            (banner.status == '대기' or banner.status == '처리중' ? ' wait' : 
-		                            (banner.status == '반려' ? ' off' : 
-		                            (banner.status == '마감' ? ' closed' : '')))}">
-		        상태
-		      </span>
-		    </td>
-		    
-		    <td class="col-reject">
-			  <div th:if="${banner.rejectReason != null and banner.rejectReason != ''}"
-			       class="bn-reject-wrap">
-			    <div class="bn-reject"
-			         th:text="${banner.rejectReason}">
-			      반려사유
-			    </div>
-			    <div class="bn-reject-tooltip"
-			         th:text="${banner.rejectReason}">
-			      전체 반려사유
-			    </div>
-			  </div>
-			
-			  <span th:if="${banner.rejectReason == null or banner.rejectReason == ''}">-</span>
-			</td>
+              <td class="bn-job-title col-job"
+                  th:title="${banner.jobTitle != null ? banner.jobTitle : '-'}"
+                  th:text="${banner.jobTitle != null ? banner.jobTitle : '-'}">
+                연결 공고
+              </td>
 
+              <td class="col-date">
+                <span class="bn-date">
+                  <i class="fa-regular fa-calendar"></i>
+                  <span th:text="${banner.startAt != null and #strings.length(banner.startAt) >= 10 ? #strings.substring(banner.startAt, 0, 10) : '-'}">
+                    2026-03-08
+                  </span>
+                </span>
+              </td>
 
-            <td class="col-action">
-			  <th:block th:if="${banner.status != '마감'}">
-			    <button class="bn-link"
-			            type="button"
-			            th:attr="onclick=|editBanner(${banner.bannerId})|">
-			      수정
-			    </button>
-			  </th:block>
-			
-			  <th:block th:if="${banner.status == '마감'}">
-			    <span class="bn-action-wrap">
-			      <span class="bn-action-disabled">수정불가</span>
-			      <button class="bn-link bn-link-delete"
-			              type="button"
-			              th:attr="onclick=|deleteBanner(${banner.bannerId})|">
-			        삭제
-			      </button>
-			    </span>
-			  </th:block>
-			</td>
-            
-          </tr>
+              <td class="col-date">
+                <span class="bn-date">
+                  <i class="fa-regular fa-calendar"></i>
+                  <span th:text="${banner.endAt != null and #strings.length(banner.endAt) >= 10 ? #strings.substring(banner.endAt, 0, 10) : '-'}">
+                    2026-03-15
+                  </span>
+                </span>
+              </td>
+
+              <td class="col-status">
+                <span class="bn-pill"
+                      th:text="${banner.status}"
+                      th:classappend="${banner.status == '승인완료' ? ' on' :
+                                      (banner.status == '대기' or banner.status == '처리중' ? ' wait' :
+                                      (banner.status == '반려' ? ' off' :
+                                      (banner.status == '마감' ? ' closed' : '')))}">
+                  상태
+                </span>
+              </td>
+
+              <td class="col-reject">
+                <div th:if="${banner.rejectReason != null and banner.rejectReason != ''}"
+                     class="bn-reject-wrap">
+                  <div class="bn-reject"
+                       th:text="${banner.rejectReason}">
+                    반려사유
+                  </div>
+                  <div class="bn-reject-tooltip"
+                       th:text="${banner.rejectReason}">
+                    전체 반려사유
+                  </div>
+                </div>
+
+                <span th:if="${banner.rejectReason == null or banner.rejectReason == ''}">-</span>
+              </td>
+
+              <td class="col-action">
+                <th:block th:if="${banner.status != '마감'}">
+                  <span class="bn-action-wrap">
+                    <button class="bn-link"
+                            type="button"
+                            th:attr="onclick=|previewBanner(${banner.bannerId})|">
+                      미리보기
+                    </button>
+                  </span>
+                </th:block>
+
+                <th:block th:if="${banner.status == '마감'}">
+                  <span class="bn-action-wrap">
+                    <button class="bn-link"
+                            type="button"
+                            th:attr="onclick=|previewBanner(${banner.bannerId})|">
+                      미리보기
+                    </button>
+                    <button class="bn-link bn-link-delete"
+                            type="button"
+                            th:attr="onclick=|deleteBanner(${banner.bannerId})|">
+                      삭제
+                    </button>
+                  </span>
+                </th:block>
+              </td>
+            </tr>
+          </th:block>
         </tbody>
       </table>
+      
+      <div id="bannerPagination" class="bn-pagination-wrap"></div>
     </div>
   </div>
 
-  <!-- Guide -->
   <div class="panel bn-guide">
     <div class="panel-head">
       <h3><i class="fa-solid fa-bullhorn"></i> 배너 광고 안내</h3>

@@ -307,34 +307,49 @@
     </div>
     
     <!-- 페이징 처리 페이지바 -->
-    <div class="job-pagination" th:if="${totalPage > 1}">
-	  <!-- 이전 -->
-	  <a th:if="${currentShowPageNo > 1}"
-	     th:href="@{/company/job/list(currentShowPageNo=${currentShowPageNo - 1})}"
-	     class="page-link">
-	    이전
-	  </a>
+	<div class="job-pagination-wrap" th:if="${totalPage > 1}">
+	  <div class="job-pagination">
 	
-	  <!-- 페이지 번호 -->
-	  <th:block th:each="i : ${#numbers.sequence(1, totalPage)}">
-	    <a th:if="${i != currentShowPageNo}"
-	       th:href="@{/company/job/list(currentShowPageNo=${i})}"
-	       th:text="${i}"
-	       class="page-link">
+	    <!-- 이전 -->
+	    <a th:if="${currentShowPageNo > 1}"
+	       th:href="@{/company/job/list(currentShowPageNo=${currentShowPageNo - 1})}"
+	       class="job-page-btn">
+	      이전
 	    </a>
 	
-	    <span th:if="${i == currentShowPageNo}"
-	          th:text="${i}"
-	          class="page-link active">
+	    <!-- 첫 페이지일 때 비활성 느낌 -->
+	    <span th:if="${currentShowPageNo <= 1}"
+	          class="job-page-btn is-disabled">
+	      이전
 	    </span>
-	  </th:block>
 	
-	  <!-- 다음 -->
-	  <a th:if="${currentShowPageNo < totalPage}"
-	     th:href="@{/company/job/list(currentShowPageNo=${currentShowPageNo + 1})}"
-	     class="page-link">
-	    다음
-	  </a>
+	    <!-- 페이지 번호 -->
+	    <th:block th:each="i : ${#numbers.sequence(1, totalPage)}">
+	      <a th:if="${i != currentShowPageNo}"
+	         th:href="@{/company/job/list(currentShowPageNo=${i})}"
+	         th:text="${i}"
+	         class="job-page-num">
+	      </a>
+	
+	      <span th:if="${i == currentShowPageNo}"
+	            th:text="${i}"
+	            class="job-page-num active">
+	      </span>
+	    </th:block>
+	
+	    <!-- 다음 -->
+	    <a th:if="${currentShowPageNo < totalPage}"
+	       th:href="@{/company/job/list(currentShowPageNo=${currentShowPageNo + 1})}"
+	       class="job-page-btn">
+	      다음
+	    </a>
+	
+	    <!-- 마지막 페이지일 때 비활성 느낌 -->
+	    <span th:if="${currentShowPageNo >= totalPage}"
+	          class="job-page-btn is-disabled">
+	      다음
+	    </span>
+	  </div>
 	</div>
     
   </div>

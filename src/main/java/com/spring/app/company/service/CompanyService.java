@@ -118,7 +118,12 @@ public interface CompanyService {
     //List<JobPostingDTO> selectJobPostingListByMemberId(String memberId);
 
     // 지원자 목록 조회
-    List<ApplicantListDTO> selectApplicantList(Map<String, Object> paraMap);
+    //List<ApplicantListDTO> selectApplicantList(Map<String, Object> paraMap);
+    
+    // 지원자 목록 총 개수
+    int selectApplicantCount(Map<String, Object> paraMap);
+    // 지원자 목록 페이징 조회
+    List<ApplicantListDTO> selectApplicantListPaging(Map<String, Object> paraMap);
     
     // 상세 보기 클릭했을 때 읽었음으로 변경
     boolean readApplicantDetail(Map<String, Object> paraMap);
@@ -199,7 +204,12 @@ public interface CompanyService {
 	List<JobPostingDTO> getBannerPostingList(String memberId);
 	
 	//배너 리스트 조회하기
-	List<BannerListDTO> getBannerListByMemberId(String memberId);
+	//List<BannerListDTO> getBannerListByMemberId(String memberId);
+	
+	//배너 갯수 조회하기
+	int getBannerCountByMemberId(String memberId);
+	//페이징처리를 위한 배너 리스트 조회하기
+	List<BannerListDTO> getBannerListByMemberIdPaging(Map<String, Object> paraMap);
 	
 	//배너 등록 화면용 포인트 정보 조회 메서드
 	Map<String, Object> getBannerPaymentInfo(String memberId);

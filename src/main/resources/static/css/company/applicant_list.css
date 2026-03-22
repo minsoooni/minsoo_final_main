@@ -111,3 +111,68 @@
   color:#9ca3af;
   font-weight:700;
 }
+
+
+
+
+
+/* =========================
+   pagination
+   배너형 구조 + 공고쪽 블루 계열
+   ========================= */
+.ap-pagination-wrap{
+  display:flex;
+  justify-content:center;
+  margin:20px 0 6px;
+}
+
+.ap-pagination{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.ap-page-btn,
+.ap-page-num{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:36px;
+  height:36px;
+  padding:0 12px;
+  border:1px solid #dbeafe;
+  background:#ffffff;
+  color:#1e3a8a;
+  border-radius:10px;
+  font-size:13px;
+  font-weight:800;
+  text-decoration:none;
+  box-sizing:border-box;
+  transition:all .15s ease;
+  cursor:pointer;
+}
+
+.ap-page-btn:hover,
+.ap-page-num:hover{
+  background:#eff6ff;
+  border-color:#93c5fd;
+  color:#1d4ed8;
+  text-decoration:none;
+}
+
+.ap-page-num.active{
+  background:#2563eb;
+  color:#ffffff;
+  border-color:#2563eb;
+  box-shadow:0 6px 16px rgba(37, 99, 235, 0.18);
+}
+
+.ap-page-btn.is-disabled{
+  opacity:.45;
+  cursor:not-allowed;
+  background:#f8fafc;
+  color:#94a3b8;
+  border-color:#e5e7eb;
+  pointer-events:none;
+}

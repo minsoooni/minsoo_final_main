@@ -1,6 +1,7 @@
 package com.spring.app.company.model;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -33,8 +34,16 @@ public interface CompanyBannerMapper {
     int updateBannerImageFileId(@Param("bannerId") Long bannerId,
                                 @Param("fileId") Long fileId);
 
+    
     // 배너리스트 조회
-    List<BannerListDTO> selectBannerListByMemberId(@Param("memberId") String memberId);
+    //List<BannerListDTO> selectBannerListByMemberId(@Param("memberId") String memberId);
+    
+    
+    // 배너 전체 개수 조회
+    int getBannerCountByMemberId(@Param("memberId") String memberId);
+
+    // 배너 리스트 페이징 조회
+    List<BannerListDTO> selectBannerListByMemberIdPaging(Map<String, Object> paraMap);
 	
 	
     // 배너 종료일이 지난 경우 상태를 '마감'으로 변경

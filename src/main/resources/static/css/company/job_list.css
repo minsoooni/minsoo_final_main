@@ -201,42 +201,67 @@
 
 
 
-/* 페이지바 CSS */
-.job-pagination{
+
+/* =========================
+   pagination
+   배너 페이지바 형태 + 공고 페이지의 블루 계열
+   ========================= */
+.job-pagination-wrap{
   display:flex;
   justify-content:center;
+  margin-top:20px;
+}
+
+.job-pagination{
+  display:flex;
   align-items:center;
   gap:8px;
-  margin-top:20px;
   flex-wrap:wrap;
 }
 
-.job-pagination .page-link{
+.job-page-btn,
+.job-page-num{
   display:inline-flex;
   align-items:center;
   justify-content:center;
   min-width:36px;
   height:36px;
   padding:0 12px;
-  border:1px solid #d1d5db;
-  border-radius:8px;
-  background:#fff;
-  color:#374151;
+  border:1px solid #dbe3f0;
+  background:#ffffff;
+  color:#334155;
+  border-radius:10px;
+  font-size:13px;
+  font-weight:800;
   text-decoration:none;
-  font-size:14px;
-  font-weight:500;
+  box-sizing:border-box;
+  transition:all .15s ease;
 }
 
-.job-pagination .page-link:hover{
-  background:#f3f4f6;
+.job-page-btn:hover,
+.job-page-num:hover{
+  background:#eff6ff;
+  border-color:#93c5fd;
+  color:#1d4ed8;
+  text-decoration:none;
 }
 
-.job-pagination .page-link.active{
+.job-page-num.active{
   background:#2563eb;
-  color:#fff;
+  color:#ffffff;
   border-color:#2563eb;
-  font-weight:700;
+  box-shadow:0 6px 16px rgba(37, 99, 235, 0.18);
 }
+
+.job-page-btn.is-disabled{
+  opacity:.45;
+  cursor:not-allowed;
+  background:#f8fafc;
+  color:#94a3b8;
+  border-color:#e5e7eb;
+  pointer-events:none;
+}
+
 
 
 
