@@ -23,7 +23,7 @@
         if (count > 1) badge.innerText = count - 1;
         else badge.style.display = "none";
       }
-      /* window.location.href = url; */
+
       if (url.startsWith('/board-service/')) {
         window.location.href = gatewayOrigin + url;
       } else if (url.startsWith('/community')) {
@@ -73,10 +73,10 @@
             <a class="nav-link" href="/user-service/companyinfo/list">기업정보</a>
           </li>
 
-		  <li class="nav-item">
-  		    <a class="nav-link" href="/board-service/community">커뮤니티</a>
-  		  </li>
-<!-- 
+          <li class="nav-item">
+            <a class="nav-link" href="/board-service/community">커뮤니티</a>
+          </li>
+<!--
           <li class="nav-item">
             <a class="nav-link"
                href="/board-service/community"
@@ -84,8 +84,7 @@
                  ? window.JPAuth.moveWithAuthCheck(event, '/board-service/community', '/user-service/auth/check')
                  : true;">커뮤니티</a>
           </li>
-
- -->
+-->
           <li class="nav-item">
             <a class="nav-link" href="/user-service/notice">공지사항</a>
           </li>
@@ -130,29 +129,41 @@
                   알림
                 </div>
 
-                <div th:if="${#lists.isEmpty(notificationList)}"
-                     class="px-3 py-3 text-muted"
-                     style="font-size:13px;">
-                  알림이 없습니다.
+                <div class="jp-notification-list" style="max-height:420px; overflow-y:auto;">
+
+                  <div th:if="${#lists.isEmpty(notificationList)}"
+                       class="px-3 py-3 text-muted"
+                       style="font-size:13px;">
+                    알림이 없습니다.
+                  </div>
+
+                  <a th:each="noti : ${notificationList}"
+                     href="javascript:void(0)"
+                     th:attr="data-noti-id=${noti.notiId}, data-url=${noti.linkUrl}"
+                     onclick="return moveAfterRead(event, this.dataset.notiId, this.dataset.url)"
+                     th:class="'dropdown-item px-3 py-3 border-bottom ' + (${noti.isRead} == 1 ? 'text-muted bg-light' : '')"
+                     style="white-space:normal; line-height:1.5;">
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                      <div style="font-weight:600; font-size:14px; color:#111827;"
+                           th:text="${noti.title}">
+                        알림 제목
+                      </div>
+
+                      <span th:if="${noti.isRead == 0}"
+                            class="badge badge-danger"
+                            style="font-size:10px;">
+                        NEW
+                      </span>
+                    </div>
+
+                    <div style="font-size:12px; color:#6b7280; white-space:pre-wrap;"
+                         th:text="${noti.message}">
+                      알림 내용
+                    </div>
+                  </a>
+
                 </div>
-
-                <a th:each="noti : ${notificationList}"
-				href="javascript:void(0)"
-				th:attr="data-noti-id=${noti.notiId}, data-url=${noti.linkUrl}"
-				onclick="return moveAfterRead(event, this.dataset.notiId, this.dataset.url)"
-                   th:class="'dropdown-item px-3 py-3 border-bottom ' + (${noti.isRead} == 1 ? 'text-muted bg-light' : '')"
-                   style="white-space:normal; line-height:1.5;">
-
-                  <div style="font-weight:600; font-size:14px; color:#111827;"
-                       th:text="${noti.title}">
-                    알림 제목
-                  </div>
-
-                  <div style="font-size:12px; color:#6b7280; white-space:pre-wrap;"
-                       th:text="${noti.message}">
-                    알림 내용
-                  </div>
-                </a>
               </div>
             </div>
 

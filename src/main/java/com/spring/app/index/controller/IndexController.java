@@ -54,7 +54,7 @@ public class IndexController {
 
 		model.addAttribute("categoryList", indexService.getParentJobCategories());
 
-		List<JobPostingListDTO> popularJobList = jobPostingService.getPopularJobPostings(5);
+		List<JobPostingListDTO> popularJobList = jobPostingService.getPopularJobPostings(4);
 		model.addAttribute("popularJobList", popularJobList);
 		
 		List<Map<String, Object>> hotCompanyList = indexService.getHotCompanies();
