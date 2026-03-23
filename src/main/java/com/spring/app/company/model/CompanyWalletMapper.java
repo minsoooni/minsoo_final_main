@@ -41,13 +41,26 @@ public interface CompanyWalletMapper {
     
     Long selectPointAvailableBalance(@Param("memberId") String memberId);
 
-    // ===== payment (lists/summary) =====
+    // 결제 요약
     Map<String, Object> selectPaymentSummary(@Param("memberId") String memberId);
 
-    List<PaymentDTO> selectPaymentList(@Param("memberId") String memberId);
+    // 결제내역 총 개수
+    int getPaymentCount(@Param("memberId") String memberId);
 
+    // 결제내역 페이징 조회
+    List<PaymentDTO> selectPaymentListPaging(Map<String, Object> paraMap);
+
+    // 포인트 거래내역 총 개수
+    int getPointTxCount(@Param("memberId") String memberId);
+
+    // 포인트 거래내역 페이징 조회
+    List<PointTransactionDTO> selectPointTxListPaging(Map<String, Object> paraMap);
+
+    
+    
+    //List<PaymentDTO> selectPaymentList(@Param("memberId") String memberId);
     // ===== point_transaction (list) =====
-    List<PointTransactionDTO> selectPointTxList(@Param("memberId") String memberId);
+    //List<PointTransactionDTO> selectPointTxList(@Param("memberId") String memberId);
 
     // ===== point_transaction =====
     int insertPointTransactionCharge(@Param("pointWalletId") Long pointWalletId,

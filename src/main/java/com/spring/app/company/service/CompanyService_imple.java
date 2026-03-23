@@ -1340,8 +1340,9 @@ public class CompanyService_imple implements CompanyService {
     }
     
     
+    
     @Override
-    public Map<String, Object> getWalletPageData(String memberId, String tab) {
+    public Map<String, Object> getWalletPageData(String memberId, String tab, int currentShowPageNo, int sizePerPage) {
         Map<String, Object> m = new HashMap<>();
 
         Long pointBalance = walletMapper.selectPointAvailableBalance(memberId);
@@ -1354,14 +1355,33 @@ public class CompanyService_imple implements CompanyService {
         m.put("pendingTotal", toLong(sum.get("PENDING_TOTAL")));
         m.put("cancelTotal", toLong(sum.get("CANCEL_TOTAL")));
 
+        int startRno = ((currentShowPageNo - 1) * sizePerPage) + 1;
+        int endRno = startRno + sizePerPage - 1;
+
+        Map<String, Object> paraMap = new HashMap<>();
+        paraMap.put("memberId", memberId);
+        paraMap.put("startRno", startRno);
+        paraMap.put("endRno", endRno);
+
+        int totalCount = 0;
+
         if ("payment".equalsIgnoreCase(tab)) {
-            m.put("paymentList", walletMapper.selectPaymentList(memberId));
-        } else {
-            m.put("pointTxList", walletMapper.selectPointTxList(memberId));
+            totalCount = walletMapper.getPaymentCount(memberId);
+            m.put("paymentList", walletMapper.selectPaymentListPaging(paraMap));
+        } 
+        else {
+            totalCount = walletMapper.getPointTxCount(memberId);
+            m.put("pointTxList", walletMapper.selectPointTxListPaging(paraMap));
         }
-        
+
+        m.put("totalCount", totalCount);
+        m.put("currentShowPageNo", currentShowPageNo);
+        m.put("sizePerPage", sizePerPage);
+
         return m;
     }
+    
+    
     
     // ===== utils는 서비스에 남겨도 OK =====
     private boolean isBlank(String s) { return s == null || s.trim().isEmpty(); }

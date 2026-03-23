@@ -99,6 +99,121 @@
   </insert>
 
 
+	<!-- 결제 내역 총 개수 조회 -->
+	<select id="getPaymentCount" resultType="int">
+	  SELECT COUNT(*)
+	  FROM TBL_PAYMENT
+	  WHERE FK_MEMBERID = #{memberId}
+	</select>
+	
+	<!-- 결제내역 페이징 처리하여 조회 -->
+	<select id="selectPaymentListPaging" parameterType="map" resultType="com.spring.app.company.domain.PaymentDTO">
+	  SELECT *
+	  FROM (
+	    SELECT ROW_NUMBER() OVER (ORDER BY CREATED_AT DESC, PAYMENT_ID DESC) AS rno,
+	           PAYMENT_ID AS paymentId,
+	           FK_MEMBERID AS memberId,
+	           ORDER_ID AS orderId,
+	           CHARGE_AMOUNT AS chargeAmount,
+	           STATUS AS status,
+	           PAY_METHOD AS payMethod,
+	           PG_PROVIDER AS pgProvider,
+	           EMB_PG_PROVIDER AS embPgProvider,
+	           TO_CHAR(REQUESTED_AT, 'YYYY-MM-DD HH24:MI:SS') AS requestedAt,
+	           TO_CHAR(PAID_AT,      'YYYY-MM-DD HH24:MI:SS') AS paidAt,
+	           TO_CHAR(CANCELLED_AT, 'YYYY-MM-DD HH24:MI:SS') AS canceledAt,
+	           TO_CHAR(CREATED_AT,   'YYYY-MM-DD HH24:MI:SS') AS createdAt,
+	           TO_CHAR(UPDATED_AT,   'YYYY-MM-DD HH24:MI:SS') AS updatedAt
+	    FROM TBL_PAYMENT
+	    WHERE FK_MEMBERID = #{memberId}
+	  )
+	  WHERE rno BETWEEN #{startRno} AND #{endRno}
+	</select>
+	
+	
+	<!-- 포인트 거래내역 총 개수 조회 -->
+	<select id="getPointTxCount" resultType="int">
+	  SELECT COUNT(*)
+	  FROM TBL_POINT_TRANSACTION PT
+	  WHERE PT.FK_POINT_WALLET_ID = (
+	    SELECT POINT_WALLET_ID
+	    FROM TBL_POINT_WALLET
+	    WHERE FK_MEMBERID = #{memberId}
+	  )
+	</select>
+	
+	
+	<!-- 포인트 거래내역 페이징 처리하여 조회 -->
+	<select id="selectPointTxListPaging" parameterType="map" resultType="com.spring.app.company.domain.PointTransactionDTO">
+	  SELECT *
+	  FROM (
+	    SELECT ROW_NUMBER() OVER (ORDER BY T.CREATED_AT DESC, T.POINT_TX_ID DESC) AS rno,
+	           T.POINT_TX_ID               AS pointTxId,
+	           T.FK_POINT_WALLET_ID        AS pointWalletId,
+	           T.FK_PAYMENT_ID             AS paymentId,
+	           T.FK_BANNER_ID              AS bannerId,
+	           T.TX_TYPE                   AS txType,
+	           T.TX_STATUS                 AS txStatus,
+	           T.DELTA_AVAILABLE           AS deltaAvailable,
+	           T.DELTA_RESERVED            AS deltaReserved,
+	           T.AVAILABLE_BALANCE_AFTER   AS availableBalanceAfter,
+	           T.RESERVED_BALANCE_AFTER    AS reservedBalanceAfter,
+	           T.TX_LABEL                  AS txLabel,
+	           T.TX_MEMO                   AS txMemo,
+	           TO_CHAR(T.CREATED_AT, 'YYYY-MM-DD HH24:MI:SS') AS createdAt
+	    FROM (
+	      SELECT
+	          PT.POINT_TX_ID,
+	          PT.FK_POINT_WALLET_ID,
+	          PT.FK_PAYMENT_ID,
+	          PT.FK_BANNER_ID,
+	          PT.TX_TYPE,
+	          PT.TX_STATUS,
+	          PT.DELTA_AVAILABLE,
+	          PT.DELTA_RESERVED,
+	          PT.CREATED_AT,
+	
+	          SUM(NVL(PT.DELTA_AVAILABLE, 0)) OVER (
+	              PARTITION BY PT.FK_POINT_WALLET_ID
+	              ORDER BY PT.CREATED_AT ASC, PT.POINT_TX_ID ASC
+	              ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+	          ) AS AVAILABLE_BALANCE_AFTER,
+	
+	          SUM(NVL(PT.DELTA_RESERVED, 0)) OVER (
+	              PARTITION BY PT.FK_POINT_WALLET_ID
+	              ORDER BY PT.CREATED_AT ASC, PT.POINT_TX_ID ASC
+	              ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+	          ) AS RESERVED_BALANCE_AFTER,
+	
+	          CASE
+	              WHEN PT.TX_TYPE = 'CHARGE' THEN '충전'
+	              WHEN PT.TX_TYPE = 'USE' THEN '사용'
+	              WHEN PT.TX_TYPE = 'REFUND' THEN '환불'
+	              ELSE PT.TX_TYPE
+	          END AS TX_LABEL,
+	
+	          CASE
+	              WHEN PT.TX_TYPE = 'CHARGE' THEN '포인트 충전'
+	              WHEN PT.TX_TYPE = 'USE' AND PT.FK_BANNER_ID IS NOT NULL THEN '배너 광고 결제'
+	              WHEN PT.TX_TYPE = 'USE' THEN '포인트 사용'
+	              WHEN PT.TX_TYPE = 'REFUND' THEN '포인트 환불'
+	              ELSE '-'
+	          END AS TX_MEMO
+	
+	      FROM TBL_POINT_TRANSACTION PT
+	      WHERE PT.FK_POINT_WALLET_ID = (
+	          SELECT POINT_WALLET_ID
+	          FROM TBL_POINT_WALLET
+	          WHERE FK_MEMBERID = #{memberId}
+	      )
+	    ) T
+	  )
+	  WHERE rno BETWEEN #{startRno} AND #{endRno}
+	</select>
+
+
+
+
 
   <!-- ===================== payment summary/list ===================== -->
 
@@ -111,6 +226,7 @@
     WHERE FK_MEMBERID = #{memberId}
   </select>
 
+<!--  
   <select id="selectPaymentList" resultType="com.spring.app.company.domain.PaymentDTO">
     SELECT
       PAYMENT_ID AS paymentId,
@@ -130,9 +246,12 @@
     WHERE FK_MEMBERID = #{memberId}
     ORDER BY CREATED_AT DESC
   </select>
+-->
+
 
 
   <!-- ===================== point_transaction list ===================== -->
+  <!--  
   <select id="selectPointTxList" resultType="com.spring.app.company.domain.PointTransactionDTO">
 	  SELECT
 	      T.POINT_TX_ID               AS pointTxId,
@@ -196,53 +315,51 @@
 	  ) T
 	  ORDER BY T.CREATED_AT DESC, T.POINT_TX_ID DESC
 	</select>
-  
-  
+	-->
   
   
   
     <!-- ===================== banner point use ===================== -->
-
-  <select id="selectPointWalletByMemberId" resultType="map">
-    SELECT POINT_WALLET_ID,
-           FK_MEMBERID,
-           AVAILABLE_BALANCE,
-           RESERVED_BALANCE
-    FROM TBL_POINT_WALLET
-    WHERE FK_MEMBERID = #{memberId}
-  </select>
-
-  <!-- 포인트 차감: 잔액이 충분할 때만 차감 -->
-  <update id="deductPointAvailable">
-    UPDATE TBL_POINT_WALLET
-    SET AVAILABLE_BALANCE = AVAILABLE_BALANCE - #{amount},
-        UPDATED_AT = SYSDATE
-    WHERE FK_MEMBERID = #{memberId}
-      AND AVAILABLE_BALANCE >= #{amount}
-  </update>
-
-  <insert id="insertPointTransactionBannerUse">
-    INSERT INTO TBL_POINT_TRANSACTION
-      (POINT_TX_ID,
-       FK_POINT_WALLET_ID,
-       FK_PAYMENT_ID,
-       FK_BANNER_ID,
-       TX_TYPE,
-       TX_STATUS,
-       DELTA_AVAILABLE,
-       DELTA_RESERVED,
-       CREATED_AT)
-    VALUES
-      (SEQ_POINT_TRANSACTION_POINT_TX_ID.NEXTVAL,
-       #{pointWalletId},
-       NULL,
-       #{bannerId},
-       #{txType},
-       #{txStatus},
-       #{deltaAvailable},
-       0,
-       SYSDATE)
-  </insert>
+	<select id="selectPointWalletByMemberId" resultType="map">
+	  SELECT POINT_WALLET_ID,
+	         FK_MEMBERID,
+	         AVAILABLE_BALANCE,
+	         RESERVED_BALANCE
+	  FROM TBL_POINT_WALLET
+	  WHERE FK_MEMBERID = #{memberId}
+	</select>
+	
+	<!-- 포인트 차감: 잔액이 충분할 때만 차감 -->
+	<update id="deductPointAvailable">
+	  UPDATE TBL_POINT_WALLET
+	  SET AVAILABLE_BALANCE = AVAILABLE_BALANCE - #{amount},
+	      UPDATED_AT = SYSDATE
+	  WHERE FK_MEMBERID = #{memberId}
+	    AND AVAILABLE_BALANCE >= #{amount}
+	</update>
+	
+	<insert id="insertPointTransactionBannerUse">
+	  INSERT INTO TBL_POINT_TRANSACTION
+	    (POINT_TX_ID,
+	     FK_POINT_WALLET_ID,
+	     FK_PAYMENT_ID,
+	     FK_BANNER_ID,
+	     TX_TYPE,
+	     TX_STATUS,
+	     DELTA_AVAILABLE,
+	     DELTA_RESERVED,
+	     CREATED_AT)
+	  VALUES
+	    (SEQ_POINT_TRANSACTION_POINT_TX_ID.NEXTVAL,
+	     #{pointWalletId},
+	     NULL,
+	     #{bannerId},
+	     #{txType},
+	     #{txStatus},
+	     #{deltaAvailable},
+	     0,
+	     SYSDATE)
+	</insert>
   
   
   
