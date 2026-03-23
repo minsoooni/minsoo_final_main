@@ -62,4 +62,7 @@ pipeline {
             echo "Main service deployment completed successfully."
         }
         failure {
-            echo "Ma
+            echo "Main service deployment failed."
+        }
+    }
+}
