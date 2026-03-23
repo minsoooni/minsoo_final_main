@@ -495,9 +495,11 @@ public class CompanyWebController {
     @GetMapping("/wallet")
     public String wallet(@RequestParam(value="menu", defaultValue="wallet") String menu,
                          @RequestParam(value="tab", defaultValue="wallet") String tab,
+                         @RequestParam(value="currentShowPageNo", defaultValue="1") String currentShowPageNoStr,
                          Authentication authentication,
-                         Model model) {
-    	
+                         Model model,
+                         HttpServletRequest request) {
+
         model.addAttribute("activeMenu", menu);
         model.addAttribute("activeTab", tab);
 
@@ -505,22 +507,98 @@ public class CompanyWebController {
             return "redirect:/login";
         }
 
-        //기업ID
         String memberId = authentication.getName();
-
-        //PortOne IMP.init용
         model.addAttribute("impCode", impCode);
 
-        //tab 값으로 필요한 데이터만 내려주는 구조 유지
-        model.addAllAttributes(service.getWalletPageData(memberId, tab));
+        int currentShowPageNo = 1;
+        try {
+            currentShowPageNo = Integer.parseInt(currentShowPageNoStr);
+            if (currentShowPageNo < 1) currentShowPageNo = 1;
+        } catch (NumberFormatException e) {
+            currentShowPageNo = 1;
+        }
+
+        int sizePerPage = 5;
+
+        Map<String, Object> walletData = service.getWalletPageData(memberId, tab, currentShowPageNo, sizePerPage);
+        model.addAllAttributes(walletData);
+
+        int totalCount = (int) walletData.get("totalCount");
+        String pageBar = buildWalletPageBar(tab, currentShowPageNo, sizePerPage, totalCount, request);
+
+        model.addAttribute("pageBar", pageBar);
 
         return "company/wallet";
     }
+    
+    // 결제_포인트용 페이징 처리를 위한 메서드
+    private String buildWalletPageBar(String tab,
+            int currentShowPageNo,
+            int sizePerPage,
+            int totalCount,
+            HttpServletRequest request) {
+
+    	int totalPage = (int) Math.ceil((double) totalCount / sizePerPage);
+    	if (totalPage == 0) {
+    		return "";
+    	}
+	
+    	int blockSize = 10;
+    	int pageNo = ((currentShowPageNo - 1) / blockSize) * blockSize + 1;
+	
+    	String contextPath = request.getContextPath();
+    	String baseUrl = contextPath + "/company/wallet?menu=wallet&tab=" + tab + "&currentShowPageNo=";
+	
+    	StringBuilder pageBar = new StringBuilder();
+    	pageBar.append("<div class='job-pagination-wrap'>");
+    	pageBar.append("<div class='job-pagination'>");
+	
+    	// 이전
+    	if (currentShowPageNo > 1) {
+    		pageBar.append("<a class='job-page-btn' href='")
+    		.append(baseUrl).append(currentShowPageNo - 1)
+    		.append("'>이전</a>");
+    	} else {
+    		pageBar.append("<span class='job-page-btn is-disabled'>이전</span>");
+    	}
+	
+    	// 번호
+    	for (int i = 1; i <= totalPage; i++) {
+    		if (i == currentShowPageNo) {
+    			pageBar.append("<span class='job-page-num active'>")
+    			.append(i)
+    			.append("</span>");
+    		} else {
+    			pageBar.append("<a class='job-page-num' href='")
+    			.append(baseUrl).append(i)
+    			.append("'>")
+    			.append(i)
+    			.append("</a>");
+    		}
+    	}
+    	
+    	// 다음
+    	if (currentShowPageNo < totalPage) {
+    		pageBar.append("<a class='job-page-btn' href='")
+    		.append(baseUrl).append(currentShowPageNo + 1)
+    		.append("'>다음</a>");
+    	} else {
+    		pageBar.append("<span class='job-page-btn is-disabled'>다음</span>");
+    	}
+	
+    	pageBar.append("</div>");
+    	pageBar.append("</div>");
+    	
+    	return pageBar.toString();
+	}
+    
+    
     // ============================== 포인트-지갑 ============================== //
     
     
 
 
+    
     // ============================== 인재 검색 ============================== //
     private String buildTalentPageBar(TalentSearchConditionDTO searchDto, int totalCount, HttpServletRequest request) {
         int sizePerPage = (searchDto.getSize() == null || searchDto.getSize() < 1) ? 10 : searchDto.getSize();
@@ -583,6 +661,7 @@ public class CompanyWebController {
         return pageBar.toString();
     }
 
+    // 인재검색용 페이징 처리를 위한 메서드
     private String buildTalentQueryString(HttpServletRequest request) {
         StringBuilder sb = new StringBuilder();
 

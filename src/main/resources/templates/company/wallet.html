@@ -164,19 +164,44 @@
   <div th:if="${activeTab}=='wallet'">
 
     <!-- 상단 잔액 카드 2개 -->
-    <div class="cgrid-1">
+    <div class="wallet-top-grid">
 	  <div class="panel balance-card">
 	    <div class="ccard-top">
 	      <div class="ccard-label">포인트 잔액</div>
 	      <i class="fa-solid fa-coins ccard-ico"></i>
 	    </div>
+	
 	    <div class="ccard-value">
-	      <span th:text="${#numbers.formatInteger(pointBalance, 3, 'COMMA')}">17,000</span><span class="unit">P</span>
+	      <span th:text="${#numbers.formatInteger(pointBalance, 3, 'COMMA')}">1,000,000</span><span class="unit">P</span>
 	    </div>
-	    <div class="btn-row">
+	
+	    <p class="balance-help">충전한 포인트는 배너 광고, 공고 상단 노출 등 기업 서비스 결제에 바로 사용할 수 있습니다.</p>
+	
+	    <div class="btn-row single">
 	      <button id="btnCharge" class="btn btn-dark btn-block">
 	        <i class="fa-solid fa-plus mr-2"></i>충전하기
 	      </button>
+	    </div>
+	  </div>
+	
+	  <div class="panel wallet-side-card">
+	    <div class="ccard-head">
+	      <div class="ccard-title">포인트 사용 안내</div>
+	    </div>
+	
+	    <div class="wallet-side-list">
+	      <div class="wallet-side-item">
+	        <strong>즉시 반영</strong>
+	        <span>충전 완료 후 포인트가 바로 반영됩니다.</span>
+	      </div>
+	      <div class="wallet-side-item">
+	        <strong>서비스 결제</strong>
+	        <span>배너 광고, 공고 노출 상품 등에 사용할 수 있습니다.</span>
+	      </div>
+	      <div class="wallet-side-item">
+	        <strong>거래내역 확인</strong>
+	        <span>충전/사용/환불 이력을 한눈에 확인할 수 있습니다.</span>
+	      </div>
 	    </div>
 	  </div>
 	</div>
@@ -186,8 +211,7 @@
     <div class="panel mt-4">
 	  <div class="ccard-head">
 	    <div class="ccard-title">
-	      포인트 거래 내역
-	      (<span th:text="${pointTxList == null ? 0 : #lists.size(pointTxList)}">0</span>건)
+	      포인트 거래 내역 (<span th:text="${totalCount}">0</span>건)
 	    </div>
 	  </div>
 	
@@ -234,6 +258,9 @@
 	      </tr>
 	    </tbody>
 	  </table>
+	  
+	  <!-- 페이지 바 -->
+      <div th:if="${pageBar != null and pageBar != ''}" th:utext="${pageBar}"></div>
 	</div>
 
     <!-- 안내 -->
@@ -313,7 +340,7 @@
     <div class="panel mt-3">
       <div class="ccard-head">
         <div class="ccard-title">
-		  결제 내역 (<span th:text="${paymentList == null ? 0 : #lists.size(paymentList)}">0</span>건)
+		  결제 내역 (<span th:text="${totalCount}">0</span>건)
 		</div>
       </div>
 
@@ -374,6 +401,9 @@
 		</tbody>
         
       </table>
+      
+      <!-- 페이지 바 -->
+      <div th:if="${pageBar != null and pageBar != ''}" th:utext="${pageBar}"></div>
     </div>
 
     <!-- 결제 안내 -->

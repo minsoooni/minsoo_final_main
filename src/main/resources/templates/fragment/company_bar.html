@@ -101,14 +101,23 @@
 	      </div>
 	  
 	      <a th:each="noti : ${notificationList}"
-	         href="javascript:void(0)"
-	         th:attr="data-noti-id=${noti.notiId}, data-url=${noti.linkUrl}"
-	         onclick="return companyMoveAfterRead(event, this.dataset.notiId, this.dataset.url)"
-	         th:class="'dropdown-item company-noti-item ' + (${noti.isRead} == 1 ? 'is-read' : '')">
-	  
-	        <div class="company-noti-title" th:text="${noti.title}">알림 제목</div>
-	        <div class="company-noti-message" th:text="${noti.message}">알림 내용</div>
-	      </a>
+		     href="javascript:void(0)"
+		     th:attr="data-noti-id=${noti.notiId}, data-url=${noti.linkUrl}"
+		     onclick="return companyMoveAfterRead(event, this.dataset.notiId, this.dataset.url)"
+		     th:class="'dropdown-item company-noti-item ' + (${noti.isRead} == 1 ? 'is-read' : '')">
+		  
+		    <div class="company-noti-row">
+		      <div class="company-noti-title" th:text="${noti.title}">알림 제목</div>
+		  
+		      <span th:if="${noti.isRead == 0}"
+		            class="company-noti-new">
+		        NEW
+		      </span>
+		    </div>
+		  
+		    <div class="company-noti-message" th:text="${noti.message}">알림 내용</div>
+		  </a>
+	      
 	    </div>
 	  </div>
       

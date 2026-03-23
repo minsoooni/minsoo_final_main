@@ -191,7 +191,8 @@ public interface CompanyService {
     PaymentCompleteResponse completePointCharge(PaymentCompleteRequest req);
 
     //지갑 페이지 데이터
-    Map<String, Object> getWalletPageData(String memberId, String tab);
+    //Map<String, Object> getWalletPageData(String memberId, String tab);
+    Map<String, Object> getWalletPageData(String memberId, String tab, int currentShowPageNo, int sizePerPage);
 
     
     
