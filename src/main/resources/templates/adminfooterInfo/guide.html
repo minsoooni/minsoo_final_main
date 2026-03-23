@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/layout_main :: layout(~{::title},~{::link},~{::css},~{::script},~{::content})}">
+
+<head>
+  <title>이용안내</title>
+  <link rel="stylesheet" th:href="@{/css/company/main_contents.css}">
+
+  <style th:fragment="css" type="text/css">
+    .policy-wrap { max-width: 900px; margin: 60px auto; padding: 0 20px 80px; }
+    .policy-header h1 { font-size: 28px; font-weight: 700; }
+    .policy-date { margin-top: 8px; color: #64748b; font-size: 14px; }
+    .policy-notice { background: #e8f2ff; border-left: 4px solid #3b82f6; padding: 15px 20px; border-radius: 8px; margin: 22px 0 30px; line-height: 1.7; }
+    .policy-content h2 { margin-top: 40px; font-size: 20px; font-weight: 600; }
+    .policy-content ul, .policy-content ol { padding-left: 20px; margin-top: 10px; }
+    .policy-content li { margin-top: 8px; line-height: 1.7; color: #334155; }
+    .policy-warn { background: #fde68a; padding: 12px 16px; border-radius: 8px; margin: 15px 0; font-size: 14px; }
+    .contact-box { background: #f1f5f9; padding: 18px 20px; border-radius: 8px; margin-top: 15px; line-height: 1.8; }
+  </style>
+
+  <script th:fragment="script" type="text/javascript"></script>
+</head>
+
+<body>
+  <section th:fragment="content" class="dash policy-wrap">
+
+    <div class="policy-header">
+      <h1>이용안내</h1>
+      <div class="policy-date">잡파인더 서비스 이용 가이드</div>
+    </div>
+
+    <hr>
+
+    <div class="policy-content">
+      <div class="policy-notice">
+        잡파인더는 구직자와 기업을 연결하는 채용 플랫폼입니다.
+        서비스를 보다 편리하게 이용하실 수 있도록 주요 기능 및 이용 방법을 안내드립니다.
+      </div>
+
+      <h2>1. 회원가입 및 로그인</h2>
+      <ul>
+        <li>개인회원과 기업회원으로 구분하여 가입할 수 있습니다.</li>
+        <li>이메일 또는 소셜 계정(카카오, 네이버)으로 간편 가입이 가능합니다.</li>
+        <li>기업회원은 사업자등록번호 인증 후 이용 가능합니다.</li>
+      </ul>
+
+      <h2>2. 채용정보 이용</h2>
+      <ul>
+        <li>직무, 지역, 경력 등 다양한 조건으로 채용공고를 검색할 수 있습니다.</li>
+        <li>관심 공고를 스크랩하여 마이페이지에서 관리할 수 있습니다.</li>
+        <li>기업 팔로우 기능을 통해 새 공고 알림을 받을 수 있습니다.</li>
+      </ul>
+
+      <h2>3. 이력서 작성</h2>
+      <ul>
+        <li>마이페이지에서 이력서를 작성하고 관리할 수 있습니다.</li>
+        <li>작성된 이력서는 채용공고 지원 시 첨부할 수 있습니다.</li>
+        <li>이력서 공개 여부를 설정하여 기업의 직접 제안을 받을 수 있습니다.</li>
+      </ul>
+
+      <h2>4. 커뮤니티 이용</h2>
+      <ul>
+        <li>취업 정보, 면접 후기 등 다양한 정보를 공유할 수 있습니다.</li>
+        <li>게시물 작성 및 댓글 기능을 이용할 수 있습니다.</li>
+        <li>부적절한 게시물은 신고하여 관리자 검토를 요청할 수 있습니다.</li>
+      </ul>
+
+      <h2>5. 고객센터</h2>
+      <div class="contact-box">
+        <div><b>이메일</b> : support@jobfinder.com</div>
+        <div><b>전화</b> : 02-1234-5678</div>
+        <div><b>운영시간</b> : 평일 09:00 ~ 18:00 (주말·공휴일 제외)</div>
+      </div>
+    </div>
+
+  </section>
+</body>
+</html>

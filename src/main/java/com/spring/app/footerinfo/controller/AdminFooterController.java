@@ -36,5 +36,14 @@ public class AdminFooterController {
         return "adminfooterinfo/ad_inquiry";
     }
     
+    @GetMapping("/policy/email-no-collect")
+    public String emailNoCollect() { return "adminfooterInfo/email-no-collect"; }
+
+    @GetMapping("/guide")
+    public String guide() { return "adminfooterInfo/guide"; }
+
+    @GetMapping("/company/info")
+    public String companyInfo() { return "adminfooterInfo/company-info"; }
+    
     
 }
