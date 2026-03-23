@@ -41,6 +41,7 @@ public class OfferController {
 
         // === 상태별 건수 (DB) === //
         Map<String, Object> counts = offerService.getOfferCounts(memberId);
+        mav.addObject("unreadCount",   counts.get("unreadCount"));
         mav.addObject("pendingCount",  counts.get("pendingCount"));
         mav.addObject("acceptedCount", counts.get("acceptedCount"));
         mav.addObject("rejectedCount", counts.get("rejectedCount"));

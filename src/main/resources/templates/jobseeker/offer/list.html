@@ -346,10 +346,10 @@
     <div class="col-6 col-md-3 mb-2">
       <div class="os-card">
         <div>
-          <div class="os-label">전체 제안</div>
-          <div class="os-num os-num-default" id="count-total" th:text="${#lists.size(offers)}">0</div>
+          <div class="os-label">미열람</div>
+          <div class="os-num os-num-default" id="count-total" th:text="${unreadCount}">0</div>
         </div>
-        <div class="os-icon-circle os-icon-blue"><i class="fas fa-envelope"></i></div>
+        <div class="os-icon-circle os-icon-blue"><i class="fas fa-envelope-open"></i></div>
       </div>
     </div>
     <div class="col-6 col-md-3 mb-2">
@@ -386,6 +386,11 @@
     <li class="nav-item">
       <a class="nav-link active" href="#" data-filter="all">
         전체 <span class="cnt">(<span th:text="${#lists.size(offers)}">0</span>)</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="#" data-filter="unread">
+        미열람 <span class="cnt">(<span th:text="${unreadCount}">0</span>)</span>
       </a>
     </li>
     <li class="nav-item">
@@ -736,8 +741,10 @@
         var matchFilter = false;
         if (currentFilter === 'all') {
           matchFilter = true;
+        } else if (currentFilter === 'unread') {
+          matchFilter = (status === 'UNREAD');
         } else if (currentFilter === 'pending') {
-          matchFilter = (status === 'UNREAD' || status === 'PENDING');
+          matchFilter = (status === 'PENDING');
         } else if (currentFilter === 'accepted') {
           matchFilter = (status === 'ACCEPTED');
         } else if (currentFilter === 'rejected') {
@@ -877,6 +884,7 @@
 
             // 카운트 업데이트
             updateCountsAfterResponse();
+            applyFilterAndSearch();
 
             alert('제안을 수락했습니다.');
           } else {
@@ -938,6 +946,7 @@
 
             // 카운트 업데이트
             updateCountsAfterResponse();
+            applyFilterAndSearch();
 
             alert('제안을 거절했습니다.');
           } else {
@@ -954,18 +963,20 @@
     // 카운트 재계산
     function updateCountsAfterResponse() {
       var cards = document.querySelectorAll('#offerListContainer .of-card');
-      var total = 0, pending = 0, accepted = 0, rejected = 0;
+      var total = 0, unread = 0, pending = 0, accepted = 0, rejected = 0, expired = 0;
 
       cards.forEach(function(card) {
         total++;
         var status = card.getAttribute('data-status');
-        if (status === 'UNREAD' || status === 'PENDING') pending++;
+        if (status === 'UNREAD') unread++;
+        else if (status === 'PENDING') pending++;
         else if (status === 'ACCEPTED') accepted++;
         else if (status === 'REJECTED') rejected++;
+        else if (status === 'EXPIRED') expired++;
       });
 
       // 요약 카드 업데이트
-      document.getElementById('count-total').textContent = total;
+      document.getElementById('count-total').textContent = unread;
       document.getElementById('count-pending').textContent = pending;
       document.getElementById('count-accepted').textContent = accepted;
       document.getElementById('count-rejected').textContent = rejected;
@@ -973,9 +984,11 @@
       // 탭 카운트 업데이트
       var tabs = document.querySelectorAll('#offerTabs .nav-link');
       tabs[0].querySelector('.cnt').innerHTML = '(' + total + ')';
-      tabs[1].querySelector('.cnt').innerHTML = '(' + pending + ')';
-      tabs[2].querySelector('.cnt').innerHTML = '(' + accepted + ')';
-      tabs[3].querySelector('.cnt').innerHTML = '(' + rejected + ')';
+      tabs[1].querySelector('.cnt').innerHTML = '(' + unread + ')';
+      tabs[2].querySelector('.cnt').innerHTML = '(' + pending + ')';
+      tabs[3].querySelector('.cnt').innerHTML = '(' + accepted + ')';
+      tabs[4].querySelector('.cnt').innerHTML = '(' + rejected + ')';
+      tabs[5].querySelector('.cnt').innerHTML = '(' + expired + ')';
     }
 
     // 메시지 프리뷰 말줄임 처리
