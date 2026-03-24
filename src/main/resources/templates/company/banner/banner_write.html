@@ -7,16 +7,15 @@
   <link rel="stylesheet" th:href="@{/css/company/job_banner.css}">
   <link rel="stylesheet" th:href="@{/css/company/job_banner_write.css}">
   <style type="text/css"></style>
-
+  
   <script th:inline="javascript">
   const contextPath = /*[[@{/}]]*/ "";
   
   let bannerPrice = 0;
   let pointBalance = 0;
-  
-  
+
   async function loadMyJobs(){
-	const apiUrl = contextPath + "company/api/banner/jobs";
+    const apiUrl = contextPath + "company/api/banner/jobs";
     const select = document.querySelector("#jobSelect");
 
     try {
@@ -68,9 +67,7 @@
       alert("공고 목록을 불러오는 중 오류가 발생했습니다.");
     }
   }//async function loadMyJobs(){}
-  
-  
-  //결제 정보 로드 함수
+
   async function loadBannerPaymentInfo(){
     try{
       const resp = await fetch(contextPath + "company/api/banner/payment-info", {
@@ -118,9 +115,7 @@
       submitBtn.disabled = false;
     }
   }//function renderPointInfo(){}
-  
-  
-  
+
   function fmtDate(d){
     const y = d.getFullYear();
     const m = String(d.getMonth()+1).padStart(2,'0');
@@ -133,6 +128,14 @@
     const d = new Date(dateStr + "T00:00:00");
     d.setDate(d.getDate() + days);
     return fmtDate(d);
+  }
+
+  // 시작 가능일(오늘 + 2일)을 계산하는 함수
+  function getBannerMinStartDate(){
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    today.setDate(today.getDate() + 2);
+    return fmtDate(today);
   }
 
   function formatMoney(value){
@@ -166,18 +169,24 @@
     }
   }
 
-  //달력 시작일에 맞춰 마감일 7일 이후로 자동설정
+  // 시작일 변경 시 종료일을 7일 뒤로 자동 계산
   function onStartAtChange(){
     const start = document.querySelector("#startAt").value;
+    if(!start){
+      document.querySelector("#endAt").value = "";
+      return;
+    }
+
     document.querySelector("#endAt").value = addDays(start, 7);
   }
 
-  //유효성 검사
   function validateBannerForm(){
     const fkJobId = document.querySelector("#fkJobId").value;
     const title = document.querySelector("#title").value.trim();
     const startAt = document.querySelector("#startAt").value;
     const endAt = document.querySelector("#endAt").value;
+    const minStartDate = getBannerMinStartDate();
+    const bannerImage = document.querySelector("#bannerImage").files[0];
 
     if(!fkJobId){
       alert("연결할 공고를 선택해 주세요.");
@@ -191,6 +200,18 @@
 
     if(!startAt){
       alert("시작일을 선택해 주세요.");
+      return false;
+    }
+    
+    if(!bannerImage){
+      alert("배너 이미지를 선택해 주세요.");
+      return false;
+    }
+
+    // 시작일은 오늘 기준 2일 뒤부터만 선택 가능하도록 검사
+    if(startAt < minStartDate){
+      alert(`배너 등록 시작일은 ${minStartDate}부터 선택할 수 있습니다.`);
+      document.querySelector("#startAt").focus();
       return false;
     }
 
@@ -207,7 +228,6 @@
     return true;
   }//function validateBannerForm(){}
 
-  
   async function submitBannerForm(e){
     e.preventDefault();
 
@@ -215,14 +235,12 @@
       return;
     }
     
-    
     const ok = confirm(
-	  `배너 등록 시 ${bannerPrice.toLocaleString("ko-KR")}P가 차감됩니다.\n등록하시겠습니까?`
-	);
-	if(!ok){
-	  return;
-	}
-    
+      `배너 등록 시 ${bannerPrice.toLocaleString("ko-KR")}P가 차감됩니다.\n등록하시겠습니까?`
+    );
+    if(!ok){
+      return;
+    }
 
     const form = document.querySelector("#bannerForm");
     const formData = new FormData(form);
@@ -234,12 +252,12 @@
       });
       
       if (!resp.ok) {
-          const text = await resp.text();
-          console.error("HTTP 오류 상태:", resp.status);
-          console.error("응답 본문:", text);
-          alert("요청 실패: " + resp.status);
-          return;
-        }
+        const text = await resp.text();
+        console.error("HTTP 오류 상태:", resp.status);
+        console.error("응답 본문:", text);
+        alert("요청 실패: " + resp.status);
+        return;
+      }
 
       const data = await resp.json();
 
@@ -256,15 +274,23 @@
     }
   }//async function submitBannerForm(e){}
 
-  
   window.addEventListener("DOMContentLoaded", () => {
     const startEl = document.querySelector("#startAt");
     const endEl = document.querySelector("#endAt");
 
-    if(startEl && !startEl.value){
-      const today = fmtDate(new Date());
-      startEl.value = today;
-      endEl.value = addDays(today, 7);
+    if(startEl){
+      const minStartDate = getBannerMinStartDate();
+
+      // 달력에서 오늘+2일 이전 날짜를 선택하지 못하도록 최소값 설정
+      startEl.min = minStartDate;
+
+      if(!startEl.value || startEl.value < minStartDate){
+        startEl.value = minStartDate;
+      }
+    }
+
+    if(endEl){
+      endEl.value = addDays(startEl.value, 7);
     }
 
     const bannerForm = document.querySelector("#bannerForm");
@@ -275,8 +301,8 @@
     loadMyJobs();
     loadBannerPaymentInfo();
   });//window.addEventListener("DOMContentLoaded", () => {})
-  
   </script>
+  
 </head>
 
 
@@ -384,10 +410,12 @@
         </div>
 
         <div class="bf-field">
-          <div class="bf-label">시작일 (START_AT) <span class="req">*</span></div>
-          <input class="bf-input" type="date" id="startAt" name="startAt" onchange="onStartAtChange()">
-          <div class="bf-help">종료일은 시작일로부터 7일로 고정됩니다.</div>
-        </div>
+		  <div class="bf-label">시작일 (START_AT) <span class="req">*</span></div>
+		  <input class="bf-input" type="date" id="startAt" name="startAt" onchange="onStartAtChange()">
+		  <div class="bf-help">
+		    배너 등록 시작일은 오늘 기준 2일 뒤부터 선택할 수 있으며, 종료일은 시작일로부터 7일로 자동 설정됩니다.
+		  </div>
+		</div>
 
         <div class="bf-field">
           <div class="bf-label">종료일 (END_AT) <span class="req">*</span></div>

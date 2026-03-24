@@ -1,5 +1,6 @@
 package com.spring.app.company.controller.api;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,6 +92,25 @@ public class CompanyBannerApiController {
             if (bannerDto.getStartAt() == null || bannerDto.getStartAt().trim().isEmpty()) {
                 map.put("result", 0);
                 map.put("message", "시작일을 선택해 주세요.");
+                return ResponseEntity.ok(map);
+            }
+            
+            
+            // 배너 이미지는 반드시 첨부하도록 검사
+            if (bannerImage == null || bannerImage.isEmpty()) {
+                map.put("result", 0);
+                map.put("message", "배너 이미지를 첨부해 주세요.");
+                return ResponseEntity.ok(map);
+            }
+            
+            
+            // 시작일은 오늘 기준 2일 뒤부터만 허용
+            LocalDate minStartDate = LocalDate.now().plusDays(2);
+            LocalDate startDate = LocalDate.parse(bannerDto.getStartAt());
+
+            if (startDate.isBefore(minStartDate)) {
+                map.put("result", 0);
+                map.put("message", "배너 등록 시작일은 " + minStartDate + "부터 선택할 수 있습니다.");
                 return ResponseEntity.ok(map);
             }
 
