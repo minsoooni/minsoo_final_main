@@ -6,9 +6,250 @@
 <head>
   <title>인재 프로필</title>
   <link rel="stylesheet" th:href="@{/css/company/talent_detail.css}">
+  <link rel="stylesheet" th:href="@{/css/company/offer.css}"><!-- 제안서 모달 디자인을 동일하게 맞추기 위해 추가 -->
   <style type="text/css"></style>
-  <script type="text/javascript"></script>
+
+  <script th:inline="javascript">
+    const contextPath = /*[[@{/}]]*/ "";
+    const talentTargetMemberId = /*[[${resume.memberid}]]*/ "";
+    const talentTargetMemberName = /*[[${resume.memberName}]]*/ "";
+    const talentTargetMemberEmail = /*[[${resume.memberEmail}]]*/ "";
+    const talentTargetResumeId = /*[[${resume.resumeId}]]*/ 0;
+
+    const offerApiBase = `${contextPath}company/api/offers`;
+
+    function offerDetailApi(id){
+      return `${offerApiBase}/${encodeURIComponent(id)}`;
+    }
+
+    function offerSendApi(id){
+      return `${offerApiBase}/${encodeURIComponent(id)}/send`;
+    }
+
+    function offerSentRecipientsApi(id){
+      return `${offerApiBase}/${encodeURIComponent(id)}/sent-recipients`;
+    }
+
+    $(function(){
+      initTalentOfferModal();
+    });
+
+    function initTalentOfferModal(){
+      // 모달 최초 진입 시 상태를 초기화함
+      resetTalentOfferModal();
+
+      // ESC 키로 모달 닫기 처리
+      document.addEventListener("keydown", function(e){
+        if(e.key === "Escape"){
+          const modal = document.getElementById("talentOfferModal");
+          if(modal?.classList.contains("is-open")){
+            closeTalentOfferModal();
+          }
+        }
+      });
+
+      // 제안서 선택 시 상세 정보를 자동으로 불러옴
+      $(document).on("change", "#talent_offerLetterId", function(){
+        const offerLetterId = $(this).val();
+        if(!offerLetterId){
+          resetTalentOfferFormFields();
+          return;
+        }
+        loadTalentOfferTemplate(offerLetterId);
+      });
+    }
+
+    function openTalentOfferModal(){
+      const hasTemplates = $("#talent_offerLetterId option").length > 1;
+
+      if(!hasTemplates){
+        alert("먼저 제안서 관리 페이지에서 원본 제안서를 등록해주세요.");
+        return;
+      }
+
+      const modal = document.getElementById("talentOfferModal");
+      if(!modal) return;
+
+      resetTalentOfferModal();
+
+      modal.classList.add("is-open");
+      modal.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeTalentOfferModal(){
+      const modal = document.getElementById("talentOfferModal");
+      if(!modal) return;
+
+      modal.classList.remove("is-open");
+      modal.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
+
+      // 닫을 때 다음 사용을 위해 상태를 초기화함
+      resetTalentOfferModal();
+    }
+
+    function resetTalentOfferModal(){
+      $("#talent_hiddenOfferLetterId").val("");
+      $("#talent_offerLetterId").val("");
+      $("#talent_jobTitle").val("");
+      $("#talent_title").val("");
+      $("#talent_message").val("");
+      $("#talent_expire").val("");
+      $("#talentAlreadySentNotice").hide().text("");
+      $("#talentSendBtn").prop("disabled", false);
+      setTalentExpireMinToday();
+      autoResizeTalentTextarea(document.getElementById("talent_message"));
+    }
+
+    function resetTalentOfferFormFields(){
+      $("#talent_hiddenOfferLetterId").val("");
+      $("#talent_jobTitle").val("");
+      $("#talent_title").val("");
+      $("#talent_message").val("");
+      $("#talent_expire").val("");
+      $("#talentAlreadySentNotice").hide().text("");
+      $("#talentSendBtn").prop("disabled", false);
+      setTalentExpireMinToday();
+      autoResizeTalentTextarea(document.getElementById("talent_message"));
+    }
+
+    function loadTalentOfferTemplate(offerLetterId){
+      $.ajax({
+        url: offerDetailApi(offerLetterId),
+        type: "GET",
+        dataType: "json",
+        success: function(res){
+          const offer = res?.item ?? res?.data ?? res;
+
+          if(!offer){
+            alert("제안서 상세 정보를 불러오지 못했습니다.");
+            resetTalentOfferFormFields();
+            return;
+          }
+
+          // 선택한 원본 제안서의 내용을 모달에 채워 넣음
+          $("#talent_hiddenOfferLetterId").val(offer.offerLetterId ?? "");
+          $("#talent_jobTitle").val(offer.jobTitle ?? "");
+          $("#talent_title").val(offer.title ?? "");
+          $("#talent_message").val(offer.message ?? "");
+          autoResizeTalentTextarea(document.getElementById("talent_message"));
+
+          // 이미 해당 인재에게 발송한 적 있는지 검사함
+          checkTalentAlreadySent(offer.offerLetterId);
+        },
+        error: function(xhr){
+          console.log("offer detail error =", xhr.responseText);
+          alert("제안서 상세 조회 실패: " + xhr.status);
+          resetTalentOfferFormFields();
+        }
+      });
+    }
+
+    function checkTalentAlreadySent(offerLetterId){
+      $.ajax({
+        url: offerSentRecipientsApi(offerLetterId),
+        type: "GET",
+        dataType: "json",
+        success: function(res){
+          const sentIds = (res && res.sentMemberIds) ? res.sentMemberIds : [];
+          const alreadySent = sentIds.includes(talentTargetMemberId);
+
+          if(alreadySent){
+            $("#talentAlreadySentNotice")
+              .text("이미 이 인재에게 발송한 제안서입니다. 다른 제안서를 선택해주세요.")
+              .show();
+
+            $("#talentSendBtn").prop("disabled", true);
+          }
+          else{
+            $("#talentAlreadySentNotice").hide().text("");
+            $("#talentSendBtn").prop("disabled", false);
+          }
+        },
+        error: function(){
+          // 조회 실패 시에는 발송만 막지 않고 기본 상태로 둠
+          $("#talentAlreadySentNotice").hide().text("");
+          $("#talentSendBtn").prop("disabled", false);
+        }
+      });
+    }
+
+    function submitTalentOfferSend(){
+      const offerLetterId = $("#talent_hiddenOfferLetterId").val();
+      const expireAt = $("#talent_expire").val();
+
+      if(!offerLetterId){
+        alert("발송할 제안서를 선택하세요.");
+        $("#talent_offerLetterId").focus();
+        return;
+      }
+
+      if(!expireAt){
+        alert("만료일을 선택하세요.");
+        $("#talent_expire").focus();
+        return;
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const expireDate = new Date(expireAt + "T00:00:00");
+      if(expireDate < today){
+        alert("만료일은 오늘 이후로 선택해야 합니다.");
+        $("#talent_expire").focus();
+        return;
+      }
+
+      $.ajax({
+        url: offerSendApi(offerLetterId),
+        type: "POST",
+        contentType: "application/json; charset=UTF-8",
+        dataType: "json",
+        data: JSON.stringify({
+          expireAt: expireAt,
+          receiverMemberIds: [talentTargetMemberId] // 현재 보고 있는 인재 1명에게만 발송
+        }),
+        success: function(res){
+          if(res && res.result === "ok"){
+            alert("제안서 발송이 완료되었습니다.");
+            closeTalentOfferModal();
+          }
+          else{
+            alert(res?.message || "제안서 발송에 실패했습니다.");
+          }
+        },
+        error: function(xhr){
+          const msg = xhr.responseJSON?.message || ("제안서 발송 실패: " + xhr.status);
+          alert(msg);
+        }
+      });
+    }
+
+    function setTalentExpireMinToday(){
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, "0");
+      const dd = String(today.getDate()).padStart(2, "0");
+      $("#talent_expire").attr("min", `${yyyy}-${mm}-${dd}`);
+    }
+
+    function autoResizeTalentTextarea(el){
+      if(!el) return;
+      el.style.height = "auto";
+      el.style.height = el.scrollHeight + "px";
+    }
+
+    document.addEventListener("input", function(e){
+      if(e.target && e.target.id === "talent_message"){
+        autoResizeTalentTextarea(e.target);
+      }
+    });
+  </script>
 </head>
+
+
+
 
 <body>
 <section class="dash">
@@ -229,20 +470,95 @@
 
     <!-- 하단 버튼 -->
     <div class="btn-actions">
-      <a th:href="@{/company/talent(menu='talent')}" class="btn btn-outline-secondary">
-        <i class="fas fa-list"></i> 목록으로
-      </a>
-
-      <a th:href="@{/company/offer/list(
-	                  targetMemberId=${resume.memberid},
-	                  targetMemberName=${resume.memberName},
-	                  targetResumeId=${resume.resumeId},
-	                  openOfferSend=1
-	                )}"
-	     class="btn btn-primary">
-	    <i class="fas fa-paper-plane"></i> 제안서 보내기
+	  <a th:href="@{/company/talent(menu='talent')}" class="btn btn-outline-secondary">
+	    <i class="fas fa-list"></i> 목록으로
 	  </a>
-    </div>
+	
+	  <button type="button" class="btn btn-primary" onclick="openTalentOfferModal()">
+	    <i class="fas fa-paper-plane"></i> 제안서 보내기
+	  </button>
+	</div>
+	
+	
+	<!-- 인재 상세 페이지 전용 제안서 발송 모달 -->
+	<div id="talentOfferModal" class="ofm" aria-hidden="true">
+	  <div class="ofm-backdrop" onclick="closeTalentOfferModal()"></div>
+	
+	  <div class="ofm-dialog" role="dialog" aria-modal="true" aria-labelledby="talentOfferModalTitle">
+	    <div class="ofm-head">
+	      <h3 id="talentOfferModalTitle" class="ofm-title">제안서 발송</h3>
+	      <button type="button" class="ofm-x" onclick="closeTalentOfferModal()" aria-label="닫기">
+	        <i class="fa-solid fa-xmark"></i>
+	      </button>
+	    </div>
+	
+	    <div class="ofm-body">
+	      <div class="ofm-target-notice" style="display:block;">
+	        <!-- 현재 보고 있는 인재에게 바로 발송된다는 점을 안내 -->
+	        <strong th:text="${resume.memberName}">홍길동</strong> 님에게 기존 제안서를 발송합니다.
+	      </div>
+	
+	      <div id="talentAlreadySentNotice" class="ofm-target-notice talent-offer-warning" style="display:none;"></div>
+	
+	      <div class="ofm-field">
+	        <div class="ofm-label">발송할 제안서 선택 <span class="ofm-req">*</span></div>
+	        <select id="talent_offerLetterId" class="ofm-select">
+	          <option value="">제안서 선택</option>
+	          <option th:each="offer : ${offerList}"
+	                  th:value="${offer.offerLetterId}"
+	                  th:text="${offer.title}">
+	            제안서 제목
+	          </option>
+	        </select>
+	      </div>
+	
+	      <div class="ofm-field">
+	        <div class="ofm-label">연결된 공고</div>
+	        <input id="talent_jobTitle" class="ofm-input" type="text" readonly placeholder="제안서를 선택하면 자동으로 표시됩니다.">
+	      </div>
+	
+	      <div class="ofm-field">
+	        <div class="ofm-label">제안서 제목</div>
+	        <input id="talent_title" class="ofm-input" type="text" readonly>
+	      </div>
+	
+	      <div class="ofm-field">
+	        <div class="ofm-label">제안 메시지</div>
+	        <textarea id="talent_message" class="ofm-textarea" readonly></textarea>
+	      </div>
+	
+	      <div class="ofm-field">
+	        <div class="ofm-label">만료일 <span class="ofm-req">*</span></div>
+	        <input id="talent_expire" class="ofm-input" type="date">
+	      </div>
+	
+	      <div class="ofm-recvbox" style="display:block;">
+	        <div class="ofm-label">수신자</div>
+	
+	        <div class="ofm-recvlist">
+	          <label class="ofm-recvitem talent-fixed-recipient">
+	            <input type="checkbox" class="ofm-check" checked disabled>
+	            <div>
+	              <div class="ofm-name" th:text="${resume.memberName}">홍길동</div>
+	              <div class="ofm-email" th:text="${resume.memberEmail}">email@example.com</div>
+	            </div>
+	          </label>
+	        </div>
+	      </div>
+	    </div>
+	
+	    <div class="ofm-foot">
+	      <button type="button" class="ofm-btn" onclick="closeTalentOfferModal()">취소</button>
+	      <button id="talentSendBtn" type="button" class="ofm-btn ofm-btn--dark" onclick="submitTalentOfferSend()">
+	        제안서 발송
+	      </button>
+	    </div>
+	  </div>
+	
+	  <input type="hidden" id="talent_hiddenOfferLetterId">
+	</div>
+	
+	
 
   </div>
 </section>

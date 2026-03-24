@@ -526,24 +526,37 @@
   flex-shrink: 0;
 }
 
+
+
 .app-card-body{
-  margin-top: 12px;
-  padding-top: 12px;
+  margin-top: 10px;
+  padding-top: 10px;
   border-top: 1px solid #f3f4f6;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
 }
 
-.app-info-row{
+.app-card-body-inline{
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.app-inline-item{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
   font-size: 13px;
 }
 
+.app-inline-divider{
+  width: 1px;
+  height: 14px;
+  background: #e5e7eb;
+  flex-shrink: 0;
+}
+
 .app-info-label{
-  min-width: 48px;
   color: #94a3b8;
   font-weight: 700;
   flex-shrink: 0;
@@ -551,36 +564,56 @@
 
 .app-info-value{
   color: #4b5563;
+  font-weight: 600;
+  min-width: 0;
   word-break: break-word;
 }
+
+
 
 /* ===== 최근 제안서 ===== */
 .offer-box{
   border: 1px solid #efefef;
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 14px;
   margin-top: 10px;
   background: #fff;
 }
 
+.offer-top{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
 .offer-title{
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 800;
   color: #111827;
   word-break: break-word;
+  min-width: 0;
+  line-height: 1.35;
 }
 
 .offer-sub{
-  color: #6b7280;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #374151;
   font-size: 13px;
-  margin-top: 4px;
+  font-weight: 600;
   word-break: break-word;
 }
 
 .offer-stats{
-  margin-top: 12px;
-  font-size: 13px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #f3f4f6;
   display: flex;
-  gap: 12px;
+  align-items: center;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
@@ -591,6 +624,7 @@
   border-radius: 999px;
   font-size: 12px;
   font-weight: 700;
+  line-height: 1;
 }
 
 .offer-stats .pending{
@@ -609,13 +643,11 @@
 }
 
 .offer-right{
-  margin-top: 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
+  flex-shrink: 0;
   font-size: 13px;
   color: #374151;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .offer-right .muted{
@@ -623,7 +655,6 @@
   font-size: 12px;
   text-align: right;
 }
-
 /* ===== 빈 데이터 ===== */
 .empty-box{
   padding: 28px 12px;
