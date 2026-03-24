@@ -294,23 +294,25 @@
             </div>
           </div>
 
-          <div class="app-card-body">
-            <div class="app-info-row">
-              <span class="app-info-label">이력서</span>
-              <span class="app-info-value"
-                    th:text="${app.resumeTitle != null and !#strings.isEmpty(app.resumeTitle) ? app.resumeTitle : '이력서 제목 없음'}">
-                이력서 제목
-              </span>
-            </div>
-
-            <div class="app-info-row">
-              <span class="app-info-label">지원일</span>
-              <span class="app-info-value"
-                    th:text="${app.appliedAt != null ? #dates.format(app.appliedAt, 'yyyy. M. d.') : '-'}">
-                2026. 3. 15.
-              </span>
-            </div>
-          </div>
+          <div class="app-card-body app-card-body-inline">
+		    <div class="app-inline-item">
+		      <span class="app-info-label">이력서</span>
+		      <span class="app-info-value"
+		            th:text="${app.resumeTitle != null and !#strings.isEmpty(app.resumeTitle) ? app.resumeTitle : '이력서 제목 없음'}">
+		        이력서 제목
+		      </span>
+		    </div>
+		  
+		    <div class="app-inline-divider"></div>
+		  
+		    <div class="app-inline-item">
+		      <span class="app-info-label">지원일</span>
+		      <span class="app-info-value"
+		            th:text="${app.appliedAt != null ? #dates.format(app.appliedAt, 'yyyy. M. d.') : '-'}">
+		        2026. 3. 15.
+		      </span>
+		    </div>
+		  </div>
 
         </div>
       </th:block>
@@ -331,25 +333,29 @@
 
       <th:block th:if="${dashboard.recentOffers != null and !#lists.isEmpty(dashboard.recentOffers)}">
         <div class="offer-box" th:each="offer : ${dashboard.recentOffers}">
-          <div class="offer-title" th:text="${offer.title}">제안서 제목</div>
-          <div class="offer-sub" th:text="${offer.jobTitle}">공고명</div>
-          <div class="offer-stats">
-            <span class="pending">미응답 <span th:text="${offer.unreadCount}">0</span></span>
-            <span class="ok">수락 <span th:text="${offer.acceptedCount}">0</span></span>
-            <span class="no">거절 <span th:text="${offer.rejectedCount}">0</span></span>
-          </div>
-          <div class="offer-right">
-            <div>총 <span th:text="${offer.totalSentCount}">0</span>명 발송</div>
-            <div class="muted">
-              만료:
-              <span th:text="${offer.expireAt != null ? #dates.format(offer.expireAt, 'yyyy. M. d.') : '-'}">2026. 3. 2.</span>
-            </div>
-          </div>
-        </div>
+		  <div class="offer-top">
+		    <div class="offer-title" th:text="${offer.title}">제안서 제목</div>
+		    <div class="offer-right">
+		      총 <span th:text="${offer.totalSentCount}">0</span>명 발송
+		    </div>
+		  </div>
+		
+		  <div class="offer-sub">
+		    연결 공고 :
+		    <span th:text="${offer.jobTitle != null and !#strings.isEmpty(offer.jobTitle) ? offer.jobTitle : '연결 공고 없음'}">공고명</span>
+		  </div>
+		
+		  <div class="offer-stats">
+		    <span class="pending">미응답 <span th:text="${offer.unreadCount}">0</span></span>
+		    <span class="ok">수락 <span th:text="${offer.acceptedCount}">0</span></span>
+		    <span class="no">거절 <span th:text="${offer.rejectedCount}">0</span></span>
+		  </div>
+		
+		</div>
       </th:block>
 
       <div class="empty-box" th:if="${dashboard.recentOffers == null or #lists.isEmpty(dashboard.recentOffers)}">
-        최근 발송한 제안서가 없습니다.
+        최근 등록한 제안서가 없습니다.
       </div>
     </div>
   </div>

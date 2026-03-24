@@ -307,81 +307,60 @@
 	<!-- RESPONSE_STATUS: 0=대기, 1=수락, 2=거절 가정 -->
 	<!-- 미열람은 VIEWED_AT IS NULL 기준 -->
 	<!-- ===================================================== -->
-	<!--  
+	<!-- 최근 제안서: 원본 제안서 등록일 기준으로 조회 -->
+	<!-- 최근 제안서: 원본 제안서를 등록일 기준으로 조회 -->
 	<select id="selectRecentOffers" parameterType="string"
 	        resultType="com.spring.app.company.domain.DashboardOfferDTO">
 	    SELECT *
 	    FROM (
 	        SELECT
-	            OS.FK_OFFER_LETTER_ID AS offerLetterId,
-	            MAX(OS.TITLE) AS title,
-	            MAX(JP.TITLE) AS jobTitle,
-	
-	            NVL(SUM(CASE WHEN ORR.RESPONSE_STATUS = 1 THEN 1 ELSE 0 END), 0) AS acceptedCount,
-	            NVL(SUM(CASE WHEN ORR.RESPONSE_STATUS = 2 THEN 1 ELSE 0 END), 0) AS rejectedCount,
-	            NVL(SUM(CASE WHEN ORR.VIEWED_AT IS NULL THEN 1 ELSE 0 END), 0) AS unreadCount,
-	
-	            COUNT(OS.OFFER_SUBMIT_ID) AS totalSentCount,
-	            MAX(OS.EXPIRE_AT) AS expireAt
-	
-	        FROM TBL_OFFER_SUBMIT OS
-	        JOIN TBL_JOB_POSTING JP
-	          ON OS.FK_JOB_ID = JP.JOB_ID
-	        LEFT JOIN TBL_OFFER_RESPONSE ORR
-	          ON ORR.FK_OFFER_SUBMIT_ID = OS.OFFER_SUBMIT_ID
-	
-	        WHERE JP.FK_MEMBERID = #{memberId}
-	
-	        GROUP BY OS.FK_OFFER_LETTER_ID
-	        ORDER BY MAX(OS.SEND_AT) DESC
-	    )
-	    WHERE ROWNUM <![CDATA[<=]]> 5
-	</select>
-	-->
-	<select id="selectRecentOffers" parameterType="string"
-	        resultType="com.spring.app.company.domain.DashboardOfferDTO">
-	    SELECT *
-	    FROM (
-	        SELECT
-	            S.offerLetterId,
-	            S.title,
-	            S.jobTitle,
+	            OL.OFFER_LETTER_ID AS offerLetterId,
+	            OL.TITLE AS title,
+	            JP.TITLE AS jobTitle,
+	            NVL(S.totalSentCount, 0) AS totalSentCount,
+	            NVL(R.pendingCount, 0) AS unreadCount,
 	            NVL(R.acceptedCount, 0) AS acceptedCount,
 	            NVL(R.rejectedCount, 0) AS rejectedCount,
-	            NVL(R.pendingCount, 0) AS unreadCount,
-	            S.totalSentCount,
-	            S.expireAt
-	        FROM
-	        (
+	            MAX(OS.EXPIRE_AT) AS expireAt
+	        FROM TBL_OFFER_LETTER OL
+	        JOIN TBL_JOB_POSTING JP
+	          ON OL.FK_JOB_ID = JP.JOB_ID
+	        LEFT JOIN TBL_OFFER_SUBMIT OS
+	          ON OL.OFFER_LETTER_ID = OS.FK_OFFER_LETTER_ID
+	        LEFT JOIN (
 	            SELECT
-	                OS.FK_OFFER_LETTER_ID AS offerLetterId,
-	                MAX(OS.TITLE) AS title,
-	                MAX(JP.TITLE) AS jobTitle,
-	                COUNT(OS.OFFER_SUBMIT_ID) AS totalSentCount,
-	                MAX(OS.EXPIRE_AT) AS expireAt,
-	                MAX(OS.SEND_AT) AS lastSendAt
-	            FROM TBL_OFFER_SUBMIT OS
-	            JOIN TBL_JOB_POSTING JP
-	              ON OS.FK_JOB_ID = JP.JOB_ID
-	            WHERE JP.FK_MEMBERID = #{memberId}
-	            GROUP BY OS.FK_OFFER_LETTER_ID
+	                FK_OFFER_LETTER_ID AS offerLetterId,
+	                COUNT(*) AS totalSentCount
+	            FROM TBL_OFFER_SUBMIT
+	            GROUP BY FK_OFFER_LETTER_ID
 	        ) S
-	        LEFT JOIN
-	        (
+	          ON OL.OFFER_LETTER_ID = S.offerLetterId
+	        LEFT JOIN (
 	            SELECT
 	                OS.FK_OFFER_LETTER_ID AS offerLetterId,
 	                SUM(CASE WHEN ORR.RESPONSE_STATUS = 0 THEN 1 ELSE 0 END) AS pendingCount,
 	                SUM(CASE WHEN ORR.RESPONSE_STATUS = 1 THEN 1 ELSE 0 END) AS acceptedCount,
 	                SUM(CASE WHEN ORR.RESPONSE_STATUS = 2 THEN 1 ELSE 0 END) AS rejectedCount
-	            FROM TBL_OFFER_RESPONSE ORR
-	            JOIN TBL_OFFER_SUBMIT OS
+	            FROM TBL_OFFER_SUBMIT OS
+	            LEFT JOIN TBL_OFFER_RESPONSE ORR
 	              ON ORR.FK_OFFER_SUBMIT_ID = OS.OFFER_SUBMIT_ID
 	            GROUP BY OS.FK_OFFER_LETTER_ID
 	        ) R
-	          ON S.offerLetterId = R.offerLetterId
-	        ORDER BY S.lastSendAt DESC
+	          ON OL.OFFER_LETTER_ID = R.offerLetterId
+	        WHERE JP.FK_MEMBERID = #{memberId}
+	        GROUP BY
+	            OL.OFFER_LETTER_ID,
+	            OL.TITLE,
+	            JP.TITLE,
+	            S.totalSentCount,
+	            R.pendingCount,
+	            R.acceptedCount,
+	            R.rejectedCount,
+	            OL.CREATED_AT
+	        ORDER BY OL.CREATED_AT DESC
 	    )
 	    WHERE ROWNUM <![CDATA[<=]]> 5
 	</select>
+	
     
 </mapper>

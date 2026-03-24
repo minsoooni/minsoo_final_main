@@ -116,17 +116,8 @@ public class CompanyWebController {
         
         // 대시보드 전체 데이터 조회
         CompanyDashboardDTO dashboard = service.getCompanyDashboard(memberId);
-        //System.out.println(dashboard.getRecentApplicants());
-        /*
-        [DashboardApplicantDTO(applicationId=13, applicantName=구직자, resumeTitle=경력이력서, jobTitle=디자이너 급구, appliedAt=Sat Mar 14 17:48:05 KST 2026, processStatus=0, processStatusText=지원완료), 
-        DashboardApplicantDTO(applicationId=12, applicantName=구직자, resumeTitle=경력이력서, jobTitle=디자이너 급구, appliedAt=Fri Mar 13 21:05:22 KST 2026, processStatus=0, processStatusText=지원완료), 
-        DashboardApplicantDTO(applicationId=11, applicantName=구직자, resumeTitle=경력이력서, jobTitle=디자이너 급구, appliedAt=Fri Mar 13 20:51:31 KST 2026, processStatus=0, processStatusText=지원완료), 
-        DashboardApplicantDTO(applicationId=10, applicantName=구직자, resumeTitle=경력이력서, jobTitle=디자이너 급구, appliedAt=Fri Mar 13 18:54:12 KST 2026, processStatus=0, processStatusText=지원완료), 
-        DashboardApplicantDTO(applicationId=9, applicantName=구직자, resumeTitle=경력이력서, jobTitle=디자이너 급구, appliedAt=Fri Mar 13 18:06:09 KST 2026, processStatus=0, processStatusText=지원완료)]
-        */
         
         model.addAttribute("dashboard", dashboard);
-        
         return "company/company_dashboard";
     }
 
@@ -328,20 +319,6 @@ public class CompanyWebController {
 	    service.refreshJobPostingStatuses();
 
 	    JobPostingDTO post = service.getJobPostingOne(jobId);
-	    //System.out.println(post);
-	    /*
-	    JobPostingDTO(jobId=1036, memberId=TESTC, categoryId=22, categoryName=그래픽, regionCode=SEOUL_GWANGJIN, regionName=광진구, 
-	    parentRegionCode=null, parentRegionName=서울특별시, title=인재, content=인재를 찾습니다, workType=정규직, careerType=무관, 
-	    eduCode=EDU_COLLEGE_4, eduLevelName=대학교(4년), educationLevelName=대학교(4년), salary=4000, headcount=1, status=게시중, 
-	    deadlineType=always, viewCount=16, scrapCount=null, companyName=테스트수정회사, companyType=중소기업, ceoName=안태훈, 
-	    industryCode=FIN, openDate=2019-01-01, companyAddr=강남구 테헤란로 H빌딩 9층, homepageUrl=https://www.naver.com, 
-	    logoUrl=images/Logo/20260310144859_707ad72e491b4482ab933fee2d2e0ff1.jpg, isHidden=0, reportId=61, reportReasonId=8, 
-	    reportReasonName=기타, reportContent=제목, 내용이 성의없습니다., reportProcessStatus=승인, 
-	    reportProcessReason=확인했습니다.! 이 공고는 1분뒤에 가려집니다.!, reportCreatedAt=Tue Mar 17 19:27:45 GMT+09:00 2026, 
-	    reportProcessedAt=Tue Mar 17 19:49:30 GMT+09:00 2026, reportCount=null, reportStatusText=승인, deadlineAt=null, 
-	    openedAt=null, closedAt=2027-01-01T12:00, createdAt=2026-03-08T23:07:09, updatedAt=2026-03-17T20:38, 
-	    skillIds=null, skillList=[Azure, C, C++, FastAPI, Figma, Flutter, GCP, Kotlin, Kubernetes, MongoDB, Node.js, PostgreSQL, Redis, Slack, Vue])
-	    */
 
 	    // 공고가 없거나, 로그인한 기업의 공고가 아니면 목록으로
 	    if (post == null || !memberId.equals(post.getMemberId())) {
@@ -738,16 +715,25 @@ public class CompanyWebController {
     // 공개 이력서 상세
     @GetMapping("/talent/detail")
     public String talentDetail(@RequestParam("resumeId") Long resumeId,
-                               Model model) {
-    	model.addAttribute("activeMenu", "talent");
+                               Model model,
+                               Authentication authentication) {
+
+        model.addAttribute("activeMenu", "talent");
 
         TalentResumeDetailDTO dto = service.getPublicPrimaryResumeDetail(resumeId);
 
         if (dto == null) {
-            return "redirect:/company/talent/talent?menu=talent";
+            // 조회 불가능한 공개 이력서면 인재검색 목록으로 보냄
+            return "redirect:/company/talent?menu=talent";
         }
 
+        String memberId = authentication.getName();
+
+        // 인재 상세 페이지에서도 기존 제안서 템플릿 목록을 사용할 수 있게 내려줌
+        List<OfferListDTO> offerList = service.selectOfferList(memberId);
+
         model.addAttribute("resume", dto);
+        model.addAttribute("offerList", offerList);
 
         return "company/talent/talent_detail";
     }

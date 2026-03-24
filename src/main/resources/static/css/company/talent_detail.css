@@ -137,3 +137,34 @@
   gap: 12px;
   margin-top: 8px;
 }
+
+
+
+
+
+
+/* 인재 상세 페이지 전용 제안서 발송 모달 보조 스타일 */
+.talent-offer-warning{
+  margin-bottom: 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.talent-fixed-recipient{
+  cursor: default;
+  border-top: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+#talent_message[readonly],
+#talent_title[readonly],
+#talent_jobTitle[readonly]{
+  background: #f9fafb;
+  color: #374151;
+}
+
+.btn-actions button.btn{
+  border-radius: 10px;
+}

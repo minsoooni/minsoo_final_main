@@ -1443,8 +1443,20 @@ public class CompanyService_imple implements CompanyService {
             throw new RuntimeException("포인트가 부족합니다. 현재 포인트: " + availableBalance + "P");
         }
 
-        // 3. 시작일 기준 종료일 +7일 계산
+        // 배너 이미지는 반드시 첨부하도록 서비스에서도 한번 더 검증
+        if (bannerImage == null || bannerImage.isEmpty()) {
+            throw new RuntimeException("배너 이미지를 첨부해 주세요.");
+        }
+        
+        // 시작일이 오늘 기준 2일 뒤부터만 가능하도록 서비스에서도 한번 더 검증
         LocalDate startDate = LocalDate.parse(bannerDto.getStartAt());
+        LocalDate minStartDate = LocalDate.now().plusDays(2);
+
+        if (startDate.isBefore(minStartDate)) {
+            throw new RuntimeException("배너 등록 시작일은 " + minStartDate + "부터 선택할 수 있습니다.");
+        }
+
+        // 3. 시작일 기준 종료일 +7일 계산
         LocalDate endDate = startDate.plusDays(7);
         bannerDto.setEndAt(endDate.toString());
 
