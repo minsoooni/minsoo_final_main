@@ -75,16 +75,18 @@ public class LoginTypeAuthenticationProvider implements AuthenticationProvider {
         if (status == 2) {
             throw new org.springframework.security.authentication.DisabledException("MEMBER_WITHDRAWN");
         }
-        if (status == 3) {
-            throw new org.springframework.security.authentication.DisabledException("MEMBER_DORMANT");
-        }
-        if (status != 1) {
+        if (status != 1 && status != 3) {
             throw new BadCredentialsException("아이디 또는 비밀번호가 올바르지 않습니다.");
         }
 
-        // 비밀번호 체크 (먼저)
+        // 비밀번호 체크
         if (!passwordEncoder.matches(rawPassword, db.getPassword())) {
             throw new BadCredentialsException("아이디 또는 비밀번호가 올바르지 않습니다.");
+        }
+
+        // 비밀번호가 맞는 경우에만 휴면 계정 처리
+        if (status == 3) {
+            throw new org.springframework.security.authentication.DisabledException("MEMBER_DORMANT");
         }
 
         // 기업 로그인일 경우 승인 여부 체크 (비번 맞은 뒤에)
