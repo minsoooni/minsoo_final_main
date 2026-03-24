@@ -125,6 +125,8 @@ public class SecurityConfig {
     	                "/member/registerSuccess",
     	                "/member/findAccount",
     	                "/member/dormant",
+    	                "/member/dormant/send-code",
+    	                "/member/dormant/verify-code",
     	                "/member/dormant/unlock",
     	                "/member/password/reset",
 
@@ -160,7 +162,7 @@ public class SecurityConfig {
     	        /* hasRole("ADMIN") 은 내부적으로 "ROLE_ADMIN"을 찾는다. DB 권한 문자열이 ROLE_ 접두사를 포함하는지 여부에 따라 hasRole/hasAuthority 선택에 유의! */
     	        .requestMatchers("/security/special/**").hasAnyRole("ADMIN", "USER_SPECIAL")
     	        .requestMatchers("/security/admin/**").hasRole("ADMIN")
-    	        .requestMatchers("/emp/**").hasRole("ADMIN")
+    	        .requestMatchers("/admin/**").hasRole("ADMIN")
     	        .requestMatchers("/company/**").hasRole("COMPANY")
 
     	        // ===== 그 외 전부 로그인(인증) 필요 (항상 맨 마지막) =====

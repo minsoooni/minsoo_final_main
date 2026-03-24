@@ -71,8 +71,7 @@
   <script th:inline="javascript">
     document.addEventListener('DOMContentLoaded', function () {
 
-      const ctx = /*[[@{/user-service}]]*/ "";
-      const base = (ctx || "").replace(/\/$/, "");
+      const base = "/user-service";
 
       const memberTabs = document.querySelectorAll('.jp-login-tab');
       const findTabs = document.querySelectorAll('.jp-find-subtab');
@@ -222,18 +221,19 @@
         codeMember.value = "";
 
         try {
-          const res = await fetch(base + "/member/password/send-code", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({
-              memberType: "member",
-              memberId,
-              name,
-              phone
-            })
-          });
+            const res = await fetch(base + "/member/password/send-code", {
+              method: "POST",
+              credentials: "same-origin",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: new URLSearchParams({
+                memberType: "member",
+                memberId,
+                name,
+                phone
+              })
+            });
 
-          const text = await res.text();
+            const text = await res.text();
 
           if (!res.ok) {
             smsMsgMember.textContent = text;
@@ -267,14 +267,14 @@
         smsMsgMember.textContent = "인증 확인 중...";
 
         try {
-          const res = await fetch(base + "/member/password/verify-code", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({ memberId, code })
-          });
+            const res = await fetch(base + "/member/password/verify-code", {
+              method: "POST",
+              credentials: "same-origin",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: new URLSearchParams({ memberId, code })
+            });
 
-          const text = await res.text();
-
+            const text = await res.text();
           if (!res.ok) {
             smsMsgMember.textContent = text;
             return;
@@ -322,18 +322,19 @@
         codeCompany.value = "";
 
         try {
-          const res = await fetch(base + "/member/password/send-code", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({
-              memberType: "company",
-              memberId,
-              bizNo,
-              phone
-            })
-          });
+            const res = await fetch(base + "/member/password/send-code", {
+              method: "POST",
+              credentials: "same-origin",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: new URLSearchParams({
+                memberType: "company",
+                memberId,
+                bizNo,
+                phone
+              })
+            });
 
-          const text = await res.text();
+            const text = await res.text();
 
           if (!res.ok) {
             smsMsgCompany.textContent = text;
@@ -367,13 +368,14 @@
         smsMsgCompany.textContent = "인증 확인 중...";
 
         try {
-          const res = await fetch(base + "/member/password/verify-code", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({ memberId, code })
-          });
+            const res = await fetch(base + "/member/password/verify-code", {
+              method: "POST",
+              credentials: "same-origin",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: new URLSearchParams({ memberId, code })
+            });
 
-          const text = await res.text();
+            const text = await res.text();
 
           if (!res.ok) {
             smsMsgCompany.textContent = text;
@@ -442,7 +444,7 @@
 
             <!-- 기업 아이디 찾기 -->
             <div id="panel-company-id" class="jp-login-panel">
-              <form th:action="@{/user-service/member/find/companyId}" method="post" novalidate>
+              <form th:action="@{/member/find/companyId}" method="post" novalidate>
                 <input type="hidden" name="memberType" value="company">
                 <input type="hidden" name="findType" value="id">
 
@@ -465,7 +467,7 @@
 
                 <div class="jp-find-help-links">
                   로그인 페이지로 돌아가기
-                  <a class="jp-link" th:href="@{/user-service/member/login(tab='company')}">기업 로그인</a>
+                  <a class="jp-link" th:href="@{/member/login(tab='company')}">기업 로그인</a>
                 </div>
 
                 <div class="jp-find-result-box" th:if="${resultType == 'companyId' and foundMemberId != null}">
@@ -526,14 +528,14 @@
 
                 <div class="jp-find-help-links">
                   로그인 페이지로 돌아가기
-                  <a class="jp-link" th:href="@{/user-service/member/login(tab='company')}">기업 로그인</a>
+                  <a class="jp-link" th:href="@{/member/login(tab='company')}">기업 로그인</a>
                 </div>
               </form>
             </div>
 
             <!-- 개인 아이디 찾기 -->
             <div id="panel-member-id" class="jp-login-panel d-none">
-              <form th:action="@{/user-service/member/find/memberId}" method="post" novalidate>
+              <form th:action="@{/member/find/memberId}" method="post" novalidate>
                 <input type="hidden" name="memberType" value="member">
                 <input type="hidden" name="findType" value="id">
 
@@ -617,7 +619,7 @@
 
                 <div class="jp-find-help-links">
                   로그인 페이지로 돌아가기
-                  <a class="jp-link" th:href="@{/user-service/member/login(tab='member')}">개인 로그인</a>
+                  <a class="jp-link" th:href="@{/member/login(tab='member')}">개인 로그인</a>
                 </div>
               </form>
             </div>
