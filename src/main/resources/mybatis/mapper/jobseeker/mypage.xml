@@ -93,17 +93,33 @@
     <!-- ======= 대시보드 통계 : 받은 제안 총 건수 ======= -->
     <select id="selectTotalOffers" parameterType="string" resultType="int">
         SELECT COUNT(*)
-        FROM tbl_offer_response
-        WHERE fk_memberid = #{memberId}
+        FROM tbl_offer_response R
+        JOIN tbl_offer_submit S ON S.offer_submit_id = R.fk_offer_submit_id
+        WHERE R.fk_memberid = #{memberId}
+          AND R.response_status = 0
+          AND (S.expire_at IS NULL OR S.expire_at >= TRUNC(SYSDATE))
     </select>
 
 
     <!-- ======= 대시보드 통계 : 읽지 않은 제안 건수 ======= -->
     <select id="selectUnreadOffers" parameterType="string" resultType="int">
         SELECT COUNT(*)
-        FROM tbl_offer_response
+        FROM tbl_offer_response R
+        JOIN tbl_offer_submit S ON S.offer_submit_id = R.fk_offer_submit_id
+        WHERE R.fk_memberid = #{memberId}
+          AND R.response_status = 0
+          AND R.viewed_at IS NULL
+          AND (S.expire_at IS NULL OR S.expire_at >= TRUNC(SYSDATE))
+    </select>
+
+
+    <!-- ======= 대시보드 통계 : 면접요청 건수 ======= -->
+    <select id="selectInterviewCount" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+        FROM tbl_job_application
         WHERE fk_memberid = #{memberId}
-          AND viewed_at IS NULL
+          AND application_status = 0
+          AND process_status = 3
     </select>
 
 

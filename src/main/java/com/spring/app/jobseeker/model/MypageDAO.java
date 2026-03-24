@@ -37,6 +37,7 @@ public interface MypageDAO {
     int selectActiveApplications(@Param("memberId") String memberId);
     int selectTotalOffers(@Param("memberId") String memberId);
     int selectUnreadOffers(@Param("memberId") String memberId);
+    int selectInterviewCount(@Param("memberId") String memberId);
     int selectScrappedCount(@Param("memberId") String memberId);
     int selectFollowedCompanies(@Param("memberId") String memberId);
 

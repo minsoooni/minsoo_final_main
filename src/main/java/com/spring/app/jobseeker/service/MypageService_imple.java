@@ -63,10 +63,10 @@ public class MypageService_imple implements MypageService {
     @Override
     public Map<String, Integer> getDashboardStats(String memberId) {
         Map<String, Integer> stats = new HashMap<>();
-        stats.put("totalApplications", mypageDAO.selectTotalApplications(memberId));
-        stats.put("activeApplications", mypageDAO.selectActiveApplications(memberId));
-        stats.put("totalOffers", mypageDAO.selectTotalOffers(memberId));
-        stats.put("unreadOffers", mypageDAO.selectUnreadOffers(memberId));
+        stats.put("totalApplications", mypageDAO.selectActiveApplications(memberId));    // 진행중 지원 수 (큰 숫자)
+        stats.put("activeApplications", mypageDAO.selectInterviewCount(memberId));       // 면접요청 수 (하단)
+        stats.put("totalOffers", mypageDAO.selectTotalOffers(memberId));                 // 대응 필요 제안 수 (큰 숫자)
+        stats.put("unreadOffers", mypageDAO.selectUnreadOffers(memberId));               // 미열람 제안 수 (하단)
         stats.put("scrappedPosts", mypageDAO.selectScrappedCount(memberId));
         stats.put("followedCompanies", mypageDAO.selectFollowedCompanies(memberId));
         return stats;
