@@ -124,13 +124,13 @@
     	    });
     	    // unlockDormant는 redirect를 반환할 거라서 fetch로 받으면 최종 HTML이 오거나, 리다이렉트가 따라가진 결과가 올 수 있음.
     	    if (!unlockRes.ok) {
-    	      const unlockText = await unlockRes.text();
-    	      smsMsg.textContent = unlockText || "휴면 해제 실패";
-    	      return;
-    	    }
-    	    // 휴면 해제 성공 → 비밀번호 재설정 페이지로 이동
-    	    window.location.href = base + "/member/password/reset";
-    	  } catch (e) {
+      	      const unlockText = await unlockRes.text();
+      	      smsMsg.textContent = unlockText || "휴면 해제 실패";
+      	      return;
+      	    }
+      	    // 휴면 해제 성공 → 로그인 페이지로 이동
+      	    window.location.href = base + "/member/login";
+      	  } catch (e) {
     	    smsMsg.textContent = "처리 중 오류가 발생했습니다.";
     	    console.error(e);
     	  }
