@@ -19,13 +19,12 @@
   /*<![CDATA[*/
     document.addEventListener("DOMContentLoaded", () => {
 
-      // 서버에서 내려준 값
-      const memberId = /*[[${memberId}]]*/ "";
-      const ctx = /*[[@{/user-service}]]*/ "";           
-      const base = (ctx || "").replace(/\/$/, ""); 
+    	// 서버에서 내려준 값
+        const memberId = /*[[${memberId}]]*/ "";
+        const base = "/user-service";
 
-      // DOM 요소
-      const btnSendCode = document.getElementById("btnSendCode");
+        // DOM 요소
+        const btnSendCode = document.getElementById("btnSendCode");
       const btnVerify   = document.getElementById("btnVerify");
       const verifyArea  = document.getElementById("verifyArea");
       const smsMsg      = document.getElementById("smsMsg");
@@ -64,14 +63,14 @@
         codeEl.value = "";
 
         try {
-          const res = await fetch(base + "/member/dormant/send-code", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({ memberId })
-          });
+            const res = await fetch(base + "/member/dormant/send-code", {
+              method: "POST",
+              credentials: "same-origin",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: new URLSearchParams({ memberId })
+            });
 
-          const text = await res.text();
-
+            const text = await res.text();
           if (!res.ok) {
             smsMsg.textContent = text;
             return;
@@ -99,14 +98,15 @@
     	  smsMsg.textContent = "인증 확인 중...";
 
     	  try {
-    	    // 인증코드 검증
-    	    const verifyRes = await fetch(base + "/member/dormant/verify-code", {
-    	      method: "POST",
-    	      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    	      body: new URLSearchParams({ memberId, code })
-    	    });
+      	    // 인증코드 검증
+      	    const verifyRes = await fetch(base + "/member/dormant/verify-code", {
+      	      method: "POST",
+      	      credentials: "same-origin",
+      	      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      	      body: new URLSearchParams({ memberId, code })
+      	    });
 
-    	    const verifyText = await verifyRes.text();
+      	    const verifyText = await verifyRes.text();
 
     	    if (!verifyRes.ok) {
     	      smsMsg.textContent = verifyText;
@@ -118,10 +118,11 @@
     	    // 휴면 해제 (세션에 인증완료가 심어져 있어야 unlock이 통과하도록)
     	    const unlockRes = await fetch(base + "/member/dormant/unlock", {
     	      method: "POST",
+    	      credentials: "same-origin",
     	      headers: { "Content-Type": "application/x-www-form-urlencoded" },
     	      body: new URLSearchParams({ memberId })
     	    });
-    	    // unlockDormant는 redirect를 반환할 거라서 fetch로 받으면 최종 HTML이 오거나,  리다이렉트가 따라가진 결과가 올 수 있음.
+    	    // unlockDormant는 redirect를 반환할 거라서 fetch로 받으면 최종 HTML이 오거나, 리다이렉트가 따라가진 결과가 올 수 있음.
     	    if (!unlockRes.ok) {
     	      const unlockText = await unlockRes.text();
     	      smsMsg.textContent = unlockText || "휴면 해제 실패";
