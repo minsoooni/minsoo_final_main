@@ -18,11 +18,13 @@
     <!-- 체크리스트 -->
     <ul class="progress-check-list">
       <li data-field="basic"><span class="label"><i class="fas fa-user"></i> 기본정보</span> <i class="fas fa-circle status-icon"></i></li>
+      <li data-field="photo"><span class="label"><i class="fas fa-camera"></i> 사진</span> <i class="fas fa-circle status-icon"></i></li>
       <li data-field="desired"><span class="label"><i class="fas fa-heart"></i> 희망조건</span> <i class="fas fa-circle status-icon"></i></li>
       <li data-field="education"><span class="label"><i class="fas fa-graduation-cap"></i> 학력</span> <i class="fas fa-circle status-icon"></i></li>
       <li data-field="career"><span class="label"><i class="fas fa-briefcase"></i> 경력</span> <i class="fas fa-circle status-icon"></i></li>
       <li data-field="techstack"><span class="label"><i class="fas fa-code"></i> 기술스택</span> <i class="fas fa-circle status-icon"></i></li>
       <li data-field="certificate"><span class="label"><i class="fas fa-certificate"></i> 자격증</span> <i class="fas fa-circle status-icon"></i></li>
+      <li data-field="language"><span class="label"><i class="fas fa-language"></i> 어학</span> <i class="fas fa-circle status-icon"></i></li>
       <li data-field="portfolio"><span class="label"><i class="fas fa-folder-open"></i> 포트폴리오</span> <i class="fas fa-circle status-icon"></i></li>
       <li data-field="selfintro"><span class="label"><i class="fas fa-pen"></i> 자기소개</span> <i class="fas fa-circle status-icon"></i></li>
     </ul>
@@ -77,41 +79,41 @@
   </style>
 
   <script>
-    // 이력서 완성도 계산
+    // 이력서 완성도 계산 (list 기준 가중치)
     function updateResumeProgress() {
       var items = {
-        basic: ($('#title').val() || '').trim().length > 0 && ($('#address').val() || '').trim().length > 0,
-        desired: ($('#categoryId').val() || '').trim().length > 0 || ($('#regionCode').val() || '').trim().length > 0,
-        education: $('#educationList > div').length > 0,
-        career: $('#careerList > div').length > 0,
-        techstack: $('#skillList .badge, #skillList .skill-tag, #skillList > span, #skillList > div').length > 0,
-        certificate: $('#certificateList > div').length > 0,
-        portfolio: $('#portfolioList > div').length > 0,
-        selfintro: ($('#selfIntro').val() || '').trim().length > 0
+        basic:       { check: ($('#title').val() || '').trim().length > 0 && ($('#address').val() || '').trim().length > 0, weight: 5 },
+        photo:       { check: ($('#photoPreview').length > 0 && $('#photoPreview').is(':visible')) || ($('#photoUpload')[0] && $('#photoUpload')[0].files.length > 0), weight: 5 },
+        desired:     { check: ($('#categoryId').val() || '').trim().length > 0 && ($('#regionCode').val() || '').trim().length > 0 && ($('#desiredSalary').val() || '').trim().length > 0, weight: 5 },
+        education:   { check: $('#educationList > div').length > 0, weight: 15 },
+        career:      { check: $('#careerList > div').length > 0, weight: 15 },
+        techstack:   { check: $('#skillList .badge, #skillList .skill-tag, #skillList > span, #skillList > div').length > 0, weight: 15 },
+        certificate: { check: $('#certificateList > div').length > 0, weight: 10 },
+        language:    { check: $('#languageList > div').length > 0, weight: 5 },
+        portfolio:   { check: $('#portfolioList > div').length > 0, weight: 10 },
+        selfintro:   { check: ($('#selfIntro').val() || '').trim().length > 0, weight: 15 }
       };
 
-      var total = 8;
-      var done = 0;
+      var percent = 0;
       var emptyNames = [];
       var fieldLabels = {
-        basic: '기본정보', desired: '희망조건', education: '학력', career: '경력',
-        techstack: '기술스택', certificate: '자격증', portfolio: '포트폴리오', selfintro: '자기소개'
+        basic: '기본정보', photo: '사진', desired: '희망조건', education: '학력', career: '경력',
+        techstack: '기술스택', certificate: '자격증', language: '어학', portfolio: '포트폴리오', selfintro: '자기소개'
       };
 
       // 체크리스트 업데이트
       $('.progress-check-list li').each(function() {
         var field = $(this).data('field');
         var icon = $(this).find('.status-icon');
-        if (items[field]) {
-          done++;
+        var item = items[field];
+        if (item && item.check) {
+          percent += item.weight;
           icon.removeClass('fa-circle empty').addClass('fa-check-circle done');
         } else {
-          emptyNames.push(fieldLabels[field]);
+          if (item) emptyNames.push(fieldLabels[field]);
           icon.removeClass('fa-check-circle done').addClass('fa-circle empty');
         }
       });
-
-      var percent = Math.round(done / total * 100);
 
       // 원형 프로그레스 업데이트
       var circumference = 263.9;
@@ -160,6 +162,27 @@
       $(document).on('click', '#photoDeleteBtn', function() {
         setTimeout(updateResumeProgress, 300);
       });
+
+      // 드롭다운/체크박스/초기화 버튼 클릭 감지
+      $(document).on('click', '.cb-dropdown, .cat-cb, .region-cb, [onclick*="reset"]', function() {
+        setTimeout(updateResumeProgress, 200);
+      });
+
+      // 주소 검색 완료 감지 (readonly input은 input 이벤트가 안 뜨므로 폴링)
+      var prevValues = {};
+      setInterval(function() {
+        var currentValues = {
+          address: $('#address').val() || '',
+          categoryId: $('#categoryId').val() || '',
+          regionCode: $('#regionCode').val() || ''
+        };
+        if (currentValues.address !== prevValues.address ||
+            currentValues.categoryId !== prevValues.categoryId ||
+            currentValues.regionCode !== prevValues.regionCode) {
+          prevValues = currentValues;
+          updateResumeProgress();
+        }
+      }, 500);
 
       // 리스트 항목 추가/삭제 감지 (MutationObserver)
       var observer = new MutationObserver(function() {
