@@ -131,7 +131,7 @@
         	    // 휴면 해제 성공 → 비밀번호 재설정 페이지로 이동
         	    window.location.href = base + "/member/password/reset";
         	  } catch (e) {
-    	    smsMsg.textContent = "처리 중 오류가 발생했습니다.";
+        	    smsMsg.textContent = "서버 오류가 발생했습니다.";
     	    console.error(e);
     	  }
     	});
