@@ -381,3 +381,27 @@
   line-height: 1.6;
   font-weight: 600;
 }
+
+
+
+/* =========================
+   EMPTY UI (지원자 페이지와 통일)
+   ========================= */
+.preview-empty{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  min-height:120px;           /* 높이 확보 */
+  padding:40px 20px;
+
+  border-radius:12px;
+  background:#f9fafb;         /* 살짝 회색 배경 */
+  border:1px dashed #e5e7eb;  /* 연한 점선 */
+
+  font-size:14px;
+  font-weight:700;
+  color:#6b7280;
+
+  text-align:center;
+}

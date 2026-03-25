@@ -182,7 +182,7 @@
       uploadBtn.addEventListener("click", uploadCompanyLogo);
     }
     
- 	// 파일 선택 시 미리보기
+ 	// 파일 선택 시 미리보기 및 파일명 표시
     const logoFileInput = document.getElementById("logoFileInput");
     if (logoFileInput) {
       logoFileInput.addEventListener("change", function(event) {
@@ -191,12 +191,15 @@
 
         const previewBox = document.getElementById("logoPreviewBox");
         const oldIcon = document.getElementById("logoDefaultIcon");
+        const fileNameBox = document.getElementById("selectedLogoFileName");
         let img = document.getElementById("logoPreviewImg");
 
+        // 기본 아이콘이 있으면 제거
         if (oldIcon) {
           oldIcon.remove();
         }
 
+        // 미리보기 이미지가 없으면 생성
         if (!img) {
           img = document.createElement("img");
           img.id = "logoPreviewImg";
@@ -204,7 +207,14 @@
           previewBox.appendChild(img);
         }
 
+        // 선택한 이미지를 즉시 미리보기로 표시
         img.src = URL.createObjectURL(file);
+
+        // 선택한 파일명을 표시
+        if (fileNameBox) {
+          fileNameBox.textContent = file.name;
+          fileNameBox.title = file.name;
+        }
       });
     }
 
@@ -272,43 +282,58 @@
     <form class="cp-form" id="basicProfileForm">
       <!-- 로고 업로드 -->
       <div class="cp-logo-section">
-       <div class="cp-label-title">기업 로고</div>
-     
-       <div class="cp-logo-row">
-         <div class="cp-logo-preview" id="logoPreviewBox">
-     
-           <!-- 로고가 있으면 출력 -->
-           <img id="logoPreviewImg"
-                th:if="${profile != null and profile.logoPath != null and !#strings.isEmpty(profile.logoPath)}"
-                th:src="@{'/' + ${profile.logoPath}}"
-                alt="기업 로고">
-     
-           <!-- 로고가 없으면 기본 아이콘 -->
-           <i id="logoDefaultIcon"
-              th:if="${profile == null or profile.logoPath == null or #strings.isEmpty(profile.logoPath)}"
-              class="fa-regular fa-building"></i>
-         </div>
-     
-         <div class="cp-logo-info">
-           <label class="btn btn-light btn-sm cp-upload-btn">
-             <i class="fa-solid fa-upload"></i>&nbsp; 파일 선택
-             <input type="file"
-                    id="logoFileInput"
-                    name="logoFile"
-                    class="cp-hidden-file"
-                    accept="image/*">
-           </label>
-     
-           <button type="button" id="uploadLogoBtn" class="btn btn-dark btn-sm cp-upload-submit-btn">
-             로고 등록
-           </button>
-     
-           <div class="cp-hint">
-             권장 크기: 200x200px, 최대 2MB
-           </div>
-         </div>
-       </div>
-     </div>
+	  <div class="cp-label-title">기업 로고</div>
+	
+	  <div class="cp-logo-upload-box">
+	    <div class="cp-logo-preview" id="logoPreviewBox">
+	
+	      <!-- 로고가 있으면 출력 -->
+	      <img id="logoPreviewImg"
+	           th:if="${profile != null and profile.logoPath != null and !#strings.isEmpty(profile.logoPath)}"
+	           th:src="@{'/' + ${profile.logoPath}}"
+	           alt="기업 로고">
+	
+	      <!-- 로고가 없으면 기본 아이콘 -->
+	      <i id="logoDefaultIcon"
+	         th:if="${profile == null or profile.logoPath == null or #strings.isEmpty(profile.logoPath)}"
+	         class="fa-regular fa-building"></i>
+	    </div>
+	
+	    <div class="cp-logo-info">
+	      <div class="cp-logo-title-row">
+	        <div class="cp-logo-title">회사 로고 업로드</div>
+	        <div class="cp-logo-subtext">구직자에게 보여질 대표 이미지를 등록하세요.</div>
+	      </div>
+	
+	      <div class="cp-logo-action-row">
+	        <!-- 파일 선택용 커스텀 버튼 -->
+	        <label for="logoFileInput" class="cp-file-select-btn">
+	          <i class="fa-solid fa-image"></i>
+	          <span>파일 선택</span>
+	        </label>
+	
+	        <!-- 선택된 파일명을 표시하는 영역 -->
+	        <div class="cp-selected-file" id="selectedLogoFileName">선택된 파일 없음</div>
+	
+	        <!-- 실제 파일 input은 숨김 처리 -->
+	        <input type="file"
+	               id="logoFileInput"
+	               name="logoFile"
+	               class="cp-hidden-file"
+	               accept="image/*">
+	
+	        <!-- 업로드 실행 버튼 -->
+	        <button type="button" id="uploadLogoBtn" class="btn btn-dark cp-upload-submit-btn">
+	          로고 등록
+	        </button>
+	      </div>
+	
+	      <div class="cp-hint">
+	        정사각형 이미지를 권장합니다. (권장 크기: 200x200px / 최대 2MB)
+	      </div>
+	    </div>
+	  </div>
+	</div>
 
       <div class="form-group cp-form-group">
         <label class="cp-form-label">기업명 *</label>

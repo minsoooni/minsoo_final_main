@@ -116,17 +116,17 @@
               }
 
               if (data.error === 'MEMBER_DORMANT') {
-                const memberId = formData.get('memberid') || '';
-                window.location.href = dormantUrl + '?memberId=' + encodeURIComponent(memberId) + '&reason=memberDormant';
-                return;
-              }
+                  const memberId = formData.get('memberid') || '';
+                  window.location.href = dormantUrl + '?memberId=' + encodeURIComponent(memberId) + '&reason=memberDormant';
+                  return;
+                }
 
-              if (data.error === 'MUST_CHANGE_PASSWORD') {
-                window.location.href = passwordChangeUrl;
-                return;
-              }
+                if (data.error === 'MUST_CHANGE_PASSWORD') {
+                  window.location.href = gatewayPrefix + 'member/password/reset';
+                  return;
+                }
 
-              showError('member', '아이디 또는 비밀번호가 올바르지 않습니다.');
+                showError('member', '아이디 또는 비밀번호가 올바르지 않습니다.');
               return;
             }
           }

@@ -221,22 +221,20 @@ public class CompanyService_imple implements CompanyService {
 	@Transactional
 	public CompanyProfileUpdateResponseDTO updateBasicProfile(CompanyProfileUpdateDTO dto) {
 	    CompanyProfileUpdateResponseDTO res = new CompanyProfileUpdateResponseDTO();
-
 	    try {
-	        // 1. 설립연도 문자열 정리
+	        // 설립연도 문자열 공백 제거
 	        String openYear = dto.getOpenYear();
-	        //System.out.println("openYear = " + dto.getOpenYear());
-	        //openYear = 2018
 
 	        if (openYear != null) {
 	            openYear = openYear.trim();
 	        }
 
-	        // 2. 4자리 숫자 검증
+	        // 설립연도 검증 및 DATE 변환
 	        if (openYear == null || openYear.isEmpty()) {
 	            dto.setOpenDate(null);
 	        } 
 	        else {
+	            // 설립연도는 4자리 숫자만 허용
 	            if (!openYear.matches("^\\d{4}$")) {
 	                res.setSuccess(false);
 	                res.setMessage("설립연도는 4자리 숫자로 입력하세요.");
@@ -246,33 +244,42 @@ public class CompanyService_imple implements CompanyService {
 	            int year = Integer.parseInt(openYear);
 	            int currentYear = java.time.LocalDate.now().getYear();
 
+	            // 설립연도 범위 검증
 	            if (year < 1800 || year > currentYear) {
 	                res.setSuccess(false);
 	                res.setMessage("설립연도는 1800년부터 현재 연도 사이여야 합니다.");
 	                return res;
 	            }
 
-	            // 2015 -> 2015-01-01
+	            // 연도만 입력받으므로 1월 1일 기준으로 DATE 생성
 	            dto.setOpenDate(java.sql.Date.valueOf(year + "-01-01"));
 	        }
 
-	        // 3. 회사 기본정보 수정
+	        // 회사 기본정보 수정
 	        int n1 = profileMapper.updateCompanyBasicInfo(dto);
 
-	        // 4. intro 테이블 존재 여부 확인
+	        // company_intro 존재 여부 확인
 	        int exists = profileMapper.existsCompanyIntro(dto.getMemberId());
 
 	        int n2;
 	        if (exists > 0) {
+	            // 이미 intro 행이 있으면 update 수행
 	            n2 = profileMapper.updateCompanyIntroBasicInfo(dto);
-	        } else {
+	        } 
+	        else {
+	            // intro 신규 생성 시 PK 시퀀스 값을 먼저 세팅
+	            Long companyIntroId = profileMapper.getCompanyIntroSeq();
+	            dto.setCompanyIntroId(companyIntroId);
+
+	            // seq 세팅 후 insert 수행
 	            n2 = profileMapper.insertCompanyIntroBasicInfo(dto);
 	        }
 
 	        if (n1 > 0 && n2 > 0) {
 	            res.setSuccess(true);
 	            res.setMessage("기본 정보가 저장되었습니다.");
-	        } else {
+	        } 
+	        else {
 	            res.setSuccess(false);
 	            res.setMessage("기본 정보 저장에 실패했습니다.");
 	        }
@@ -323,15 +330,23 @@ public class CompanyService_imple implements CompanyService {
 
 	        int n;
 	        if (exists > 0) {
+	            // 이미 intro 행이 있으면 update 수행
 	            n = profileMapper.updateCompanyIntroDetail(dto);
-	        } else {
+	        } 
+	        else {
+	            // intro 신규 생성 시 PK 시퀀스 값을 먼저 세팅
+	            Long companyIntroId = profileMapper.getCompanyIntroSeq();
+	            dto.setCompanyIntroId(companyIntroId);
+
+	            // seq 세팅 후 insert 수행
 	            n = profileMapper.insertCompanyIntroDetail(dto);
 	        }
 
 	        if (n > 0) {
 	            res.setSuccess(true);
 	            res.setMessage("기업 소개가 저장되었습니다.");
-	        } else {
+	        } 
+	        else {
 	            res.setSuccess(false);
 	            res.setMessage("기업 소개 저장에 실패했습니다.");
 	        }

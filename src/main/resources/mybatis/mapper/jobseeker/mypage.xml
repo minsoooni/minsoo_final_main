@@ -163,7 +163,7 @@
     </select>
 
 
-    <!-- ======= 대시보드 : 최근 본 공고 (최근 3건) ======= -->
+    <!-- ======= 대시보드 : 최근 본 공고 (최근 5건) ======= -->
     <!--  dashboard.html 키: id, title, companyName, viewedAt -->
     <select id="selectRecentViewedPosts" parameterType="string" resultType="java.util.HashMap">
         SELECT * FROM (

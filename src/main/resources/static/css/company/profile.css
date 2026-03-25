@@ -155,21 +155,25 @@
    로고 영역
 ========================= */
 .cp-logo-section {
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 
-.cp-logo-row {
+.cp-logo-upload-box {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 18px;
+  padding: 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #fafafa 0%, #f8fafc 100%);
 }
 
 .cp-logo-preview {
-  width: 82px;
-  height: 82px;
-  border-radius: 14px;
-  border: 1px dashed #d1d5db;
-  background: #f9fafb;
+  width: 96px;
+  height: 96px;
+  border-radius: 18px;
+  border: 1px dashed #cbd5e1;
+  background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -184,33 +188,99 @@
 }
 
 .cp-logo-preview i {
-  font-size: 26px;
-  color: #9ca3af;
+  font-size: 30px;
+  color: #94a3b8;
 }
 
 .cp-logo-info {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  gap: 10px;
+  min-width: 0;
 }
 
-.cp-upload-btn {
+.cp-logo-title-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cp-logo-title {
+  font-size: 15px;
+  font-weight: 900;
+  color: #111827;
+}
+
+.cp-logo-subtext {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.cp-logo-action-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cp-file-select-btn {
   display: inline-flex;
   align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 14px;
   border-radius: 10px;
-  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  font-size: 13px;
   font-weight: 800;
+  color: #374151;
+  cursor: pointer;
   margin: 0;
+  transition: all 0.2s ease;
+}
+
+.cp-file-select-btn:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.cp-selected-file {
+  flex: 1;
+  min-width: 180px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  font-size: 13px;
+  color: #6b7280;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cp-hidden-file {
   display: none;
 }
 
+.cp-upload-submit-btn {
+  height: 42px;
+  border-radius: 10px;
+  padding: 0 16px;
+  font-weight: 800;
+  white-space: nowrap;
+  margin: 0;
+}
+
 .cp-hint {
-  margin-top: 8px;
+  margin-top: 0;
   font-size: 12px;
   color: #6b7280;
+  line-height: 1.5;
 }
 
 /* =========================
@@ -228,17 +298,4 @@
   line-height: 1.7;
   color: #6b7280;
   word-break: keep-all;
-}
-
-
-
-.cp-upload-submit-btn {
-  margin-top: 8px;
-  border-radius: 10px;
-  padding: 8px 12px;
-  font-weight: 800;
-}
-
-.cp-logo-info .btn {
-  width: fit-content;
 }
