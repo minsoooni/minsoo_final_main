@@ -84,7 +84,7 @@ public class SecurityConfig {
     	    "/member/registerMember",
     	    "/member/registerCompanyMember",
     	    "/member/findAccount/**",
-            "/member/passwordChange",
+            "/member/password/Change",
     	    "/security/noAuthenticated",
     	    "/security/noAuthorized",
     	    "/security/loginEnd",
