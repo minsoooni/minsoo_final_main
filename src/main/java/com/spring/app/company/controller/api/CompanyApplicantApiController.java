@@ -117,7 +117,29 @@ public class CompanyApplicantApiController {
 
         // 기업용 지원자 상세 조회
         ApplicantDetailDTO dto = service.getApplicantDetailForCompany(paraMap);
-
+        //System.out.println(dto);
+        /*
+        ApplicantDetailDTO(applicationId=35, jobId=1057, memberId=solee7966, submittedResumeId=35, applicationRound=1, applicationStatus=0, 
+        				processStatus=1, processStatusText=열람, appliedAt=Wed Mar 25 11:43:33 GMT+09:00 2026, cancelledAt=null, 
+        				viewedAt=Wed Mar 25 11:50:47 GMT+09:00 2026, postTitle=백엔드 개발자 (Java/Spring) 채용, companyName=(주)네오테크 솔루션즈, 
+        				regionName=강남구, categoryName=백엔드, workType=정규직, salary=4000, deadlineAt=Wed Apr 15 23:59:00 GMT+09:00 2026, 
+        				name=안태훈, birthDate=Sat Nov 11 00:00:00 GMT+09:00 2000, gender=1, phone=010-4533-1386, email=solee7966@naver.com, 
+        				resumeTitle=백엔드 개발자 이력서, selfIntro=안정적인 서비스를 만드는 백엔드 개발자를 목표로 성장하고 있습니다.
+					        		Java와 Spring Boot를 기반으로 REST API를 설계하고, MySQL/Oracle DB와 연동하여 데이터를 처리하는 프로젝트를 수행해왔습니다.
+					
+					        		특히 단순한 기능 구현을 넘어, 서비스의 안정성과 확장성을 고려하는 개발을 지향합니다.
+					        		프로젝트 진행 중에는 API 응답 속도 개선을 위해 쿼리 최적화와 인덱스 설계를 적용한 경험이 있으며, 이를 통해 실제 성능 개선을 이루었습니다.
+					
+					        		또한 Git을 활용한 협업 경험을 통해 코드 리뷰와 브랜치 전략의 중요성을 이해하고 있으며, 문제 발생 시 로그를 기반으로 원인을 분석하고 해결하는 능력을 키워왔습니다.
+					
+					        		최근에는 Docker와 CI/CD 환경에 관심을 가지고 학습하며, 운영 환경까지 고려하는 개발자로 성장하고 있습니다.
+					        		앞으로도 단순히 동작하는 코드가 아닌, 유지보수와 확장성이 뛰어난 서비스를 만드는 개발자가 되고자 합니다., 
+        		education=[{"educationId":145,"resumeId":34,"educationLevelCode":"EDU_COLLEGE_4","schoolname":"쌍용대학교","major":"소프트웨어학",
+        					"enrolldate":"2019-03-04","graduationdate":"2025-02-28","status":"0","sort":0,"educationLevelName":"대학교(4년)"}], 
+        					career=null, language=null, portfolio=[{"portfolioId":99,"resumeId":34,"portfolioType":0,"link":"https://www.naver.com/",
+        					"filepath":null,"originalFilename":null,"portfolioTitle":null,"portfolioUrl":null,"portfolioDesc":null,"createdAt":"2026-03-25","sort":0}],
+        					award=null, address=경기 하남시 수리북로 29, photoPath=/images/jobseeker/20260325024136_362e5d0abd67435698e87b5ba092de6d.png, desiredSalary=3000)
+		*/
         if (dto == null) {
             mav.setViewName("redirect:/company/applicant/list");
             return mav;
@@ -155,6 +177,9 @@ public class CompanyApplicantApiController {
         appDetail.put("award", dto.getAward());
         appDetail.put("address", dto.getAddress());
         appDetail.put("photoPath", dto.getPhotoPath());
+        //System.out.println("dto.getPhotoPath()"+dto.getPhotoPath());
+        //dto.getPhotoPath()/images/jobseeker/20260325024136_362e5d0abd67435698e87b5ba092de6d.png
+        
         appDetail.put("desiredSalary", dto.getDesiredSalary());
 
         List<Map<String, Object>> techstackList = service.getApplicationTechstackList(dto.getSubmittedResumeId());

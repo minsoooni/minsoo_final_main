@@ -3,6 +3,7 @@ package com.spring.app.company.controller.api;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -51,6 +52,14 @@ public class CompanyWalletApiController {
     @PostMapping("/payments/complete")
     public PaymentCompleteResponse complete(@RequestBody PaymentCompleteRequest req) {
         return service.completePointCharge(req);
+    }
+    
+    
+    // 결제 재확인(서버 오류 후 복구용)
+    @Operation(summary = "포인트 충전 결제 재확인", description = "주문번호 기준으로 포트원 결제를 다시 조회하여 결제 반영 여부를 복구한다.")
+    @GetMapping("/payments/reconcile/{orderId}")
+    public PaymentCompleteResponse reconcile(@PathVariable String orderId) {
+        return service.reconcilePointCharge(orderId);
     }
 
     

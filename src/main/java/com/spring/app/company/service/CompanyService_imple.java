@@ -1204,47 +1204,82 @@ public class CompanyService_imple implements CompanyService {
     
     //========================= [결제] =========================//
     //결제 준비 메서드
+    /*
+	 authentication == null 체크
+	 authentication.getName() 비어있는지 체크
+	 insertPayment() 결과값 체크
+	 주문번호 중복 가능성 대비 간단 재시도
+     */
     @Override
     public PaymentReadyResponse preparePointCharge(PaymentReadyRequest req, Authentication authentication) {
         PaymentReadyResponse res = new PaymentReadyResponse();
 
+        // 요청값 필수 체크
         if (req == null || req.chargeAmount == null) {
             res.ok = false;
             res.message = "chargeAmount가 필요합니다.";
             return res;
         }
 
-        // 허용 금액 정책(10/20/50만)
+        // 허용 금액만 결제 가능
         long ca = req.chargeAmount;
         if (!(ca == 100000 || ca == 200000 || ca == 500000)) {
             res.ok = false;
             res.message = "허용되지 않은 충전 금액입니다.";
             return res;
         }
-        
-        //Authentication 기반으로 기업ID를 받아오도록 리팩토링 권장
+
+        // 로그인 사용자 체크
+        if (authentication == null || isBlank(authentication.getName())) {
+            res.ok = false;
+            res.message = "로그인 정보가 없습니다.";
+            return res;
+        }
+
         String memberId = authentication.getName();
 
-        String orderId = generateOrderId(); //여기서 생성된 orderId가 merchant_uid로 계속 사용됨
-        //결제 테이블에 '선택한 충전금액' 저장 (포인트로 적립될 금액)
-        walletMapper.insertPayment(memberId, orderId, ca, "PENDING");
+        // 주문번호는 충돌 가능성을 고려해 최대 3번 시도
+        String orderId = null;
+        int insertCnt = 0;
+
+        for (int i = 0; i < 3; i++) {
+            orderId = generateOrderId();
+            try {
+                insertCnt = walletMapper.insertPayment(memberId, orderId, ca, "PENDING");
+                if (insertCnt == 1) {
+                    break;
+                }
+            } catch (Exception e) {
+                // 주문번호 충돌/DB 오류 시 한 번 더 시도
+                if (i == 2) {
+                    throw e;
+                }
+            }
+        }
+
+        // 결제 준비 DB insert 검증
+        if (insertCnt != 1) {
+            res.ok = false;
+            res.message = "결제 준비 중 오류가 발생했습니다.";
+            return res;
+        }
 
         res.ok = true;
         res.orderId = orderId;
         res.chargeAmount = ca;
-
-        //프로젝트용 실제 결제 금액은 100원
-        res.payAmount = 100L;
-
-        res.orderName = "포인트 충전(" + (ca/10000) + "만원)";
+        res.payAmount = 100L; // 프로젝트용 실제 결제 금액
+        res.orderName = "포인트 충전(" + (ca / 10000) + "만원)";
         res.buyerName = "기업회원";
         res.buyerEmail = "";
         res.buyerTel = "";
+
         return res;
     }
     
     
+    
     //결제 성공 후 메서드
+    /*
     @Override
     @Transactional
     public PaymentCompleteResponse completePointCharge(PaymentCompleteRequest req) {
@@ -1353,9 +1388,222 @@ public class CompanyService_imple implements CompanyService {
 
         return res;
     }
+    */
+    @Override
+    public PaymentCompleteResponse completePointCharge(PaymentCompleteRequest req) {
+        PaymentCompleteResponse res = new PaymentCompleteResponse();
+
+        // 주문번호는 필수
+        if (req == null || isBlank(req.merchantUid)) {
+            res.ok = false;
+            res.message = "merchantUid가 필요합니다.";
+            return res;
+        }
+
+        return reconcileByOrderId(req.merchantUid, req.impUid);
+    }
+    @Override
+    public PaymentCompleteResponse reconcilePointCharge(String orderId) {
+        PaymentCompleteResponse res = new PaymentCompleteResponse();
+
+        // 주문번호 필수 체크
+        if (isBlank(orderId)) {
+            res.ok = false;
+            res.message = "orderId가 필요합니다.";
+            return res;
+        }
+
+        return reconcileByOrderId(orderId, null);
+    }
+    private PaymentCompleteResponse reconcileByOrderId(String orderId, String reqImpUid) {
+        PaymentCompleteResponse res = new PaymentCompleteResponse();
+        
+        
+
+        // DB 주문 조회
+        Map<String, Object> payment = walletMapper.selectPaymentByOrderId(orderId);
+        if (payment == null) {
+            res.ok = false;
+            res.message = "주문번호가 존재하지 않습니다.";
+            return res;
+        }
+
+        String status = String.valueOf(payment.get("STATUS"));
+        Long chargeAmount = toLong(payment.get("CHARGE_AMOUNT"));
+        String memberId = String.valueOf(payment.get("FK_MEMBERID"));
+
+        // 이미 적립 완료된 주문이면 잔액만 다시 조회해서 반환
+        if ("PAID".equalsIgnoreCase(status)) {
+            Long balance = walletMapper.selectPointAvailableBalance(memberId);
+            res.ok = true;
+            res.orderId = orderId;
+            res.paidAmount = chargeAmount;
+            res.pointBalance = balance == null ? 0L : balance;
+            res.message = "이미 처리된 결제입니다.";
+            return res;
+        }
+
+        // 포트원 토큰 발급 실패는 FAILED가 아니라 VERIFYING
+        String token = portOneV1Client.getAccessToken();
+        if (isBlank(token)) {
+            walletMapper.updatePaymentStatusIfCurrent(orderId, "PENDING", "VERIFYING");
+            res.ok = false;
+            res.orderId = orderId;
+            res.message = "결제 확인 중입니다. 잠시 후 다시 확인해주세요.";
+            return res;
+        }
+
+        // merchant_uid 기준 결제 조회
+        PortOneV1Client.PortOnePaymentInfo info =
+                portOneV1Client.getPaymentInfoByMerchantUid(token, orderId);
+
+        // 포트원 일시 장애/네트워크 오류도 VERIFYING 처리
+        if (info == null) {
+            walletMapper.updatePaymentStatusIfCurrent(orderId, "PENDING", "VERIFYING");
+            res.ok = false;
+            res.orderId = orderId;
+            res.message = "결제 확인 중입니다. 잠시 후 다시 확인해주세요.";
+            return res;
+        }
+
+        // 주문번호 불일치는 실제 비정상 요청이므로 FAILED 처리
+        if (!orderId.equals(info.merchantUid)) {
+            walletMapper.updatePaymentStatusIfCurrent(orderId, "PENDING", "FAILED");
+            res.ok = false;
+            res.orderId = orderId;
+            res.message = "주문번호가 일치하지 않습니다.";
+            return res;
+        }
+
+        // 프론트에서 impUid를 넘겼다면 조회 결과와 일치하는지 한 번 더 확인
+        if (!isBlank(reqImpUid) && !reqImpUid.equals(info.getImpUid())) {
+            walletMapper.updatePaymentStatusIfCurrent(orderId, "PENDING", "FAILED");
+            res.ok = false;
+            res.orderId = orderId;
+            res.message = "결제 고유번호가 일치하지 않습니다.";
+            return res;
+        }
+
+        // 프로젝트용 실제 결제금액 100원 검증
+        if (!Long.valueOf(100L).equals(info.amount)) {
+            walletMapper.updatePaymentStatusIfCurrent(orderId, "PENDING", "FAILED");
+            res.ok = false;
+            res.orderId = orderId;
+            res.message = "결제 금액이 일치하지 않습니다.";
+            return res;
+        }
+
+        // 실제 결제 실패/취소인 경우만 FAILED 또는 CANCELED 처리
+        if ("cancelled".equalsIgnoreCase(info.status) || "cancel".equalsIgnoreCase(info.status)) {
+            walletMapper.updatePaymentStatusIfCurrent(orderId, "PENDING", "CANCELED");
+            res.ok = false;
+            res.orderId = orderId;
+            res.message = "취소된 결제입니다.";
+            return res;
+        }
+
+        if (!"paid".equalsIgnoreCase(info.status)) {
+            walletMapper.updatePaymentStatusIfCurrent(orderId, "PENDING", "FAILED");
+            res.ok = false;
+            res.orderId = orderId;
+            res.message = "결제가 완료 상태가 아닙니다: " + info.status;
+            return res;
+        }
+
+        try {
+        	//실제 적립 처리
+            return applyChargePayment(orderId, memberId, chargeAmount, info);
+        } catch (Exception e) {
+            // 서버 내부 예외 발생 시 바로 FAILED로 확정하지 않고 확인 상태로 둠
+            walletMapper.updatePaymentStatusIfCurrent(orderId, "PENDING", "VERIFYING");
+
+            e.printStackTrace(); // 운영에서는 logger로 교체 권장
+
+            res.ok = false;
+            res.orderId = orderId;
+            res.message = "결제는 완료되었을 수 있습니다. 잠시 후 다시 확인해주세요.";
+            return res;
+        }
+    }
+    @Transactional
+    public PaymentCompleteResponse applyChargePayment(String orderId, String memberId, Long chargeAmount,
+                                                      PortOneV1Client.PortOnePaymentInfo info) {
+        PaymentCompleteResponse res = new PaymentCompleteResponse();
+
+        // 지갑 조회
+        Long walletId = walletMapper.selectPointWalletId(memberId);
+
+        // 지갑이 없으면 생성
+        if (walletId == null) {
+            int walletInsertCnt = walletMapper.insertPointWallet(memberId);
+            if (walletInsertCnt != 1) {
+                throw new RuntimeException("포인트 지갑 생성 실패");
+            }
+
+            walletId = walletMapper.selectPointWalletId(memberId);
+            if (walletId == null) {
+                throw new RuntimeException("포인트 지갑 재조회 실패");
+            }
+        }
+
+        // PENDING 상태일 때만 PAID 처리
+        int paidUpdateCnt = walletMapper.updatePaymentPaidIfPending(
+                orderId,
+                info.payMethod,
+                info.pgProvider,
+                info.embPgProvider
+        );
+
+        if (paidUpdateCnt == 0) {
+            // 다른 요청이 먼저 처리했을 가능성이 있으므로 재조회
+            Map<String, Object> payment = walletMapper.selectPaymentByOrderId(orderId);
+            String latestStatus = payment == null ? null : String.valueOf(payment.get("STATUS"));
+
+            if ("PAID".equalsIgnoreCase(latestStatus)) {
+                Long balance = walletMapper.selectPointAvailableBalance(memberId);
+                res.ok = true;
+                res.orderId = orderId;
+                res.paidAmount = chargeAmount;
+                res.pointBalance = balance == null ? 0L : balance;
+                res.message = "이미 처리된 결제입니다.";
+                return res;
+            }
+
+            throw new RuntimeException("결제 상태 변경 실패");
+        }
+
+        // 사용가능 포인트 적립
+        int addPointCnt = walletMapper.addPointAvailable(memberId, chargeAmount);
+        if (addPointCnt != 1) {
+            throw new RuntimeException("포인트 적립 실패");
+        }
+
+        // 거래내역 기록
+        int txInsertCnt = walletMapper.insertPointTransactionCharge(
+                walletId,
+                orderId,
+                "CHARGE",
+                "DONE",
+                chargeAmount
+        );
+        if (txInsertCnt != 1) {
+            throw new RuntimeException("포인트 거래내역 저장 실패");
+        }
+
+        Long balance = walletMapper.selectPointAvailableBalance(memberId);
+
+        res.ok = true;
+        res.orderId = orderId;
+        res.paidAmount = chargeAmount;
+        res.pointBalance = balance == null ? 0L : balance;
+        res.message = "결제가 정상 반영되었습니다.";
+
+        return res;
+    }
     
     
     
+    //페이징 처리
     @Override
     public Map<String, Object> getWalletPageData(String memberId, String tab, int currentShowPageNo, int sizePerPage) {
         Map<String, Object> m = new HashMap<>();
