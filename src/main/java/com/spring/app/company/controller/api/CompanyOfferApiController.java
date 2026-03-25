@@ -54,7 +54,7 @@ public class CompanyOfferApiController {
     @GetMapping("/{offerLetterId}")
     public ResponseEntity<OfferDetailDTO> offerDetail(@PathVariable("offerLetterId") Long offerLetterId) {
         OfferDetailDTO dto = service.selectOfferDetail(offerLetterId);
-        System.out.println(dto);
+        //System.out.println(dto);
         /*
         OfferDetailDTO(offerLetterId=23, jobId=1023, title=수정일자 수정 후 테스트제안서 1, message=지원자 전달 멧지, expireAt=2026-03-22T00:00)
         */        

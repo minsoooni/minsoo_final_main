@@ -46,26 +46,26 @@
 
     <!-- 발송한 제안서 상태 조회해오기 -->
     <select id="selectOfferMetricsByCompany"
-            resultType="com.spring.app.company.domain.OfferMetricsDTO">
-      SELECT
-        ol.offer_letter_id AS offerLetterId,
-        NVL(COUNT(r.fk_memberid), 0) AS totalSent,
-        NVL(SUM(CASE WHEN r.viewed_at IS NOT NULL THEN 1 ELSE 0 END), 0) AS viewedCnt,
-        NVL(SUM(CASE WHEN r.viewed_at IS NULL THEN 1 ELSE 0 END), 0) AS unreadCnt,
-        NVL(SUM(CASE WHEN r.response_status = 1 THEN 1 ELSE 0 END), 0) AS acceptCnt,
-        NVL(SUM(CASE WHEN r.response_status = 2 THEN 1 ELSE 0 END), 0) AS rejectCnt
-      FROM tbl_offer_letter ol
-      LEFT JOIN tbl_offer_submit s
-        ON s.fk_offer_letter_id = ol.offer_letter_id
-      LEFT JOIN tbl_offer_response r
-        ON r.fk_offer_submit_id = s.offer_submit_id
-      JOIN tbl_job_posting jp
-        ON jp.job_id = ol.fk_job_id
-      WHERE jp.fk_memberid = #{companyMemberId}
-        AND ol.status = 0
-      GROUP BY ol.offer_letter_id
-      ORDER BY ol.offer_letter_id DESC
-    </select>
+        resultType="com.spring.app.company.domain.OfferMetricsDTO">
+	  SELECT
+	    ol.offer_letter_id AS offerLetterId,
+	    NVL(COUNT(r.fk_memberid), 0) AS totalSent,
+	    NVL(SUM(CASE WHEN r.viewed_at IS NOT NULL THEN 1 ELSE 0 END), 0) AS viewedCnt,
+	    NVL(SUM(CASE WHEN r.fk_memberid IS NOT NULL AND r.viewed_at IS NULL THEN 1 ELSE 0 END), 0) AS unreadCnt,
+	    NVL(SUM(CASE WHEN r.response_status = 1 THEN 1 ELSE 0 END), 0) AS acceptCnt,
+	    NVL(SUM(CASE WHEN r.response_status = 2 THEN 1 ELSE 0 END), 0) AS rejectCnt
+	  FROM tbl_offer_letter ol
+	  LEFT JOIN tbl_offer_submit s
+	    ON s.fk_offer_letter_id = ol.offer_letter_id
+	  LEFT JOIN tbl_offer_response r
+	    ON r.fk_offer_submit_id = s.offer_submit_id
+	  JOIN tbl_job_posting jp
+	    ON jp.job_id = ol.fk_job_id
+	  WHERE jp.fk_memberid = #{companyMemberId}
+	    AND ol.status = 0
+	  GROUP BY ol.offer_letter_id
+	  ORDER BY ol.offer_letter_id DESC
+	</select>
 
 
     <!-- 제안서 리스트 조회해오기 : 템플릿 목록 -->

@@ -189,6 +189,8 @@ public interface CompanyService {
     PaymentReadyResponse preparePointCharge(PaymentReadyRequest req, Authentication authentication);
     //결제 완료(서버 검증 + 포인트 적립)
     PaymentCompleteResponse completePointCharge(PaymentCompleteRequest req);
+    // 결제 재확인(서버 오류/응답 끊김 이후 복구용)
+    PaymentCompleteResponse reconcilePointCharge(String orderId);
 
     //지갑 페이지 데이터
     //Map<String, Object> getWalletPageData(String memberId, String tab);
