@@ -17,6 +17,7 @@
     const readyUrl = /*[[@{/company/Wallet/payments/ready}]]*/ "";
     const completeUrl = /*[[@{/company/Wallet/payments/complete}]]*/ "";
     const reconcileBaseUrl = /*[[@{/company/Wallet/payments/reconcile/}]]*/ "";
+    const cancelPendingUrl = /*[[@{/company/Wallet/payments/cancel-pending}]]*/ "";
     
 	// JSON 응답을 안전하게 파싱
     async function requestJson(url, options) {
@@ -34,7 +35,9 @@
         status: response.status,
         data
       };
-    }
+    }//async function requestJson(url, options) {}
+    
+	
 	// 주문번호 기준으로 결제 반영을 다시 확인
     async function reconcilePayment(orderId) {
       const result = await requestJson(reconcileBaseUrl + encodeURIComponent(orderId), {
@@ -42,7 +45,25 @@
       });
 
       return result.data;
-    }
+    }//async function reconcilePayment(orderId) {}
+    
+	
+	// 결제창 취소 시 대기 주문을 취소 상태로 정리
+    async function cancelPendingPayment(orderId) {
+      const response = await fetch(cancelPendingUrl + "?orderId=" + encodeURIComponent(orderId), {
+        method: "POST"
+      });
+
+      let data = null;
+      try {
+        data = await response.json();
+      } catch (e) {
+        data = null;
+      }
+
+      return data;
+    }//async function cancelPendingPayment(orderId) {}
+
 
     if (!window.IMP) {
       alert("결제 모듈 로딩 실패(IMP 없음)");
@@ -53,6 +74,7 @@
     IMP.init(impCode);
     
     //console.log(impCode);
+
 
     /* ===================== 3) 버튼 이벤트 ===================== */
     const btnCharge = document.getElementById("btnCharge");
@@ -66,14 +88,14 @@
     window.startCharge = startCharge;
 
     /* ===================== functions ===================== */
-
+	//모달열기
     function openChargeModal() {
       const modal = document.getElementById("chargeModal");
       if (!modal) return;
       modal.style.display = "block";
       modal.setAttribute("aria-hidden", "false");
     }
-
+	//모달닫기
     function closeChargeModal() {
       const modal = document.getElementById("chargeModal");
       if (!modal) return;
@@ -81,6 +103,7 @@
       modal.setAttribute("aria-hidden", "true");
     }
 
+	//충전시작
     async function startCharge() {
    	  const btn = document.getElementById("btnCharge");
 
@@ -130,7 +153,21 @@
    	    }, async function (rsp) {
 
    	      if (!rsp.success) {
-   	        alert("결제 실패: " + (rsp.error_msg || "알 수 없는 오류"));
+   	        console.log("결제 실패/취소 분기 진입", rsp);
+   	        const orderId = rsp.merchant_uid || sessionStorage.getItem("lastPointOrderId");
+   	        console.log("취소 정리 대상 orderId =", orderId);
+          
+   	        if (orderId) {
+   	          try {
+   	            const cancelRes = await cancelPendingPayment(orderId);
+   	            console.log("cancelPendingPayment 응답 =", cancelRes);
+   	            sessionStorage.removeItem("lastPointOrderId");
+   	          } catch (e) {
+   	            console.error("대기 결제 취소 정리 실패:", e);
+   	          }
+   	        }
+          
+   	        alert("결제가 취소되었습니다.");
    	        return;
    	      }
 
@@ -307,12 +344,14 @@
 	      <!-- 포인트 거래내역 -->
 	      <tr th:each="tx : ${pointTxList}">
 	        <td>
-	          <span class="badge"
-	                th:classappend="${tx.txType == 'CHARGE'} ? ' badge-dark' : (${tx.txType == 'USE'} ? ' badge-secondary' : ' badge-light')"
-	                th:text="${tx.txLabel}">
-	            충전
-	          </span>
-	        </td>
+			  <span class="tx-badge"
+			        th:classappend="${tx.txType == 'CHARGE'} ? ' tx-badge-charge' 
+			                        : (${tx.txType == 'USE'} ? ' tx-badge-use' 
+			                        : ' tx-badge-etc')"
+			        th:text="${tx.txLabel}">
+			    충전
+			  </span>
+			</td>
 	
 	        <td th:classappend="${tx.deltaAvailable > 0} ? 'plus' : 'minus'"
 	            th:text="${tx.deltaAvailable > 0 ? '+' : ''} + ${#numbers.formatInteger(tx.deltaAvailable, 3, 'COMMA')} + 'P'">
@@ -457,12 +496,17 @@
 		
 		    <!-- 상태 -->
 		    <td>
-		      <span class="w-pill"
-		            th:classappend="${p.status == 'PAID'} ? ' w-pill-dark' : (${p.status == 'PENDING'} ? ' w-pill-gray' : ' w-pill-red')"
-		            th:text="${p.status == 'PAID' ? '완료' : (p.status == 'PENDING' ? '대기' : (p.status == 'CANCELED' ? '취소' : '기타'))}">
-		        완료
-		      </span>
-		    </td>
+			  <span class="w-pill"
+			        th:classappend="${p.status == 'PAID'} ? ' w-pill-paid' 
+			                        : (${p.status == 'PENDING'} ? ' w-pill-pending' 
+			                        : (${p.status == 'CANCELED'} ? ' w-pill-canceled' 
+			                        : ' w-pill-default'))"
+			        th:text="${p.status == 'PAID' ? '완료' 
+			                : (p.status == 'PENDING' ? '대기' 
+			                : (p.status == 'CANCELED' ? '취소' : '기타'))}">
+			    완료
+			  </span>
+			</td>
 		
 		    <!-- 결제일시 / 취소일시 / 생성일시 (이미 문자열로 내려옴) -->
 		    <td th:text="${p.paidAt != null ? p.paidAt : '-'}">-</td>
