@@ -21,11 +21,25 @@ public interface CompanyWalletMapper {
 
     Map<String, Object> selectPaymentByOrderId(@Param("orderId") String orderId);
 
+    /*
     int updatePaymentPaid(@Param("orderId") String orderId,
             			  @Param("payMethod") String payMethod,
             			  @Param("pgProvider") String pgProvider,
             			  @Param("embPgProvider") String embPgProvider);
+     */
+    
+    // PENDING 상태일 때만 PAID로 변경
+    int updatePaymentPaidIfPending(@Param("orderId") String orderId,
+                                   @Param("payMethod") String payMethod,
+                                   @Param("pgProvider") String pgProvider,
+                                   @Param("embPgProvider") String embPgProvider);
 
+    // 특정 상태일 때만 다른 상태로 변경
+    int updatePaymentStatusIfCurrent(@Param("orderId") String orderId,
+                                     @Param("currentStatus") String currentStatus,
+                                     @Param("nextStatus") String nextStatus);
+
+    
     int updatePaymentStatus(@Param("orderId") String orderId,
                             @Param("status") String status);
 

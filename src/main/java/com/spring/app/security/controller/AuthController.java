@@ -77,6 +77,11 @@ public class AuthController {
                     .body(body);
 
         } catch (DisabledException e) {
+            if ("MUST_CHANGE_PASSWORD".equals(e.getMessage())) {
+                HttpSession session = request.getSession();
+                session.setAttribute("PASSWORD_RESET_VERIFIED_MEMBER", memberid);
+            }
+
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("success", false);
             body.put("error", e.getMessage());

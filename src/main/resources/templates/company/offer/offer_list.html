@@ -814,7 +814,7 @@
             </p>
 
             <div class="of-item__sub">
-              공고 ID: ${item.jobId ?? "-"} · 마지막 발송일: ${formatDateTime(item.lastSendAt)}
+              마지막 발송일: ${formatDateTime(item.lastSendAt)}
             </div>
 
             <div class="of-metrics">
@@ -1005,7 +1005,8 @@
         <div class="of-item__row">
           <div>
             <p class="of-item__title" th:text="${offer.title}">제안서 제목</p>
-            <div class="of-item__sub" th:text="|공고 ID: ${offer.jobId}|">공고 ID</div>
+            <!-- <div class="of-item__sub" th:text="|공고 ID: ${offer.jobId}|">공고 ID</div> -->
+            
 
             <div class="of-metrics">
               <span>
@@ -1065,8 +1066,9 @@
       </div>
 
       <div class="preview-empty" th:if="${#lists.isEmpty(offerList)}">
-        등록된 제안서가 없습니다.
-      </div>
+	    <i class="fa-regular fa-folder-open" style="margin-right:6px;"></i>
+	    등록된 제안서가 없습니다.
+	  </div>
     </div>
   </div>
 

@@ -35,12 +35,75 @@
 .plus { color:#16a34a; font-weight:600; }
 .minus { color:#ef4444; font-weight:600; }
 .muted { color:#9ca3af; }
-.badge {font-weight:600; font-size:12px; }
+/* 거래유형 배지 */
+.tx-badge{
+  display:inline-block;
+  padding:5px 10px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:700;
+  line-height:1;
+}
+
+/* 충전: 초록 */
+.tx-badge-charge{
+  background:#dcfce7;
+  color:#166534;
+  border:1px solid #86efac;
+}
+
+/* 사용: 파랑 */
+.tx-badge-use{
+  background:#dbeafe;
+  color:#1d4ed8;
+  border:1px solid #93c5fd;
+}
+
+/* 기타: 회색 */
+.tx-badge-etc{
+  background:#f3f4f6;
+  color:#4b5563;
+  border:1px solid #d1d5db;
+}
 
 /* pill (wallet 전용 - 공통 pill과 충돌 방지) */
-.w-pill { display:inline-block; padding: 4px 10px; border-radius: 999px; font-size:12px; font-weight:600; }
-.w-pill-dark { background:#111827; color:#fff; }
-.w-pill-gray { background:#e5e7eb; color:#111; }
+/* 결제 상태 pill */
+.w-pill{
+  display:inline-block;
+  padding:5px 10px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:700;
+  line-height:1;
+}
+
+/* 완료: 초록 */
+.w-pill-paid{
+  background:#dcfce7;
+  color:#166534;
+  border:1px solid #86efac;
+}
+
+/* 대기: 주황 */
+.w-pill-pending{
+  background:#ffedd5;
+  color:#c2410c;
+  border:1px solid #fdba74;
+}
+
+/* 취소: 빨강 */
+.w-pill-canceled{
+  background:#fee2e2;
+  color:#b91c1c;
+  border:1px solid #fca5a5;
+}
+
+/* 기타: 회색 */
+.w-pill-default{
+  background:#f3f4f6;
+  color:#4b5563;
+  border:1px solid #d1d5db;
+}
 
 /* 결제요약 컬러 */
 .ok { color:#16a34a; }
