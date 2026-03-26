@@ -24,6 +24,17 @@ import jakarta.validation.Valid;
 @Controller
 public class MemberController {
 	
+	private static final String ANONYMOUS_USER = "anonymousUser";
+	private static final String REDIRECT_MEMBER_LOGIN = "redirect:/member/login";
+	private static final String MEMBER_ID = "memberId";
+	private static final String DORMANT_VERIFIED_MEMBER = "DORMANT_VERIFIED_MEMBER";
+	private static final String PASSWORD_RESET_VERIFIED_MEMBER = "PASSWORD_RESET_VERIFIED_MEMBER";
+	private static final String REDIRECT_MEMBER_PASSWORD_RESET = "redirect:/member/password/reset";
+	private static final String MEMBER_PASSWORD_CHANGE = "member/passwordChange";
+	private static final String ERROR = "error";
+	private static final String MEMBER_FIND_ACCOUNT = "member/findAccount";
+	private static final String MEMBER_REGISTER_MEMBER = "member/registerMember";
+	
 	private final MemberService memberService;
 	private final MemberMapper memberMapper;
 	private final PasswordEncoder passwordEncoder;
@@ -33,9 +44,7 @@ public class MemberController {
 	    this.memberMapper = memberMapper;
 	    this.passwordEncoder = passwordEncoder;
 	}
-	
-	String ctxPath = "http://localhost:8000/user-service/";
-		
+
 	// =========================== 공용 ===========================
 	
 	// 로그인 페이지 이동
@@ -53,7 +62,7 @@ public class MemberController {
 	
     // 휴면 계정 안내 페이지 이동
     @GetMapping("/member/dormant")
-    public String dormantPage(@RequestParam(value="memberId", required=false) String memberId,
+    public String dormantPage(@RequestParam(value = MEMBER_ID, required = false) String memberId,
                               Model model) {
 
         // memberId가 안 넘어오면 로그인 세션에서 꺼내기
@@ -62,25 +71,25 @@ public class MemberController {
                     .getContext().getAuthentication();
 
             if (auth != null && auth.isAuthenticated()
-                    && !"anonymousUser".equals(auth.getPrincipal())) {
+                    && !ANONYMOUS_USER.equals(auth.getPrincipal())) {
                 memberId = auth.getName();
             } else {
                 // 로그인도 아닌데 들어오면 로그인 페이지로
-                return "redirect:/member/login";
+                return REDIRECT_MEMBER_LOGIN;
             }
         }
 
-        model.addAttribute("memberId", memberId);
+        model.addAttribute(MEMBER_ID, memberId);
         return "member/dormant";
     }
     
     // 휴면 계정 해제 처리
     @PostMapping("/member/dormant/unlock")
-    public String unlockDormant(@RequestParam("memberId") String memberId,
+    public String unlockDormant(@RequestParam(MEMBER_ID) String memberId,
                                 HttpSession session) {
 
         // 인증 완료 여부 체크 (세션에 심어둔 값)
-        String verifiedMemberId = (String) session.getAttribute("DORMANT_VERIFIED_MEMBER");
+        String verifiedMemberId = (String) session.getAttribute(DORMANT_VERIFIED_MEMBER);
 
         // 인증이 안됐거나, 다른 memberId로 unlock 시도하면 차단
         if (verifiedMemberId == null || !verifiedMemberId.equals(memberId)) {
@@ -92,7 +101,7 @@ public class MemberController {
         // 휴면 해제
         memberMapper.unlockDormant(memberId, now);
         
-        return "redirect:/member/password/reset";
+        return REDIRECT_MEMBER_PASSWORD_RESET;
     }
 
     // 비밀번호 변경 페이지 이동 (로그인 사용자 / 강제 비밀번호 변경 대상)
@@ -102,14 +111,14 @@ public class MemberController {
         var auth = SecurityContextHolder.getContext().getAuthentication();
 
         if (auth == null || !auth.isAuthenticated()
-                || "anonymousUser".equals(auth.getPrincipal())) {
-            return "redirect:/member/login";
+                || ANONYMOUS_USER.equals(auth.getPrincipal())) {
+            return REDIRECT_MEMBER_LOGIN;
         }
 
         String memberId = auth.getName();
-        model.addAttribute("memberId", memberId);
+        model.addAttribute(MEMBER_ID, memberId);
 
-        return "member/passwordChange"; // templates/member/passwordChange.html
+        return MEMBER_PASSWORD_CHANGE; // templates/member/passwordChange.html
     }
 
     // 비밀번호 변경 처리
@@ -119,29 +128,29 @@ public class MemberController {
         var auth = SecurityContextHolder.getContext().getAuthentication();
 
         if (auth == null || !auth.isAuthenticated()
-                || "anonymousUser".equals(auth.getPrincipal())) {
-            return "redirect:/member/login";
+                || ANONYMOUS_USER.equals(auth.getPrincipal())) {
+            return REDIRECT_MEMBER_LOGIN;
         }
 
         String memberId = auth.getName();
 
         // 새 비번/확인 일치
         if (newPassword == null || !newPassword.equals(newPasswordConfirm)) {
-            model.addAttribute("memberId", memberId);
-            model.addAttribute("error", "newPasswordMismatch");
-            return "member/passwordChange";
+            model.addAttribute(MEMBER_ID, memberId);
+            model.addAttribute(ERROR, "newPasswordMismatch");
+            return MEMBER_PASSWORD_CHANGE;
         }
 
         // 현재 비번 일치 확인 (DB 해시 vs 입력값 matches)
         MemberDTO db = memberMapper.selectByMemberId(memberId);
         if (db == null) {
-            return "redirect:/member/login";
+            return REDIRECT_MEMBER_LOGIN;
         }
 
         if (!passwordEncoder.matches(currentPassword, db.getPassword())) {
-            model.addAttribute("memberId", memberId);
-            model.addAttribute("error", "currentPasswordInvalid");
-            return "member/passwordChange";
+            model.addAttribute(MEMBER_ID, memberId);
+            model.addAttribute(ERROR, "currentPasswordInvalid");
+            return MEMBER_PASSWORD_CHANGE;
         }
 
         // 비번 업데이트 + 강제변경 플래그 0으로 내리기
@@ -157,17 +166,17 @@ public class MemberController {
     @GetMapping("/member/password/reset")
     public String passwordResetPage(HttpSession session, Model model) {
 
-        String verifiedMemberId = (String) session.getAttribute("DORMANT_VERIFIED_MEMBER");
+        String verifiedMemberId = (String) session.getAttribute(DORMANT_VERIFIED_MEMBER);
 
         if(verifiedMemberId == null) {
-            verifiedMemberId = (String) session.getAttribute("PASSWORD_RESET_VERIFIED_MEMBER");
+            verifiedMemberId = (String) session.getAttribute(PASSWORD_RESET_VERIFIED_MEMBER);
         }
 
         if (verifiedMemberId == null || verifiedMemberId.isBlank()) {
             return "redirect:/member/findAccount?findType=password";
         }
 
-        model.addAttribute("memberId", verifiedMemberId);
+        model.addAttribute(MEMBER_ID, verifiedMemberId);
         return "member/passwordReset";
     }
 
@@ -177,10 +186,10 @@ public class MemberController {
                                    @RequestParam("newPasswordConfirm") String newPasswordConfirm,
                                    HttpSession session, Model model) {
 
-        String verifiedMemberId = (String) session.getAttribute("DORMANT_VERIFIED_MEMBER");
+        String verifiedMemberId = (String) session.getAttribute(DORMANT_VERIFIED_MEMBER);
 
         if(verifiedMemberId == null) {
-            verifiedMemberId = (String) session.getAttribute("PASSWORD_RESET_VERIFIED_MEMBER");
+            verifiedMemberId = (String) session.getAttribute(PASSWORD_RESET_VERIFIED_MEMBER);
         }
 
         if (verifiedMemberId == null || verifiedMemberId.isBlank()) {
@@ -188,8 +197,8 @@ public class MemberController {
         }
 
         if (newPassword == null || !newPassword.equals(newPasswordConfirm)) {
-            model.addAttribute("memberId", verifiedMemberId);
-            model.addAttribute("error", "newPasswordMismatch");
+            model.addAttribute(MEMBER_ID, verifiedMemberId);
+            model.addAttribute(ERROR, "newPasswordMismatch");
             return "member/passwordReset";
         }
 
@@ -199,8 +208,8 @@ public class MemberController {
         memberMapper.updateMustChangePasswordYn(verifiedMemberId, 0);
         memberMapper.resetFail(verifiedMemberId);
 
-        session.removeAttribute("DORMANT_VERIFIED_MEMBER");
-        session.removeAttribute("PASSWORD_RESET_VERIFIED_MEMBER");
+        session.removeAttribute(DORMANT_VERIFIED_MEMBER);
+        session.removeAttribute(PASSWORD_RESET_VERIFIED_MEMBER);
 
         return "redirect:/member/login?pwReset=1";
     }
@@ -208,7 +217,7 @@ public class MemberController {
     // 아이디/비밀번호 찾기 페이지 이동
     @GetMapping("/member/findAccount")
     public String findAccountPage() {
-        return "member/findAccount";
+        return MEMBER_FIND_ACCOUNT;
     }
 
 	// =========================== 개인회원 ===========================
@@ -216,7 +225,7 @@ public class MemberController {
 	// (구직자) 회원가입 이동 
 	@GetMapping("/member/registerMember")
 	public String registerMemberView(@ModelAttribute("req") MemberRegisterRequest req) {
-	    return "member/registerMember";
+	    return MEMBER_REGISTER_MEMBER;
 	}
 	
     // (구직자) 회원가입 동작 메서드
@@ -240,7 +249,7 @@ public class MemberController {
             br.rejectValue("email", "duplicate.email", "이미 사용 중인 이메일입니다.");
         }
         if (br.hasErrors()) {
-            return "member/registerMember";
+            return MEMBER_REGISTER_MEMBER;
         }
         try {
             memberService.registerPersonal(req);
@@ -255,7 +264,7 @@ public class MemberController {
             } else {
                 br.reject("register.failed", msg != null ? msg : "회원가입에 실패했습니다.");
             }
-            return "member/registerMember";
+            return MEMBER_REGISTER_MEMBER;
         }
 
         return "redirect:/member/registerSuccess?type=member";
@@ -277,7 +286,7 @@ public class MemberController {
             model.addAttribute("foundMemberId", maskMemberId(foundMemberId));
         }
 
-        return "member/findAccount";
+        return MEMBER_FIND_ACCOUNT;
     }
 
     // 구직자 회원 비밀번호 찾기 처리
@@ -290,14 +299,14 @@ public class MemberController {
             model.addAttribute("memberType", "member");
             model.addAttribute("findType", "password");
             model.addAttribute("notFound", true);
-            return "member/findAccount";
+            return MEMBER_FIND_ACCOUNT;
         }
 
         // 본인확인 성공 → 세션 저장
-        session.setAttribute("PASSWORD_RESET_VERIFIED_MEMBER", member.getMemberId());
+        session.setAttribute(PASSWORD_RESET_VERIFIED_MEMBER, member.getMemberId());
 
         // 비밀번호 재설정 페이지 이동
-        return "redirect:/member/password/reset";
+        return REDIRECT_MEMBER_PASSWORD_RESET;
     }
 
 	// =========================== 기업회원 ===========================
@@ -333,7 +342,7 @@ public class MemberController {
             model.addAttribute("foundMemberId", maskMemberId(foundMemberId));
         }
 
-        return "member/findAccount";
+        return MEMBER_FIND_ACCOUNT;
     }
 
     // 회사 회원 비밀번호 찾기 처리
@@ -346,14 +355,14 @@ public class MemberController {
             model.addAttribute("memberType", "company");
             model.addAttribute("findType", "password");
             model.addAttribute("notFound", true);
-            return "member/findAccount";
+            return MEMBER_FIND_ACCOUNT;
         }
 
         // 본인확인 성공 → 세션 저장
-        session.setAttribute("PASSWORD_RESET_VERIFIED_MEMBER", company.getMemberId());
+        session.setAttribute(PASSWORD_RESET_VERIFIED_MEMBER, company.getMemberId());
 
         // 비밀번호 재설정 페이지 이동
-        return "redirect:/member/password/reset";
+        return REDIRECT_MEMBER_PASSWORD_RESET;
     }
     
     private String maskMemberId(String memberId) {
