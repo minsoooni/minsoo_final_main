@@ -17,8 +17,7 @@ public class IndexDAO_imple implements IndexDAO {
 	
 	@Override
 	public List<Map<String, String>> getImageFileNameList() {
-		List<Map<String, String>> mapList = sqlSession.selectList("index.getImgFileNameList");
-		return mapList;
+		return sqlSession.selectList("index.getImgFileNameList");
 	}
 	
 	 // === 직무 부모 카테고리 조회 ===
