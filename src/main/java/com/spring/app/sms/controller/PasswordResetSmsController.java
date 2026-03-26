@@ -109,7 +109,7 @@ public class PasswordResetSmsController {
         int codeInt = ThreadLocalRandom.current().nextInt(100000, 1000000);
         String code = String.valueOf(codeInt);
 
-        long expireAt = Instant.now().plusSeconds(5 * 60).toEpochMilli();
+        long expireAt = Instant.now().plusSeconds(5L * 60).toEpochMilli();
 
         session.setAttribute("PASSWORD_RESET_SMS_MEMBERID", verifiedMemberId);
         session.setAttribute("PASSWORD_RESET_SMS_CODE", code);
