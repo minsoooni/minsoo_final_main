@@ -49,12 +49,15 @@ pipeline {
                         ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP '
                             cd $APP_DIR
                             docker compose pull main-service
+                            docker compose down main-service
                             docker compose up -d --no-deps main-service
                         '
                     """
                 }
             }
         }
+        
+        
     }
 
     post {
