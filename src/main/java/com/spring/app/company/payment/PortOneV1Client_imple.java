@@ -109,7 +109,8 @@ public class PortOneV1Client_imple implements PortOneV1Client {
             PortOnePaymentInfo info = new PortOnePaymentInfo();
             info.status = String.valueOf(response.get("status"));
             info.merchantUid = String.valueOf(response.get("merchant_uid"));
-            info.impUid = String.valueOf(response.get("imp_uid"));   // 여기서 '진짜 imp_uid' 확보 가능
+            //info.impUid = String.valueOf(response.get("imp_uid"));   // 여기서 '진짜 imp_uid' 확보 가능
+            info.setImpUid(String.valueOf(response.get("imp_uid"))); // imp_uid setter로 저장
             info.amount = toLong(response.get("amount"));
             
             //추가: 결제수단 / PG / 간편결제 구분

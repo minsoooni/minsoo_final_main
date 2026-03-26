@@ -814,7 +814,7 @@
             </p>
 
             <div class="of-item__sub">
-              공고 ID: ${item.jobId ?? "-"} · 마지막 발송일: ${formatDateTime(item.lastSendAt)}
+              마지막 발송일: ${formatDateTime(item.lastSendAt)}
             </div>
 
             <div class="of-metrics">
@@ -1005,7 +1005,8 @@
         <div class="of-item__row">
           <div>
             <p class="of-item__title" th:text="${offer.title}">제안서 제목</p>
-            <div class="of-item__sub" th:text="|공고 ID: ${offer.jobId}|">공고 ID</div>
+            <!-- <div class="of-item__sub" th:text="|공고 ID: ${offer.jobId}|">공고 ID</div> -->
+            
 
             <div class="of-metrics">
               <span>

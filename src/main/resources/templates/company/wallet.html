@@ -16,6 +16,54 @@
     const impCode = /*[[${impCode}]]*/ "imp_XXXX";
     const readyUrl = /*[[@{/company/Wallet/payments/ready}]]*/ "";
     const completeUrl = /*[[@{/company/Wallet/payments/complete}]]*/ "";
+    const reconcileBaseUrl = /*[[@{/company/Wallet/payments/reconcile/}]]*/ "";
+    const cancelPendingUrl = /*[[@{/company/Wallet/payments/cancel-pending}]]*/ "";
+    
+	// JSON 응답을 안전하게 파싱
+    async function requestJson(url, options) {
+      const response = await fetch(url, options);
+
+      let data = null;
+      try {
+        data = await response.json();
+      } catch (e) {
+        data = null;
+      }
+
+      return {
+        ok: response.ok,
+        status: response.status,
+        data
+      };
+    }//async function requestJson(url, options) {}
+    
+	
+	// 주문번호 기준으로 결제 반영을 다시 확인
+    async function reconcilePayment(orderId) {
+      const result = await requestJson(reconcileBaseUrl + encodeURIComponent(orderId), {
+        method: "GET"
+      });
+
+      return result.data;
+    }//async function reconcilePayment(orderId) {}
+    
+	
+	// 결제창 취소 시 대기 주문을 취소 상태로 정리
+    async function cancelPendingPayment(orderId) {
+      const response = await fetch(cancelPendingUrl + "?orderId=" + encodeURIComponent(orderId), {
+        method: "POST"
+      });
+
+      let data = null;
+      try {
+        data = await response.json();
+      } catch (e) {
+        data = null;
+      }
+
+      return data;
+    }//async function cancelPendingPayment(orderId) {}
+
 
     if (!window.IMP) {
       alert("결제 모듈 로딩 실패(IMP 없음)");
@@ -26,6 +74,7 @@
     IMP.init(impCode);
     
     //console.log(impCode);
+
 
     /* ===================== 3) 버튼 이벤트 ===================== */
     const btnCharge = document.getElementById("btnCharge");
@@ -39,14 +88,14 @@
     window.startCharge = startCharge;
 
     /* ===================== functions ===================== */
-
+	//모달열기
     function openChargeModal() {
       const modal = document.getElementById("chargeModal");
       if (!modal) return;
       modal.style.display = "block";
       modal.setAttribute("aria-hidden", "false");
     }
-
+	//모달닫기
     function closeChargeModal() {
       const modal = document.getElementById("chargeModal");
       if (!modal) return;
@@ -54,80 +103,139 @@
       modal.setAttribute("aria-hidden", "true");
     }
 
+	//충전시작
     async function startCharge() {
-      try {
-        const selected = document.querySelector("input[name='chargeAmount']:checked");
-        if (!selected) {
-          alert("충전 금액을 선택하세요.");
-          return;
-        }
+   	  const btn = document.getElementById("btnCharge");
 
-        const chargeAmount = Number(selected.value); // 100000 / 200000 / 500000
-        if (!Number.isFinite(chargeAmount) || chargeAmount <= 0) {
-          alert("올바른 충전 금액을 선택하세요.");
-          return;
-        }
+   	  try {
+   	    const selected = document.querySelector("input[name='chargeAmount']:checked");
+   	    if (!selected) {
+   	      alert("충전 금액을 선택하세요.");
+   	      return;
+   	    }
 
-        // 1) 서버 ready (주문 생성 + PENDING insert + 결제창 파라미터 반환)
-        const readyRes = await fetch(readyUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ chargeAmount })
-        }).then(r => r.json());
+   	    const chargeAmount = Number(selected.value);
+   	    if (!Number.isFinite(chargeAmount) || chargeAmount <= 0) {
+   	      alert("올바른 충전 금액을 선택하세요.");
+   	      return;
+   	    }
 
-        if (!readyRes || !readyRes.ok) {
-          alert("결제 준비 실패: " + (readyRes?.message || "서버 오류"));
-          return;
-        }
+   	    // 버튼 중복 클릭 방지
+   	    if (btn) btn.disabled = true;
 
-        // 2) PortOne 결제창 (프로젝트용 실제 결제 금액 = 100원)
-        IMP.request_pay({
-          pg: "html5_inicis",
-          pay_method: "card",
-          merchant_uid: readyRes.orderId,     // 서버가 만든 주문번호
-          name: readyRes.orderName,           // 예: "포인트 충전(10만원)"
-          amount: readyRes.payAmount,         // ★ 100원
-          buyer_email: readyRes.buyerEmail || "",
-          buyer_name: readyRes.buyerName || "",
-          buyer_tel: readyRes.buyerTel || ""
-        }, async function (rsp) {
-          /* 
-          console.log("rsp =", rsp);
-          console.log("imp_uid =", rsp.imp_uid, "merchant_uid =", rsp.merchant_uid);
-          console.log("imp_uid length =", (rsp.imp_uid || "").length);
+   	    // 1) ready 호출
+   	    const readyResult = await requestJson(readyUrl, {
+   	      method: "POST",
+   	      headers: { "Content-Type": "application/json" },
+   	      body: JSON.stringify({ chargeAmount })
+   	    });
+
+   	    const readyRes = readyResult.data;
+
+   	    if (!readyResult.ok || !readyRes || !readyRes.ok) {
+   	      alert("결제 준비 실패: " + (readyRes?.message || "서버 오류"));
+   	      return;
+   	    }
+
+   	    // 재확인용으로 주문번호 임시 저장
+   	    sessionStorage.setItem("lastPointOrderId", readyRes.orderId);
+
+   	    // 2) PG 결제창 호출
+   	    IMP.request_pay({
+   	      pg: "html5_inicis",
+   	      pay_method: "card",
+   	      merchant_uid: readyRes.orderId,
+   	      name: readyRes.orderName,
+   	      amount: readyRes.payAmount,
+   	      buyer_email: readyRes.buyerEmail || "",
+   	      buyer_name: readyRes.buyerName || "",
+   	      buyer_tel: readyRes.buyerTel || ""
+   	    }, async function (rsp) {
+
+   	      if (!rsp.success) {
+   	        console.log("결제 실패/취소 분기 진입", rsp);
+   	        const orderId = rsp.merchant_uid || sessionStorage.getItem("lastPointOrderId");
+   	        console.log("취소 정리 대상 orderId =", orderId);
           
-          console.log("rsp.emb_pg_provider =", rsp.emb_pg_provider);
-          console.log("rsp =", rsp);
- 		  */          
-          if (rsp.success) {
-        	  
-            // 3) 서버 complete (imp_uid 검증 + 포인트 적립)
-            const doneRes = await fetch(completeUrl, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                impUid: rsp.imp_uid,
-                merchantUid: rsp.merchant_uid,
-              })
-            }).then(r => r.json());
+   	        if (orderId) {
+   	          try {
+   	            const cancelRes = await cancelPendingPayment(orderId);
+   	            console.log("cancelPendingPayment 응답 =", cancelRes);
+   	            sessionStorage.removeItem("lastPointOrderId");
+   	          } catch (e) {
+   	            console.error("대기 결제 취소 정리 실패:", e);
+   	          }
+   	        }
+          
+   	        alert("결제가 취소되었습니다.");
+   	        return;
+   	      }
 
-            if (doneRes && doneRes.ok) {
-              alert("결제 완료! 포인트가 충전되었습니다.");
-              closeChargeModal();
-              location.reload();
-            } else {
-              alert("결제 처리 실패: " + (doneRes?.message || "서버 오류"));
-            }
-          } else {
-            alert("결제 실패: " + (rsp.error_msg || "알 수 없는 오류"));
-          }
-        });
+   	      // 3) complete 호출
+   	      const doneResult = await requestJson(completeUrl, {
+   	        method: "POST",
+   	        headers: { "Content-Type": "application/json" },
+   	        body: JSON.stringify({
+   	          impUid: rsp.imp_uid,
+   	          merchantUid: rsp.merchant_uid
+   	        })
+   	      });
 
-      } catch (e) {
-        console.error(e);
-        alert("결제 진행 중 오류가 발생했습니다.");
-      }
-    }
+   	      const doneRes = doneResult.data;
+
+   	      if (doneResult.ok && doneRes && doneRes.ok) {
+   	        sessionStorage.removeItem("lastPointOrderId");
+   	        alert("결제 완료! 포인트가 충전되었습니다.");
+   	        closeChargeModal();
+   	        location.reload();
+   	        return;
+   	      }
+
+   	      // complete 실패 시 재확인 1회 시도
+   	      const orderId = rsp.merchant_uid || sessionStorage.getItem("lastPointOrderId");
+   	      if (orderId) {
+   	        const retryRes = await reconcilePayment(orderId);
+
+   	        if (retryRes && retryRes.ok) {
+   	          sessionStorage.removeItem("lastPointOrderId");
+   	          alert("결제 완료! 포인트가 정상 반영되었습니다.");
+   	          closeChargeModal();
+   	          location.reload();
+   	          return;
+   	        }
+   	      }
+
+   	      alert(
+   	        "결제는 완료되었을 수 있으나 서버 반영 확인이 필요합니다.\n" +
+   	        "잠시 후 결제내역/포인트를 다시 확인해주세요.\n" +
+   	        "주문번호: " + (rsp.merchant_uid || "-")
+   	      );
+   	    });
+
+   	  } catch (e) {
+   	    console.error(e);
+
+   	    const lastOrderId = sessionStorage.getItem("lastPointOrderId");
+   	    if (lastOrderId) {
+   	      try {
+   	        const retryRes = await reconcilePayment(lastOrderId);
+   	        if (retryRes && retryRes.ok) {
+   	          sessionStorage.removeItem("lastPointOrderId");
+   	          alert("결제 완료! 포인트가 정상 반영되었습니다.");
+   	          closeChargeModal();
+   	          location.reload();
+   	          return;
+   	        }
+   	      } catch (err) {
+   	        console.error(err);
+   	      }
+   	    }
+
+   	    alert("결제 진행 중 오류가 발생했습니다. 잠시 후 다시 확인해주세요.");
+   	  } finally {
+   	    if (btn) btn.disabled = false;
+   	  }
+   	}
   });//document.addEventListener("DOMContentLoaded", function () {}
   </script>
 
@@ -236,12 +344,14 @@
 	      <!-- 포인트 거래내역 -->
 	      <tr th:each="tx : ${pointTxList}">
 	        <td>
-	          <span class="badge"
-	                th:classappend="${tx.txType == 'CHARGE'} ? ' badge-dark' : (${tx.txType == 'USE'} ? ' badge-secondary' : ' badge-light')"
-	                th:text="${tx.txLabel}">
-	            충전
-	          </span>
-	        </td>
+			  <span class="tx-badge"
+			        th:classappend="${tx.txType == 'CHARGE'} ? ' tx-badge-charge' 
+			                        : (${tx.txType == 'USE'} ? ' tx-badge-use' 
+			                        : ' tx-badge-etc')"
+			        th:text="${tx.txLabel}">
+			    충전
+			  </span>
+			</td>
 	
 	        <td th:classappend="${tx.deltaAvailable > 0} ? 'plus' : 'minus'"
 	            th:text="${tx.deltaAvailable > 0 ? '+' : ''} + ${#numbers.formatInteger(tx.deltaAvailable, 3, 'COMMA')} + 'P'">
@@ -386,12 +496,17 @@
 		
 		    <!-- 상태 -->
 		    <td>
-		      <span class="w-pill"
-		            th:classappend="${p.status == 'PAID'} ? ' w-pill-dark' : (${p.status == 'PENDING'} ? ' w-pill-gray' : ' w-pill-red')"
-		            th:text="${p.status == 'PAID' ? '완료' : (p.status == 'PENDING' ? '대기' : (p.status == 'CANCELED' ? '취소' : '기타'))}">
-		        완료
-		      </span>
-		    </td>
+			  <span class="w-pill"
+			        th:classappend="${p.status == 'PAID'} ? ' w-pill-paid' 
+			                        : (${p.status == 'PENDING'} ? ' w-pill-pending' 
+			                        : (${p.status == 'CANCELED'} ? ' w-pill-canceled' 
+			                        : ' w-pill-default'))"
+			        th:text="${p.status == 'PAID' ? '완료' 
+			                : (p.status == 'PENDING' ? '대기' 
+			                : (p.status == 'CANCELED' ? '취소' : '기타'))}">
+			    완료
+			  </span>
+			</td>
 		
 		    <!-- 결제일시 / 취소일시 / 생성일시 (이미 문자열로 내려옴) -->
 		    <td th:text="${p.paidAt != null ? p.paidAt : '-'}">-</td>
