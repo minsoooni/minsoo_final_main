@@ -5,7 +5,6 @@ import javax.sql.DataSource;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.SqlSessionTemplate;
-import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -66,18 +65,7 @@ public class Datasource_myspringboot {
     public SqlSessionTemplate sqlSessionTemplate(@Qualifier("sqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
         return new SqlSessionTemplate(sqlSessionFactory);
     }
-    /*
-       @Primary 는 처음 스프링 구동 시 기본으로 사용할 Bean을 설정하는 것이다.
-    
-       @Autowired
-       private SqlSessionTemplate abc;
-       -- 위처럼 별도 Bean 설정없이 @Autowired로 연결한 경우, abc 에는 @Primary로 설정한 SqlSessionTemplate 빈이 주입된다.
-    
-       @Autowired
-	   @Qualifier("sqlsession")
-       private SqlSessionTemplate abc;
-       -- 위처럼 @Qualifier("sqlsession")을 해주면 빈 이름이 sqlsession 인 SqlSessionTemplate 객체가 abc 에 주입된다. 
-    */
+
     
     @Bean
     public PlatformTransactionManager transactionManager_myspringboot_user() {
@@ -85,33 +73,5 @@ public class Datasource_myspringboot {
         tm.setDataSource(dataSource());
         return tm;
     }
-    
- /*
-	다음으로 transaction을 실행시키려고 하는 위치에서 다음의 예제와 같이 구현하시면 됩니다.
-	@Service
-	public class SampleService {
-	
-	    @Autowired
-	    private SampleDao dao;
-	    
-	    @Transactional(value="transactionManager_myspringboot_user")
-	    @Override
-	    public boolean insertSample(Sample sample) {
-	        int returnId = dao.deleteSample(sample);
-	        if (returnId > 0) {
-	            dao.insertSample(sample);
-	            return true;
-	        }
-	        return false;
-	    }
-	} 
-	
-	여기서 application에 선언한 transaction manager가 복수일 경우 target으로 하는 transaction manager명을 명시해야 합니다. 
-	그렇지 않으면 다음과 같은 exception이 발생합니다.
-	NoUniqueBeanDefinitionException
-	No qualifying bean of type 'org.springframework.transaction.TransactionManager'
-	
-	org.springframework.beans.factory.NoUniqueBeanDefinitionException: No qualifying bean of type 'org.springframework.transaction.TransactionManager' available: expected single matching bean but found 2: transactionManager_hr,transactionManager_myspring_user 
- */
-	
+   
 }

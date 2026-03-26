@@ -1279,116 +1279,6 @@ public class CompanyService_imple implements CompanyService {
     
     
     //결제 성공 후 메서드
-    /*
-    @Override
-    @Transactional
-    public PaymentCompleteResponse completePointCharge(PaymentCompleteRequest req) {
-
-    	//결제 성공 후 UID 조회
-        //System.out.println("complete req impUid=" + (req == null ? null : req.impUid) +", merchantUid=" + (req == null ? null : req.merchantUid));
-
-        PaymentCompleteResponse res = new PaymentCompleteResponse();
-
-        // 0) 요청값 체크 (impUid는 더 이상 필수 아님)
-        if (req == null || isBlank(req.merchantUid)) {
-            res.ok = false;
-            res.message = "merchantUid가 필요합니다.";
-            return res;
-        }
-
-        // 1) DB에서 주문(orderId=merchantUid) 조회
-        Map<String, Object> payment = walletMapper.selectPaymentByOrderId(req.merchantUid);
-        if (payment == null) {
-            res.ok = false;
-            res.message = "주문번호가 존재하지 않습니다.";
-            return res;
-        }
-
-        String status = String.valueOf(payment.get("STATUS"));
-        Long chargeAmount = toLong(payment.get("CHARGE_AMOUNT")); // 적립될 포인트
-        String memberId = String.valueOf(payment.get("FK_MEMBERID"));
-
-        // 2) 이미 PAID면 바로 응답
-        if ("PAID".equalsIgnoreCase(status)) {
-            Long balance = walletMapper.selectPointAvailableBalance(memberId);
-            res.ok = true;
-            res.orderId = req.merchantUid;
-            res.paidAmount = chargeAmount;
-            res.pointBalance = balance;
-            return res;
-        }
-
-        // 3) 포트원 토큰 발급
-        String token = portOneV1Client.getAccessToken();
-        if (token == null) {
-            walletMapper.updatePaymentStatus(req.merchantUid, "FAILED");
-            res.ok = false;
-            res.message = "포트원 토큰 발급 실패";
-            return res;
-        }
-
-        // 4) 결제 조회 (imp_uid가 아니라 merchant_uid 기반으로)
-        PortOneV1Client.PortOnePaymentInfo info =
-                portOneV1Client.getPaymentInfoByMerchantUid(token, req.merchantUid);
-
-        if (info == null) {
-            walletMapper.updatePaymentStatus(req.merchantUid, "FAILED");
-            res.ok = false;
-            res.message = "포트원 결제 조회 실패(merchant_uid)";
-            return res;
-        }
-
-        // 5) 검증
-        if (!req.merchantUid.equals(info.merchantUid)) {
-            walletMapper.updatePaymentStatus(req.merchantUid, "FAILED");
-            res.ok = false;
-            res.message = "주문번호 불일치";
-            return res;
-        }
-        if (!Long.valueOf(100L).equals(info.amount)) {
-            walletMapper.updatePaymentStatus(req.merchantUid, "FAILED");
-            res.ok = false;
-            res.message = "결제 금액 불일치(프로젝트용 100원 결제 정책)";
-            return res;
-        }
-        if (!"paid".equalsIgnoreCase(info.status)) {
-            walletMapper.updatePaymentStatus(req.merchantUid, "FAILED");
-            res.ok = false;
-            res.message = "결제가 완료 상태가 아닙니다: " + info.status;
-            return res;
-        }
-        
-        
-        //조회 응답에서 필요한 값 추출
-        String payMethod = info.payMethod;           // "card"
-        String pgProvider = info.pgProvider;         // "html5_inicis"
-        String embPgProvider = info.embPgProvider;   // "naverpay" (조회에서만 나옴)
-//        System.out.println("1"+payMethod);
-//        System.out.println("2"+pgProvider);
-//        System.out.println("3"+embPgProvider);
-
-        // 6) 지갑 생성/적립/거래기록(트랜잭션)
-        Long walletId = walletMapper.selectPointWalletId(memberId);
-        if (walletId == null) {
-            walletMapper.insertPointWallet(memberId);
-            walletId = walletMapper.selectPointWalletId(memberId);
-        }
-        
-        //DB 업데이트
-        walletMapper.updatePaymentPaid(req.merchantUid, payMethod, pgProvider, embPgProvider);
-        walletMapper.addPointAvailable(memberId, chargeAmount);
-        walletMapper.insertPointTransactionCharge(walletId, req.merchantUid, "CHARGE", "DONE", chargeAmount);
-
-        Long balance = walletMapper.selectPointAvailableBalance(memberId);
-
-        res.ok = true;
-        res.orderId = req.merchantUid;
-        res.paidAmount = chargeAmount;
-        res.pointBalance = balance;
-
-        return res;
-    }
-    */
     @Override
     public PaymentCompleteResponse completePointCharge(PaymentCompleteRequest req) {
         PaymentCompleteResponse res = new PaymentCompleteResponse();
@@ -1602,6 +1492,78 @@ public class CompanyService_imple implements CompanyService {
     }
     
     
+    //사용자가 결제창에서 취소했을 때 남아버리는 대기 결제건을 바로 정리하는 용도
+    @Override
+    public PaymentCompleteResponse cancelPendingPayment(String orderId) {
+        PaymentCompleteResponse res = new PaymentCompleteResponse();
+
+        // 주문번호 필수 체크
+        if (isBlank(orderId)) {
+            res.ok = false;
+            res.message = "orderId가 필요합니다.";
+            return res;
+        }
+
+        // 주문 조회
+        Map<String, Object> payment = walletMapper.selectPaymentByOrderId(orderId);
+        if (payment == null) {
+            res.ok = false;
+            res.message = "존재하지 않는 주문입니다.";
+            return res;
+        }
+
+        String status = String.valueOf(payment.get("STATUS"));
+
+        // 이미 취소된 주문이면 그대로 성공 응답
+        if ("CANCELED".equalsIgnoreCase(status)) {
+            res.ok = true;
+            res.orderId = orderId;
+            res.message = "이미 취소 처리된 주문입니다.";
+            return res;
+        }
+
+        // 이미 결제 완료된 주문이면 취소 정리 대상이 아님
+        if ("PAID".equalsIgnoreCase(status)) {
+            res.ok = false;
+            res.orderId = orderId;
+            res.message = "이미 결제가 완료된 주문은 취소 정리할 수 없습니다.";
+            return res;
+        }
+
+        // PENDING 상태일 때만 CANCELED로 변경
+        int updateCnt = walletMapper.updatePaymentStatusIfCurrent(orderId, "PENDING", "CANCELED");
+
+        if (updateCnt == 1) {
+            res.ok = true;
+            res.orderId = orderId;
+            res.message = "결제 취소가 정상 처리되었습니다.";
+            return res;
+        }
+
+        // 상태가 이미 바뀐 경우 재조회해서 응답
+        payment = walletMapper.selectPaymentByOrderId(orderId);
+        String latestStatus = payment == null ? null : String.valueOf(payment.get("STATUS"));
+
+        if ("CANCELED".equalsIgnoreCase(latestStatus)) {
+            res.ok = true;
+            res.orderId = orderId;
+            res.message = "이미 취소 처리된 주문입니다.";
+            return res;
+        }
+
+        if ("PAID".equalsIgnoreCase(latestStatus)) {
+            res.ok = false;
+            res.orderId = orderId;
+            res.message = "이미 결제가 완료된 주문입니다.";
+            return res;
+        }
+
+        res.ok = false;
+        res.orderId = orderId;
+        res.message = "결제 취소 처리 중 상태 변경에 실패했습니다.";
+        return res;
+    }
+    
     
     //페이징 처리
     @Override
@@ -1661,6 +1623,7 @@ public class CompanyService_imple implements CompanyService {
         try { return Long.parseLong(String.valueOf(v)); } catch (Exception e) { return 0L; }
     }
     //========================= [결제] =========================//
+    
     
     
     

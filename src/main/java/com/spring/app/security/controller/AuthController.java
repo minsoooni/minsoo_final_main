@@ -62,7 +62,7 @@ public class AuthController {
                     .httpOnly(true)
                     .secure(false)
                     .path("/")
-                    .maxAge(60 * 60 * 24 * 14)
+                    .maxAge(60L * 60 * 24 * 14)
                     .sameSite("Lax")
                     .build();
 
@@ -135,7 +135,7 @@ public class AuthController {
                     .httpOnly(true)
                     .secure(false)
                     .path("/")
-                    .maxAge(60 * 60 * 24 * 14)
+                    .maxAge(60L * 60 * 24 * 14)
                     .sameSite("Lax")
                     .build();
 

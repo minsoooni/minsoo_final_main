@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.spring.app.company.domain.PaymentCompleteRequest;
@@ -60,6 +61,13 @@ public class CompanyWalletApiController {
     @GetMapping("/payments/reconcile/{orderId}")
     public PaymentCompleteResponse reconcile(@PathVariable String orderId) {
         return service.reconcilePointCharge(orderId);
+    }
+    
+    
+    // 결제창 취소 시 대기 주문을 취소 상태로 정리
+    @PostMapping("/payments/cancel-pending")
+    public PaymentCompleteResponse cancelPendingPayment(@RequestParam("orderId") String orderId) {
+        return service.cancelPendingPayment(orderId);
     }
 
     
