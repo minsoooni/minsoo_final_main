@@ -66,6 +66,7 @@ public class AdminController {
 	}
 	 */
 	
+	/* 확인용 */
 	
 	
 	@GetMapping({"/dashboard", "/admin_dashboard"})
