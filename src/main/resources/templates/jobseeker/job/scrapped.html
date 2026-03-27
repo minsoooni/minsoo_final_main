@@ -66,7 +66,7 @@
         <button type="submit" class="btn btn-primary" style="white-space:nowrap;">
           <i class="fas fa-search"></i> 검색
         </button>
-        <select name="sort" class="form-control" style="width: 120px;">
+        <select name="sort" class="form-control" style="width: 120px;" onchange="this.form.submit()">
           <option value="latest"   th:selected="${sort == 'latest'}">최신순</option>
           <option value="deadline" th:selected="${sort == 'deadline'}">마감임박순</option>
         </select>
