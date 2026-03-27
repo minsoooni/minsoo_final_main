@@ -37,7 +37,7 @@ public class DormantSmsController {
         int codeInt = ThreadLocalRandom.current().nextInt(100000, 1000000);
         String code = String.valueOf(codeInt);
 
-        long expireAt = Instant.now().plusSeconds(5 * 60).toEpochMilli();
+        long expireAt = Instant.now().plusSeconds(5L * 60).toEpochMilli();
         session.setAttribute("DORMANT_SMS_MEMBERID", memberId);
         session.setAttribute("DORMANT_SMS_CODE", code);
         session.setAttribute("DORMANT_SMS_EXPIRE_AT", expireAt);

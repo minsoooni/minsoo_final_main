@@ -13,7 +13,7 @@ import jakarta.validation.ConstraintViolationException;
 public class ApiExceptionHandler {
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
-    public ResponseEntity<?> handleMissingParam(MissingServletRequestParameterException e) {
+    public ResponseEntity<Map<String, String>> handleMissingParam(MissingServletRequestParameterException e) {
         return ResponseEntity.badRequest().body(Map.of(
                 "error", "Bad Request",
                 "message", e.getParameterName() + " is required"
@@ -21,7 +21,7 @@ public class ApiExceptionHandler {
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<?> handleConstraintViolation(ConstraintViolationException e) {
+    public ResponseEntity<Map<String, String>> handleConstraintViolation(ConstraintViolationException e) {
         // message 예: "checkEmail.email: must be a well-formed email address"
         return ResponseEntity.badRequest().body(Map.of(
                 "error", "Bad Request",

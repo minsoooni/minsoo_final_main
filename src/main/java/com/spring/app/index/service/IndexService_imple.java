@@ -19,8 +19,7 @@ public class IndexService_imple implements IndexService {
 	//메인화면에 들어갈 이미지 정보 리스틀 가져오기
 	@Override
 	public List<Map<String, String>> getImageFileNameList() {
-		List<Map<String, String>> mapList = indexDAO.getImageFileNameList();
-		return mapList;
+		return indexDAO.getImageFileNameList();
 	}
 	
 	// === 직무 부모 카테고리 조회 ===
