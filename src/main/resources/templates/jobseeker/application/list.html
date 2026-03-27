@@ -301,7 +301,7 @@
           <i class="fas fa-search"></i> 검색
         </button>
         <input type="hidden" name="status" th:value="${status}">
-        <select name="sort" class="form-control" style="width: 120px;">
+        <select name="sort" class="form-control" style="width: 120px;" onchange="this.form.submit()">
           <option value="latest" th:selected="${sort == 'latest' or sort == null}">최신순</option>
           <option value="oldest" th:selected="${sort == 'oldest'}">오래된순</option>
           <option value="company" th:selected="${sort == 'company'}">기업명순</option>

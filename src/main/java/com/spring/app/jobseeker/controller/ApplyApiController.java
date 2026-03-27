@@ -28,6 +28,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/api/apply")
 public class ApplyApiController {
 
+   
+    private static final String KEY_SUCCESS = "success";
+    private static final String KEY_MESSAGE = "message";
+
     private final ApplyService applyService;
 
     public ApplyApiController(ApplyService applyService) {
@@ -37,7 +41,6 @@ public class ApplyApiController {
 
    
     // 1. 지원 취소
-    // POST /api/apply/cancel/{applicationId}
     @Operation(
         summary = "지원 취소",
         description = "미열람 상태인 지원을 취소한다. 기업이 이미 열람했거나 취소된 지원은 취소 불가."
@@ -80,8 +83,8 @@ public class ApplyApiController {
         Map<String, Object> result = new HashMap<>();
 
         if (principal == null) {
-            result.put("success", false);
-            result.put("message", "로그인이 필요합니다.");
+            result.put(KEY_SUCCESS, false);
+            result.put(KEY_MESSAGE, "로그인이 필요합니다.");
             return ResponseEntity.status(401).body(result);
         }
 
@@ -89,11 +92,11 @@ public class ApplyApiController {
 
         int n = applyService.cancelApplication(applicationId, memberid);
         if (n == 1) {
-            result.put("success", true);
-            result.put("message", "지원이 취소되었습니다.");
+            result.put(KEY_SUCCESS, true);
+            result.put(KEY_MESSAGE, "지원이 취소되었습니다.");
         } else {
-            result.put("success", false);
-            result.put("message", "지원 취소에 실패했습니다. 이미 열람되었거나 취소된 지원입니다.");
+            result.put(KEY_SUCCESS, false);
+            result.put(KEY_MESSAGE, "지원 취소에 실패했습니다. 이미 열람되었거나 취소된 지원입니다.");
         }
 
         return ResponseEntity.ok(result);
@@ -102,7 +105,6 @@ public class ApplyApiController {
 
   
     // 2. 지원 여부 확인
-    // GET /api/apply/check/{jobId}
     @Operation(
         summary = "지원 여부 확인",
         description = "해당 공고에 이미 지원했는지 확인한다."
@@ -147,7 +149,6 @@ public class ApplyApiController {
 
     
     // 3. 지원 상태별 건수 조회
-    // GET /api/apply/status-counts
     @Operation(
         summary = "지원 상태별 건수 조회",
         description = "로그인한 회원의 지원 상태별 건수를 조회한다."
@@ -191,34 +192,31 @@ public class ApplyApiController {
 
   
     // 4. 지원서 첨부파일 목록 조회
-    // GET /api/apply/{applicationId}/files
     @Operation(
         summary = "지원서 첨부파일 목록 조회",
         description = "해당 지원의 첨부파일 목록을 조회한다."
     )
-    @ApiResponses({
-        @ApiResponse(
-            responseCode = "200",
-            description = "조회 성공",
-            content = @Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(
-                    name = "조회 성공",
-                    value = """
+    @ApiResponse(
+        responseCode = "200",
+        description = "조회 성공",
+        content = @Content(
+            mediaType = "application/json",
+            examples = @ExampleObject(
+                name = "조회 성공",
+                value = """
+                        {
+                          "files": [
                             {
-                              "files": [
-                                {
-                                  "fileId": 1,
-                                  "fileUrl": "20260228_abc123.pdf",
-                                  "originalFilename": "포트폴리오.pdf"
-                                }
-                              ]
+                              "fileId": 1,
+                              "fileUrl": "20260228_abc123.pdf",
+                              "originalFilename": "포트폴리오.pdf"
                             }
-                            """
-                )
+                          ]
+                        }
+                        """
             )
         )
-    })
+    )
     @GetMapping("/{applicationId}/files")
     public ResponseEntity<Map<String, Object>> getFiles(
             @Parameter(description = "지원 ID") @PathVariable("applicationId") Long applicationId,
