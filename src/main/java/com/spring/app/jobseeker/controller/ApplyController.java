@@ -23,6 +23,18 @@ import com.spring.app.jobseeker.service.ResumeService;
 @RequestMapping("/jobseeker")
 public class ApplyController {
 
+  
+    private static final String REDIRECT_LOGIN = "redirect:/member/login";
+    private static final String KEY_COMPANY_NAME = "companyName";
+    private static final String KEY_REGION = "region";
+    private static final String KEY_CAREER = "career";
+    private static final String KEY_DEADLINE = "deadline";
+    private static final String KEY_ERROR_MSG = "errorMsg";
+    private static final String KEY_STATUS = "status";
+    private static final String KEY_APPLIED_AT = "appliedAt";
+    private static final String STATUS_UNREAD = "UNREAD";
+    private static final String STATUS_INTERVIEW = "INTERVIEW";
+
     private final ApplyService applyService;
     private final ResumeService resumeService;
     private final JobPostingService jobPostingService;
@@ -44,7 +56,7 @@ public class ApplyController {
                                   ModelAndView mav) {
 
         if (principal == null) {
-            mav.setViewName("redirect:/member/login");
+            mav.setViewName(REDIRECT_LOGIN);
             return mav;
         }
 
@@ -61,35 +73,11 @@ public class ApplyController {
             return mav;
         }
 
-        Map<String, String> postMap = new HashMap<>();
-        postMap.put("id", String.valueOf(post.getJobId()));
-        postMap.put("title", post.getTitle());
-        postMap.put("companyName", post.getCompanyName());
-        postMap.put("region", (post.getParentRegionName() != null ? post.getParentRegionName() + " " : "")
-                + (post.getRegionName() != null ? post.getRegionName() : ""));
-        postMap.put("career", post.getCareerType());
+        // 공고 정보 Map 구성 (private 메서드로 분리)
+        mav.addObject("post", buildPostMap(post));
 
-        if ("always".equals(post.getDeadlineType())) {
-            postMap.put("deadline", "상시채용");
-        } else {
-            postMap.put("deadline", post.getDeadlineAt() != null ? "~ " + post.getDeadlineAt() : "");
-        }
-        mav.addObject("post", postMap);
-
-        List<ResumeDTO> allResumes = resumeService.selectResumeListByMember(memberid);
-        List<Map<String, Object>> resumes = new ArrayList<>();
-        for (ResumeDTO r : allResumes) {
-            if (r.getWriteStatus() == 1 && r.getIsDeleted() == 0) {
-                Map<String, Object> rMap = new HashMap<>();
-                rMap.put("id", r.getResumeId());
-                rMap.put("title", r.getTitle());
-                rMap.put("career", r.getCareerSummary() != null ? r.getCareerSummary() : "신입");
-                rMap.put("role", r.getCategoryName() != null ? r.getCategoryName() : "미지정");
-                rMap.put("updatedAt", r.getUploadedAt());
-                rMap.put("isDefault", r.getIsPrimary() == 1);
-                resumes.add(rMap);
-            }
-        }
+        // 이력서 목록 필터링 (private 메서드로 분리)
+        List<Map<String, Object>> resumes = buildResumeList(memberid);
 
         if (resumes.isEmpty()) {
             mav.setViewName("redirect:/jobseeker/resume/list");
@@ -112,14 +100,14 @@ public class ApplyController {
                               RedirectAttributes redirectAttributes) {
 
         if (principal == null) {
-            return "redirect:/member/login";
+            return REDIRECT_LOGIN;
         }
 
         String memberid = principal.getName();
 
         try {
             if (applyService.hasAlreadyApplied(jobId, memberid)) {
-                redirectAttributes.addFlashAttribute("errorMsg", "이미 지원한 공고입니다.");
+                redirectAttributes.addFlashAttribute(KEY_ERROR_MSG, "이미 지원한 공고입니다.");
                 return "redirect:/job/detail/" + jobId;
             }
 
@@ -128,7 +116,7 @@ public class ApplyController {
 
         } catch (Exception e) {
             e.printStackTrace();
-            redirectAttributes.addFlashAttribute("errorMsg", "지원 중 오류가 발생했습니다: " + e.getMessage());
+            redirectAttributes.addFlashAttribute(KEY_ERROR_MSG, "지원 중 오류가 발생했습니다: " + e.getMessage());
             return "redirect:/jobseeker/apply/form/" + jobId;
         }
     }
@@ -153,10 +141,10 @@ public class ApplyController {
 
         ModelAndView mav = new ModelAndView();
         mav.addObject("activeMenu", "application");
-        mav.addObject("status", statusFilter);
+        mav.addObject(KEY_STATUS, statusFilter);
 
         if (principal == null) {
-            mav.setViewName("redirect:/member/login");
+            mav.setViewName(REDIRECT_LOGIN);
             return mav;
         }
 
@@ -181,16 +169,16 @@ public class ApplyController {
             app.put("id", dto.getApplicationId());
             app.put("postId", dto.getJobId());
             app.put("postTitle", dto.getPostTitle());
-            app.put("companyName", dto.getCompanyName());
+            app.put(KEY_COMPANY_NAME, dto.getCompanyName());
             app.put("companyLogo", dto.getCompanyLogo());
-            app.put("appliedAt", dto.getAppliedAt());
-            app.put("status", mapProcessStatus(dto.getProcessStatus()));
+            app.put(KEY_APPLIED_AT, dto.getAppliedAt());
+            app.put(KEY_STATUS, mapProcessStatus(dto.getProcessStatus()));
             app.put("statusText", dto.getProcessStatusText());
-            app.put("region", dto.getRegionName());
+            app.put(KEY_REGION, dto.getRegionName());
             app.put("role", dto.getCategoryName());
             app.put("employmentType", dto.getWorkType());
             app.put("salary", dto.getSalary() != null ? String.format("%,d만원", dto.getSalary()) : null);
-            app.put("deadline", dto.getDeadlineAt());
+            app.put(KEY_DEADLINE, dto.getDeadlineAt());
             app.put("resumeTitle", dto.getResumeTitle());
             app.put("canCancel", dto.getProcessStatus() == 0 && dto.getApplicationStatus() == 0);
 
@@ -220,35 +208,16 @@ public class ApplyController {
             app.put("hasViewed", hasViewed);
 
             // 탭 필터링
-            String mappedStatus = (String) app.get("status");
-            if (!"ALL".equals(statusFilter)) {
-                boolean match = false;
-                if ("SUBMITTED".equals(statusFilter) && ("UNREAD".equals(mappedStatus))) match = true;
-                if ("REVIEWING".equals(statusFilter) && ("READ".equals(mappedStatus))) match = true;
-                if ("INTERVIEW".equals(statusFilter) && "INTERVIEW".equals(mappedStatus)) match = true;
-                if ("PASSED".equals(statusFilter) && "PASSED".equals(mappedStatus)) match = true;
-                if ("REJECTED".equals(statusFilter) && "REJECTED".equals(mappedStatus)) match = true;
-                if (!match) continue;
+            String mappedStatus = (String) app.get(KEY_STATUS);
+            if (!"ALL".equals(statusFilter) && !matchesStatusFilter(statusFilter, mappedStatus)) {
+                continue;
             }
 
             applications.add(app);
         }
 
         // 정렬
-        if ("oldest".equals(sort)) {
-            applications.sort((a, b) -> {
-                String dateA = (String) a.get("appliedAt");
-                String dateB = (String) b.get("appliedAt");
-                return (dateA != null ? dateA : "").compareTo(dateB != null ? dateB : "");
-            });
-        } else if ("company".equals(sort)) {
-            applications.sort((a, b) -> {
-                String compA = (String) a.get("companyName");
-                String compB = (String) b.get("companyName");
-                return (compA != null ? compA : "").compareTo(compB != null ? compB : "");
-            });
-        }
-        // "latest"는 SQL에서 이미 applied_at DESC로 가져오므로 별도 정렬 불필요
+        sortApplications(applications, sort);
 
         mav.addObject("applications", applications);
 
@@ -276,7 +245,7 @@ public class ApplyController {
                                           ModelAndView mav) {
 
         if (principal == null) {
-            mav.setViewName("redirect:/member/login");
+            mav.setViewName(REDIRECT_LOGIN);
             return mav;
         }
 
@@ -294,12 +263,12 @@ public class ApplyController {
         appDetail.put("id", dto.getApplicationId());
         appDetail.put("postId", dto.getJobId());
         appDetail.put("postTitle", dto.getPostTitle());
-        appDetail.put("companyName", dto.getCompanyName());
-        appDetail.put("region", dto.getRegionName());
+        appDetail.put(KEY_COMPANY_NAME, dto.getCompanyName());
+        appDetail.put(KEY_REGION, dto.getRegionName());
         appDetail.put("role", dto.getCategoryName());
-        appDetail.put("status", mapProcessStatus(dto.getProcessStatus()));
+        appDetail.put(KEY_STATUS, mapProcessStatus(dto.getProcessStatus()));
         appDetail.put("statusText", dto.getProcessStatusText());
-        appDetail.put("appliedAt", dto.getAppliedAt());
+        appDetail.put(KEY_APPLIED_AT, dto.getAppliedAt());
         appDetail.put("viewedAt", dto.getViewedAt());
         appDetail.put("resumeTitle", dto.getResumeTitle());
         appDetail.put("canEdit", false);
@@ -318,7 +287,7 @@ public class ApplyController {
         if (snapshot != null) {
             appDetail.put("selfIntro", snapshot.getSelfIntro());
             appDetail.put("education", snapshot.getEducation());
-            appDetail.put("career", snapshot.getCareer());
+            appDetail.put(KEY_CAREER, snapshot.getCareer());
             appDetail.put("language", snapshot.getLanguage());
             appDetail.put("portfolio", snapshot.getPortfolio());
             appDetail.put("award", snapshot.getAward());
@@ -349,7 +318,7 @@ public class ApplyController {
                                     RedirectAttributes redirectAttributes) {
 
         if (principal == null) {
-            return "redirect:/member/login";
+            return REDIRECT_LOGIN;
         }
 
         String memberid = principal.getName();
@@ -358,24 +327,98 @@ public class ApplyController {
         if (n == 1) {
             redirectAttributes.addFlashAttribute("successMsg", "지원이 취소되었습니다.");
         } else {
-            redirectAttributes.addFlashAttribute("errorMsg", "지원 취소에 실패했습니다. 이미 열람되었거나 취소된 지원입니다.");
+            redirectAttributes.addFlashAttribute(KEY_ERROR_MSG, "지원 취소에 실패했습니다. 이미 열람되었거나 취소된 지원입니다.");
         }
 
         return "redirect:/jobseeker/application/list";
     }
 
 
-  
+    // ===== private 헬퍼 메서드 ===== //
+
+    // 공고 정보를 Map으로 변환
+    private Map<String, String> buildPostMap(JobPostingListDTO post) {
+        Map<String, String> postMap = new HashMap<>();
+        postMap.put("id", String.valueOf(post.getJobId()));
+        postMap.put("title", post.getTitle());
+        postMap.put(KEY_COMPANY_NAME, post.getCompanyName());
+
+        String regionStr = (post.getParentRegionName() != null ? post.getParentRegionName() + " " : "")
+                + (post.getRegionName() != null ? post.getRegionName() : "");
+        postMap.put(KEY_REGION, regionStr);
+
+        postMap.put(KEY_CAREER, post.getCareerType());
+
+        if ("always".equals(post.getDeadlineType())) {
+            postMap.put(KEY_DEADLINE, "상시채용");
+        } else {
+            postMap.put(KEY_DEADLINE, post.getDeadlineAt() != null ? "~ " + post.getDeadlineAt() : "");
+        }
+
+        return postMap;
+    }
+
+    // 이력서 목록 필터링 (작성완료 + 미삭제)
+    private List<Map<String, Object>> buildResumeList(String memberid) {
+        List<ResumeDTO> allResumes = resumeService.selectResumeListByMember(memberid);
+        List<Map<String, Object>> resumes = new ArrayList<>();
+
+        for (ResumeDTO r : allResumes) {
+            if (r.getWriteStatus() == 1 && r.getIsDeleted() == 0) {
+                Map<String, Object> rMap = new HashMap<>();
+                rMap.put("id", r.getResumeId());
+                rMap.put("title", r.getTitle());
+                rMap.put(KEY_CAREER, r.getCareerSummary() != null ? r.getCareerSummary() : "신입");
+                rMap.put("role", r.getCategoryName() != null ? r.getCategoryName() : "미지정");
+                rMap.put("updatedAt", r.getUploadedAt());
+                rMap.put("isDefault", r.getIsPrimary() == 1);
+                resumes.add(rMap);
+            }
+        }
+
+        return resumes;
+    }
+
+    // 탭 필터 매칭
+    private boolean matchesStatusFilter(String statusFilter, String mappedStatus) {
+        switch (statusFilter) {
+            case "SUBMITTED":  return STATUS_UNREAD.equals(mappedStatus);
+            case "REVIEWING":  return "READ".equals(mappedStatus);
+            case "INTERVIEW":  return STATUS_INTERVIEW.equals(mappedStatus);
+            case "PASSED":     return "PASSED".equals(mappedStatus);
+            case "REJECTED":   return "REJECTED".equals(mappedStatus);
+            default:           return false;
+        }
+    }
+
+    // 지원 내역 정렬
+    private void sortApplications(List<Map<String, Object>> applications, String sort) {
+        if ("oldest".equals(sort)) {
+            applications.sort((a, b) -> {
+                String dateA = (String) a.get(KEY_APPLIED_AT);
+                String dateB = (String) b.get(KEY_APPLIED_AT);
+                return (dateA != null ? dateA : "").compareTo(dateB != null ? dateB : "");
+            });
+        } else if ("company".equals(sort)) {
+            applications.sort((a, b) -> {
+                String compA = (String) a.get(KEY_COMPANY_NAME);
+                String compB = (String) b.get(KEY_COMPANY_NAME);
+                return (compA != null ? compA : "").compareTo(compB != null ? compB : "");
+            });
+        }
+        // "latest"는 SQL에서 이미 applied_at DESC로 가져오므로 별도 정렬 불필요
+    }
+
     // process_status(숫자) → 상태 문자열
     private String mapProcessStatus(int processStatus) {
         switch (processStatus) {
-            case 0: return "UNREAD";
+            case 0: return STATUS_UNREAD;
             case 1: return "READ";
             case 2: return "REJECTED";
-            case 3: return "INTERVIEW";
+            case 3: return STATUS_INTERVIEW;
             case 4: return "PASSED";
             case 5: return "REJECTED";
-            default: return "UNREAD";
+            default: return STATUS_UNREAD;
         }
     }
 }
