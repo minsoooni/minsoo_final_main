@@ -38,9 +38,9 @@
   --jp-transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ===== 2. 전체 레이아웃 ===== */
+/* ===== 2. 전체 레이아웃(추후 수정) ===== */
 .jobseeker-wrapper { min-height: 100vh; display: flex; flex-direction: column; }
-.jobseeker-body { display: flex; flex: 1; overflow: hidden; max-width: 1700px; margin: 0 auto; width: 100%;}
+.jobseeker-body { display: flex; flex: 1; overflow: hidden; max-width: 1800px; margin: 0 auto; width: 100%;}
 
 /* ===== 3. 사이드바 ===== */
 .jobseeker-sidebar {
