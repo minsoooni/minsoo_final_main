@@ -45,7 +45,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @RequestMapping("/admin")
 public class AdminController { 
-	//private final 
+	//private final 0327 확인
 	private final AdminCompanyService companyAdminService;
 	private final AdminMemberService memberAdminService;
 	private final AdminJobPostService adminJobPostService;
