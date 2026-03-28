@@ -26,6 +26,10 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ApplyService_imple implements ApplyService {
 
+    // === 중복 상수화 === //
+    private static final String TARGET_TYPE_APPLICATION = "APPLICATION";
+    private static final String KEY_REJECTED = "rejected";
+
     private final ApplyDAO applyDAO;
     private final ResumeDAO resumeDAO;
     private final MypageDAO mypageDAO;
@@ -146,7 +150,7 @@ public class ApplyService_imple implements ApplyService {
                     if (newFileName != null) {
                         ImageFileDTO imageFile = new ImageFileDTO();
                         imageFile.setTargetId(applicationId);
-                        imageFile.setTargetType("APPLICATION");
+                        imageFile.setTargetType(TARGET_TYPE_APPLICATION);
                         imageFile.setFilecategory("ATTACH");
                         imageFile.setFileUrl(newFileName);
                         imageFile.setOriginalFilename(file.getOriginalFilename());
@@ -162,7 +166,7 @@ public class ApplyService_imple implements ApplyService {
             if (jobInfo != null) {
                 NotificationDTO noti = new NotificationDTO();
                 noti.setFkMemberId((String) jobInfo.get("companyMemberId"));
-                noti.setType("APPLICATION");
+                noti.setType(TARGET_TYPE_APPLICATION);
                 noti.setTitle("새로운 지원자 안내");
                 noti.setMessage("[" + jobInfo.get("postTitle") + "]에 " + member.getName() + "님이 지원했습니다");
                 noti.setLinkUrl("/company/applicant/list?jobId=" + jobId);
@@ -191,7 +195,7 @@ public class ApplyService_imple implements ApplyService {
     // 지원서 첨부파일 목록 조회
     @Override
     public List<ImageFileDTO> getApplicationFiles(long applicationId) {
-        return applyDAO.selectImageFileList(applicationId, "APPLICATION");
+        return applyDAO.selectImageFileList(applicationId, TARGET_TYPE_APPLICATION);
     }
 
     // 입사지원 취소 (접수 상태일 때만 가능)
@@ -213,7 +217,7 @@ public class ApplyService_imple implements ApplyService {
         result.put("reviewing", 0);
         result.put("interview", 0);
         result.put("passed", 0);
-        result.put("rejected", 0);
+        result.put(KEY_REJECTED, 0);
 
         int total = 0;
         for (Map<String, Object> row : list) {
@@ -223,10 +227,11 @@ public class ApplyService_imple implements ApplyService {
             switch (status) {
                 case 0: result.put("submitted", cnt); break;
                 case 1: result.put("reviewing", cnt); break;
-                case 2: result.merge("rejected", cnt, Integer::sum); break;  // 서류탈락 → rejected 합산
+                case 2: result.merge(KEY_REJECTED, cnt, Integer::sum); break;  // 서류탈락 → rejected 합산
                 case 3: result.put("interview", cnt); break;
                 case 4: result.put("passed", cnt); break;
-                case 5: result.merge("rejected", cnt, Integer::sum); break;  // 최종불합격 → rejected 합산
+                case 5: result.merge(KEY_REJECTED, cnt, Integer::sum); break;  // 최종불합격 → rejected 합산
+                default: break;  // 정의되지 않은 상태값은 무시
             }
         }
         result.put("total", total);

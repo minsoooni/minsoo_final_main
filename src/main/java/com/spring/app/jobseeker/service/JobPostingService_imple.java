@@ -20,6 +20,13 @@ import com.spring.app.jobseeker.model.MypageDAO;
 @Service
 public class JobPostingService_imple implements JobPostingService {
 
+    // === 중복 상수화 === //
+    private static final String KEY_REGION_CODE = "regionCode";
+    private static final String KEY_CATEGORY_ID = "categoryId";
+    private static final String KEY_JOB_ID = "jobId";
+    private static final String KEY_MEMBER_ID = "memberId";
+    private static final String KEY_COUNT = "count";
+
     private final JobPostingDAO jobPostingDAO;
     private final MypageDAO mypageDAO;
 
@@ -54,10 +61,10 @@ public class JobPostingService_imple implements JobPostingService {
             ResumeDTO resume = mypageDAO.selectPrimaryResume(memberId);
             if (resume != null) {
                 if (resume.getRegionCode() != null) {
-                    paraMap.put("regionCode", resume.getRegionCode());
+                    paraMap.put(KEY_REGION_CODE, resume.getRegionCode());
                 }
                 if (resume.getCategoryId() != null) {
-                    paraMap.put("categoryId", resume.getCategoryId());
+                    paraMap.put(KEY_CATEGORY_ID, resume.getCategoryId());
                 }
                 if (resume.getDesiredSalary() != null) {
                     paraMap.put("desiredSalary", resume.getDesiredSalary());
@@ -173,8 +180,8 @@ public class JobPostingService_imple implements JobPostingService {
     public boolean hasAlreadyApplied(Long jobId, String memberId) {
         if (memberId == null) return false;
         Map<String, Object> paraMap = new HashMap<>();
-        paraMap.put("jobId", jobId);
-        paraMap.put("memberId", memberId);
+        paraMap.put(KEY_JOB_ID, jobId);
+        paraMap.put(KEY_MEMBER_ID, memberId);
         return jobPostingDAO.checkAlreadyApplied(paraMap) > 0;
     }
 
@@ -188,8 +195,8 @@ public class JobPostingService_imple implements JobPostingService {
     @Override
     public int submitReport(Long jobId, String memberId, Long reasonId, String reportContent) {
         Map<String, Object> paraMap = new HashMap<>();
-        paraMap.put("jobId", jobId);
-        paraMap.put("memberId", memberId);
+        paraMap.put(KEY_JOB_ID, jobId);
+        paraMap.put(KEY_MEMBER_ID, memberId);
         paraMap.put("reasonId", reasonId);
         paraMap.put("reportContent", reportContent);
         return jobPostingDAO.insertReport(paraMap);
@@ -200,8 +207,8 @@ public class JobPostingService_imple implements JobPostingService {
     public boolean hasAlreadyReported(Long jobId, String memberId) {
         if (memberId == null) return false;
         Map<String, Object> paraMap = new HashMap<>();
-        paraMap.put("jobId", jobId);
-        paraMap.put("memberId", memberId);
+        paraMap.put(KEY_JOB_ID, jobId);
+        paraMap.put(KEY_MEMBER_ID, memberId);
         return jobPostingDAO.checkAlreadyReported(paraMap) > 0;
     }
 
@@ -219,7 +226,7 @@ public class JobPostingService_imple implements JobPostingService {
         if (memberId == null) return false;
         Map<String, Object> paraMap = new HashMap<>();
         paraMap.put("companyMemberId", companyMemberId);
-        paraMap.put("memberId", memberId);
+        paraMap.put(KEY_MEMBER_ID, memberId);
         return jobPostingDAO.checkFollowStatus(paraMap) > 0;
     }
 
@@ -229,7 +236,7 @@ public class JobPostingService_imple implements JobPostingService {
     public void toggleFollow(String companyMemberId, String memberId, boolean follow) {
         Map<String, Object> paraMap = new HashMap<>();
         paraMap.put("companyMemberId", companyMemberId);
-        paraMap.put("memberId", memberId);
+        paraMap.put(KEY_MEMBER_ID, memberId);
         if (follow) {
             jobPostingDAO.insertFollow(paraMap);
         } else {
@@ -243,8 +250,8 @@ public class JobPostingService_imple implements JobPostingService {
     public boolean isScraped(Long jobId, String memberId) {
         if (memberId == null) return false;
         Map<String, Object> paraMap = new HashMap<>();
-        paraMap.put("jobId", jobId);
-        paraMap.put("memberId", memberId);
+        paraMap.put(KEY_JOB_ID, jobId);
+        paraMap.put(KEY_MEMBER_ID, memberId);
         return jobPostingDAO.checkScrapStatus(paraMap) > 0;
     }
 
@@ -253,8 +260,8 @@ public class JobPostingService_imple implements JobPostingService {
     @Override
     public void toggleScrap(Long jobId, String memberId, boolean scrap) {
         Map<String, Object> paraMap = new HashMap<>();
-        paraMap.put("jobId", jobId);
-        paraMap.put("memberId", memberId);
+        paraMap.put(KEY_JOB_ID, jobId);
+        paraMap.put(KEY_MEMBER_ID, memberId);
         if (scrap) {
             jobPostingDAO.insertScrap(paraMap);
         } else {
@@ -280,11 +287,11 @@ public class JobPostingService_imple implements JobPostingService {
         // percent 계산
         int totalCount = basic != null ? ((Number) basic.getOrDefault("totalCount", 0)).intValue() : 0;
         for (Map<String, Object> t : techTop5) {
-            int cnt = ((Number) t.get("count")).intValue();
+            int cnt = ((Number) t.get(KEY_COUNT)).intValue();
             t.put("percent", totalCount > 0 ? Math.round((double) cnt / totalCount * 100) : 0);
         }
         for (Map<String, Object> ct : certTop5) {
-            int cnt = ((Number) ct.get("count")).intValue();
+            int cnt = ((Number) ct.get(KEY_COUNT)).intValue();
             ct.put("percent", totalCount > 0 ? Math.round((double) cnt / totalCount * 100) : 0);
         }
 
@@ -379,8 +386,15 @@ public class JobPostingService_imple implements JobPostingService {
         for (int v : values) { if (v > max) max = v; }
         for (int v : values) {
             Map<String, Object> item = new HashMap<>();
-            item.put("count", v);
-            item.put("px", max > 0 ? Math.max((int) Math.round((double) v / max * maxPx), (v > 0 ? 5 : 0)) : 0);
+            item.put(KEY_COUNT, v);
+            int px;
+            if (max > 0) {
+                int minPx = (v > 0) ? 5 : 0;
+                px = Math.max((int) Math.round((double) v / max * maxPx), minPx);
+            } else {
+                px = 0;
+            }
+            item.put("px", px);
             list.add(item);
         }
         return list;
@@ -401,9 +415,9 @@ public class JobPostingService_imple implements JobPostingService {
         if (resume == null) return null;
 
         Map<String, Object> paraMap = new HashMap<>();
-        paraMap.put("jobId", jobId);
-        paraMap.put("regionCode", resume.getRegionCode());
-        paraMap.put("categoryId", resume.getCategoryId());
+        paraMap.put(KEY_JOB_ID, jobId);
+        paraMap.put(KEY_REGION_CODE, resume.getRegionCode());
+        paraMap.put(KEY_CATEGORY_ID, resume.getCategoryId());
         paraMap.put("desiredSalary", resume.getDesiredSalary() != null ? resume.getDesiredSalary() : 0);
         paraMap.put("resumeId", resume.getResumeId());
 
@@ -440,9 +454,9 @@ public class JobPostingService_imple implements JobPostingService {
         if (currentPost == null) return new java.util.ArrayList<>();
 
         Map<String, Object> paraMap = new HashMap<>();
-        paraMap.put("jobId", jobId);
-        paraMap.put("categoryId", currentPost.getCategoryId());
-        paraMap.put("regionCode", currentPost.getRegionCode());
+        paraMap.put(KEY_JOB_ID, jobId);
+        paraMap.put(KEY_CATEGORY_ID, currentPost.getCategoryId());
+        paraMap.put(KEY_REGION_CODE, currentPost.getRegionCode());
 
         // 유사 공고 가져오기
         List<JobPostingListDTO> list = jobPostingDAO.selectSimilarJobPostings(paraMap);
