@@ -21,6 +21,11 @@ public class ResumeService_imple implements ResumeService {
     @Transactional
     public int insertResume(ResumeDTO dto) {
 
+    	// 대표이력서 중복 방지
+        if (dto.getIsPrimary() == 1) {
+            dao.clearPrimaryResume(dto.getMemberid());
+        }
+    	
         // 이력서 기본 정보 등록
         int result = dao.insertResume(dto);
         long resumeId = dto.getResumeId();
@@ -100,6 +105,11 @@ public class ResumeService_imple implements ResumeService {
         dao.deleteAwardByResumeId(resumeId);
         dao.deleteTechstackByResumeId(resumeId);
 
+        // 대표이력서 중복 방지
+        if (dto.getIsPrimary() == 1) {
+            dao.clearPrimaryResume(dto.getMemberid());
+        }
+        
         // 2. 기본 정보 수정
         int result = dao.updateResume(dto);
 

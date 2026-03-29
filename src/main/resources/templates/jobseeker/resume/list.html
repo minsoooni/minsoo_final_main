@@ -303,8 +303,12 @@
 <script th:inline="javascript">
     const ctxPath = /*[[@{/}]]*/ '';
 
+    let isPrimaryProcessing = false;
+    
     function setPrimary(resumeId) {
+    	if(isPrimaryProcessing) return;
         if (!confirm('이 이력서를 대표 이력서로 설정하시겠습니까?')) return;
+        isPrimaryProcessing = true;
 
         const allowScout = confirm('기업의 제안을 허용하시겠습니까?\n\n허용하면 기업이 이력서를 검색·열람하고 먼저 제안할 수 있습니다.') ? 1 : 0;
 
