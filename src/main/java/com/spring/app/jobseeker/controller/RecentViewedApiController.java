@@ -115,7 +115,7 @@ public class RecentViewedApiController {
 
         String memberId = principal.getName();
 
-        int n = recentViewedService.removeAllViewedPosts(memberId);
+        recentViewedService.removeAllViewedPosts(memberId);
 
         Map<String, Object> result = new HashMap<>();
         result.put("success", true);

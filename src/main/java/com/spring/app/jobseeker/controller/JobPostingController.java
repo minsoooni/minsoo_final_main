@@ -181,7 +181,9 @@ public class JobPostingController {
 		try {
 			int companyStatus = jobPostingService.getCompanyMemberStatus(post.getMemberId());
 			isCompanyWithdrawn = (companyStatus == 2);
-		} catch (Exception e) {}
+		} catch (Exception e) {
+			// 기업 탈퇴 여부 확인 실패 시 기본값(false) 유지
+		}
 		mav.addObject("isCompanyWithdrawn", isCompanyWithdrawn);
 
 		// === 팔로우 상태 확인 === //
@@ -234,7 +236,9 @@ public class JobPostingController {
 				try {
 					java.time.LocalDate closedDate = java.time.LocalDate.parse(post.getClosedAt(), java.time.format.DateTimeFormatter.ofPattern("yyyy.MM.dd"));
 					if (closedDate.isBefore(java.time.LocalDate.now())) isPrivate = true;
-				} catch (Exception e) {}
+				} catch (Exception e) {
+					// 날짜 파싱 실패 시 기본값 유지
+				}
 			}
 
 			// 마감: status=마감 또는 마감일 지남
@@ -244,7 +248,9 @@ public class JobPostingController {
 				try {
 					java.time.LocalDate deadlineDate = java.time.LocalDate.parse(post.getDeadlineAt(), java.time.format.DateTimeFormatter.ofPattern("yyyy.MM.dd"));
 					if (deadlineDate.isBefore(java.time.LocalDate.now())) isClosed = true;
-				} catch (Exception e) {}
+				} catch (Exception e) {
+					// 날짜 파싱 실패 시 기본값 유지
+				}
 			}
 		}
 		mav.addObject("isClosed", isClosed);

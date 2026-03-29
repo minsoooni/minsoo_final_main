@@ -26,6 +26,15 @@ import com.spring.app.member.domain.MemberDTO;
 @RequestMapping("/jobseeker")
 public class MypageController {
 
+    // === 중복 상수화 === //
+    private static final String KEY_ACTIVE_MENU = "activeMenu";
+    private static final String KEY_MEMBER = "member";
+    private static final String KEY_DEADLINE = "deadline";
+    private static final String KEY_MESSAGE = "message";
+    private static final String KEY_PW_ERROR = "pwError";
+    private static final String REDIRECT_PROFILE_EDIT = "redirect:/jobseeker/profile/edit";
+    private static final String KEY_COMMUNITY_ERROR = "communityError";
+
     private final MypageService mypageService;
     private final JobPostingService jobPostingService;
     private final PasswordEncoder passwordEncoder;
@@ -44,14 +53,14 @@ public class MypageController {
     @GetMapping("dashboard")
     public ModelAndView dashboard(ModelAndView mav, Principal principal) {
 
-        mav.addObject("activeMenu", "dashboard");
+        mav.addObject(KEY_ACTIVE_MENU, "dashboard");
 
         String memberId = principal.getName();
 
         // === 프로필 (DB) === //
         MemberDTO member = mypageService.getMemberInfo(memberId);
         ResumeDTO resume = mypageService.getPrimaryResume(memberId);
-        mav.addObject("member", member);
+        mav.addObject(KEY_MEMBER, member);
         mav.addObject("resume", resume);
 
         // === 통계 카드 (DB) === //
@@ -73,7 +82,7 @@ public class MypageController {
             recommendedPostDTOs = jobPostingService.getRecommendedJobPostings(memberId);
         }
 
-        // dashboard.html 키(id, title, companyName, deadline, region, salary)에 맞춰 변환
+        
         List<Map<String, String>> recommendedPosts = new ArrayList<>();
         for (JobPostingListDTO dto : recommendedPostDTOs) {
             Map<String, String> post = new HashMap<>();
@@ -104,12 +113,12 @@ public class MypageController {
                 try {
                     java.time.LocalDate deadlineDate = java.time.LocalDate.parse(dto.getDeadlineAt().substring(0, 10));
                     long dday = java.time.temporal.ChronoUnit.DAYS.between(java.time.LocalDate.now(), deadlineDate);
-                    post.put("deadline", dday >= 0 ? "D-" + dday : "마감");
+                    post.put(KEY_DEADLINE, dday >= 0 ? "D-" + dday : "마감");
                 } catch (Exception e) {
-                    post.put("deadline", dto.getDeadlineAt());
+                    post.put(KEY_DEADLINE, dto.getDeadlineAt());
                 }
             } else {
-                post.put("deadline", "상시");
+                post.put(KEY_DEADLINE, "상시");
             }
             recommendedPosts.add(post);
         }
@@ -130,9 +139,9 @@ public class MypageController {
         MemberDTO member = mypageService.getMemberInfo(memberId);
         ResumeDTO resume = mypageService.getPrimaryResume(memberId);
 
-        mav.addObject("member", member);
+        mav.addObject(KEY_MEMBER, member);
         mav.addObject("resume", resume);
-        mav.addObject("activeMenu", "profile");
+        mav.addObject(KEY_ACTIVE_MENU, "profile");
         mav.setViewName("jobseeker/mypage/profile");
         return mav;
     }
@@ -148,9 +157,9 @@ public class MypageController {
         MemberDTO member = mypageService.getMemberInfo(memberId);
         ResumeDTO resume = mypageService.getPrimaryResume(memberId);
 
-        mav.addObject("member", member);
+        mav.addObject(KEY_MEMBER, member);
         mav.addObject("resume", resume);
-        mav.addObject("activeMenu", "profile");
+        mav.addObject(KEY_ACTIVE_MENU, "profile");
         mav.setViewName("jobseeker/mypage/profileEdit");
         return mav;
     }
@@ -181,9 +190,9 @@ public class MypageController {
         int result = mypageService.updateProfile(dto);
 
         if (result > 0) {
-            redirectAttributes.addFlashAttribute("message", "프로필이 수정되었습니다.");
+            redirectAttributes.addFlashAttribute(KEY_MESSAGE, "프로필이 수정되었습니다.");
         } else {
-            redirectAttributes.addFlashAttribute("message", "프로필 수정에 실패했습니다.");
+            redirectAttributes.addFlashAttribute(KEY_MESSAGE, "프로필 수정에 실패했습니다.");
         }
 
         return "redirect:/jobseeker/profile";
@@ -204,15 +213,15 @@ public class MypageController {
 
         // 1) 새 비밀번호 일치 확인
         if (!newPassword.equals(newPasswordConfirm)) {
-            redirectAttributes.addFlashAttribute("pwError", "새 비밀번호가 일치하지 않습니다.");
-            return "redirect:/jobseeker/profile/edit";
+            redirectAttributes.addFlashAttribute(KEY_PW_ERROR, "새 비밀번호가 일치하지 않습니다.");
+            return REDIRECT_PROFILE_EDIT;
         }
 
         // 2) 현재 비밀번호 확인
         String storedPassword = mypageService.getPassword(memberId);
         if (!passwordEncoder.matches(currentPassword, storedPassword)) {
-            redirectAttributes.addFlashAttribute("pwError", "현재 비밀번호가 올바르지 않습니다.");
-            return "redirect:/jobseeker/profile/edit";
+            redirectAttributes.addFlashAttribute(KEY_PW_ERROR, "현재 비밀번호가 올바르지 않습니다.");
+            return REDIRECT_PROFILE_EDIT;
         }
 
         // 3) 비밀번호 변경
@@ -220,12 +229,12 @@ public class MypageController {
         int result = mypageService.updatePassword(memberId, encodedPassword);
 
         if (result > 0) {
-            redirectAttributes.addFlashAttribute("message", "비밀번호가 변경되었습니다.");
+            redirectAttributes.addFlashAttribute(KEY_MESSAGE, "비밀번호가 변경되었습니다.");
         } else {
-            redirectAttributes.addFlashAttribute("pwError", "비밀번호 변경에 실패했습니다.");
+            redirectAttributes.addFlashAttribute(KEY_PW_ERROR, "비밀번호 변경에 실패했습니다.");
         }
 
-        return "redirect:/jobseeker/profile/edit";
+        return REDIRECT_PROFILE_EDIT;
     }
 
    
@@ -241,19 +250,19 @@ public class MypageController {
         String companyName = communityCompanyName.trim();
 
         if (companyName.isEmpty()) {
-            redirectAttributes.addFlashAttribute("communityError", "직장명을 입력해주세요.");
-            return "redirect:/jobseeker/profile/edit";
+            redirectAttributes.addFlashAttribute(KEY_COMMUNITY_ERROR, "직장명을 입력해주세요.");
+            return REDIRECT_PROFILE_EDIT;
         }
 
         int result = mypageService.updateCommunityCompanyName(memberId, companyName);
 
         if (result > 0) {
-            redirectAttributes.addFlashAttribute("message", "커뮤니티 인증이 완료되었습니다.");
+            redirectAttributes.addFlashAttribute(KEY_MESSAGE, "커뮤니티 인증이 완료되었습니다.");
         } else {
-            redirectAttributes.addFlashAttribute("communityError", "커뮤니티 인증에 실패했습니다.");
+            redirectAttributes.addFlashAttribute(KEY_COMMUNITY_ERROR, "커뮤니티 인증에 실패했습니다.");
         }
 
-        return "redirect:/jobseeker/profile/edit";
+        return REDIRECT_PROFILE_EDIT;
     }
 
    
@@ -269,11 +278,11 @@ public class MypageController {
         int result = mypageService.updateCommunityCompanyName(memberId, null);
 
         if (result > 0) {
-            redirectAttributes.addFlashAttribute("message", "커뮤니티 인증이 취소되었습니다.");
+            redirectAttributes.addFlashAttribute(KEY_MESSAGE, "커뮤니티 인증이 취소되었습니다.");
         } else {
-            redirectAttributes.addFlashAttribute("communityError", "인증 취소에 실패했습니다.");
+            redirectAttributes.addFlashAttribute(KEY_COMMUNITY_ERROR, "인증 취소에 실패했습니다.");
         }
 
-        return "redirect:/jobseeker/profile/edit";
+        return REDIRECT_PROFILE_EDIT;
     }
 }

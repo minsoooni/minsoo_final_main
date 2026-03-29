@@ -39,7 +39,7 @@ public class ResumeController {
         List<ResumeDTO> resumeList = resumeService.selectResumeListByMember(memberId);
         mav.addObject("resumeList", resumeList);
         mav.addObject("maxResumeCount", MAX_RESUME_COUNT);
-        System.out.println("~~~ 작업 디렉토리 확인: " + new java.io.File(".").getAbsolutePath());
+        
         return mav;
     }
 
@@ -52,8 +52,7 @@ public class ResumeController {
         // 이력서 개수 제한 체크
         int resumeCount = resumeService.selectResumeCountByMember(memberId);
         if (resumeCount >= MAX_RESUME_COUNT) {
-            ModelAndView mav = new ModelAndView("redirect:/jobseeker/resume/list");
-            return mav;
+        	return new ModelAndView("redirect:/jobseeker/resume/list");            
         }
 
         ModelAndView mav = new ModelAndView("jobseeker/resume/form");

@@ -30,6 +30,10 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/resume")
 public class ResumeApiController {
 
+    // === 중복 상수화 === //
+    private static final String KEY_RESULT = "result";
+    private static final String KEY_MESSAGE = "message";
+
     private final ResumeService resumeService;
     private final FileManager fileManager;
 
@@ -67,15 +71,15 @@ public class ResumeApiController {
         int count = resumeService.selectResumeCountByMember(((String) authentication.getPrincipal()));
         if (count >= 5) {
             Map<String, Object> map = new HashMap<>();
-            map.put("result", 0);
-            map.put("message", "이력서는 최대 5개까지 작성할 수 있습니다.");
+            map.put(KEY_RESULT, 0);
+            map.put(KEY_MESSAGE, "이력서는 최대 5개까지 작성할 수 있습니다.");
             return ResponseEntity.ok(map);
         }
 
         int result = resumeService.insertResume(dto);
 
         Map<String, Object> map = new HashMap<>();
-        map.put("result", result);
+        map.put(KEY_RESULT, result);
         map.put("resumeId", dto.getResumeId());
         return ResponseEntity.ok(map);
     }
@@ -106,7 +110,7 @@ public class ResumeApiController {
                                                        Authentication authentication) {
         dto.setMemberid(((String) authentication.getPrincipal()));
         int result = resumeService.updateResume(dto);
-        return ResponseEntity.ok(Map.of("result", result, "resumeId", dto.getResumeId()));
+        return ResponseEntity.ok(Map.of(KEY_RESULT, result, "resumeId", dto.getResumeId()));
     }
 
   
@@ -135,7 +139,7 @@ public class ResumeApiController {
             @Parameter(description = "이력서 ID") @PathVariable("resumeId") long resumeId,
             Authentication authentication) {
         int result = resumeService.deleteResume(resumeId, ((String) authentication.getPrincipal()));
-        return ResponseEntity.ok(Map.of("result", result));
+        return ResponseEntity.ok(Map.of(KEY_RESULT, result));
     }
 
     
@@ -263,7 +267,7 @@ public class ResumeApiController {
         String memberid = (String) authentication.getPrincipal();
         int allowScout = ((Number) body.get("allowScout")).intValue();
         int result = resumeService.setPrimaryResume(resumeId, memberid, allowScout);
-        return ResponseEntity.ok(Map.of("result", result));
+        return ResponseEntity.ok(Map.of(KEY_RESULT, result));
     }
 
     
@@ -276,7 +280,7 @@ public class ResumeApiController {
         int allowScout = ((Number) body.get("allowScout")).intValue();
         String memberid = (String) authentication.getPrincipal();
         int result = resumeService.updateAllowScout(resumeId, memberid, allowScout);
-        return ResponseEntity.ok(Map.of("result", result));
+        return ResponseEntity.ok(Map.of(KEY_RESULT, result));
     }
 
   
@@ -413,8 +417,8 @@ public class ResumeApiController {
         Map<String, Object> map = new HashMap<>();
 
         if (multipartFile.isEmpty()) {
-            map.put("result", 0);
-            map.put("message", "파일이 없습니다.");
+            map.put(KEY_RESULT, 0);
+            map.put(KEY_MESSAGE, "파일이 없습니다.");
             return ResponseEntity.ok(map);
         }
 
@@ -426,13 +430,13 @@ public class ResumeApiController {
             // DB에 저장할 경로
             String photoPath = "/images/jobseeker/" + newFileName;
 
-            map.put("result", 1);
+            map.put(KEY_RESULT, 1);
             map.put("photoPath", photoPath);
 
         } catch (Exception e) {
             e.printStackTrace();
-            map.put("result", 0);
-            map.put("message", "업로드 중 오류가 발생했습니다.");
+            map.put(KEY_RESULT, 0);
+            map.put(KEY_MESSAGE, "업로드 중 오류가 발생했습니다.");
         }
 
         return ResponseEntity.ok(map);
@@ -449,8 +453,8 @@ public class ResumeApiController {
         Map<String, Object> map = new HashMap<>();
 
         if (multipartFile.isEmpty()) {
-            map.put("result", 0);
-            map.put("message", "파일이 없습니다.");
+            map.put(KEY_RESULT, 0);
+            map.put(KEY_MESSAGE, "파일이 없습니다.");
             return ResponseEntity.ok(map);
         }
 
@@ -461,14 +465,14 @@ public class ResumeApiController {
 
             String filepath = "/images/portfolio/" + newFileName;
 
-            map.put("result", 1);
+            map.put(KEY_RESULT, 1);
             map.put("filepath", filepath);
             map.put("fileName", originalFilename);
 
         } catch (Exception e) {
             e.printStackTrace();
-            map.put("result", 0);
-            map.put("message", "업로드 중 오류가 발생했습니다.");
+            map.put(KEY_RESULT, 0);
+            map.put(KEY_MESSAGE, "업로드 중 오류가 발생했습니다.");
         }
 
         return ResponseEntity.ok(map);

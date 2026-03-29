@@ -3,6 +3,7 @@ package com.spring.app.jobseeker.controller;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
@@ -29,6 +30,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController
 @RequestMapping("/api/mypage")
 public class MypageApiController {
+
+    // === SonarQube: 중복 리터럴 상수화 === //
+    private static final String KEY_SUCCESS = "success";
+    private static final String KEY_MESSAGE = "message";
+    private static final String KEY_CLASS_NAME = "className";
 
     private final MypageService mypageService;
 
@@ -148,28 +154,28 @@ public class MypageApiController {
         String phone = paramMap.get("phone");
 
         if (name == null || name.trim().isEmpty()) {
-            result.put("success", false);
-            result.put("message", "이름은 필수 입력값입니다.");
+            result.put(KEY_SUCCESS, false);
+            result.put(KEY_MESSAGE, "이름은 필수 입력값입니다.");
             return ResponseEntity.badRequest().body(result);
         }
         if (birthDateStr == null || birthDateStr.trim().isEmpty()) {
-            result.put("success", false);
-            result.put("message", "생년월일은 필수 입력값입니다.");
+            result.put(KEY_SUCCESS, false);
+            result.put(KEY_MESSAGE, "생년월일은 필수 입력값입니다.");
             return ResponseEntity.badRequest().body(result);
         }
         if (genderStr == null || genderStr.trim().isEmpty()) {
-            result.put("success", false);
-            result.put("message", "성별은 필수 입력값입니다.");
+            result.put(KEY_SUCCESS, false);
+            result.put(KEY_MESSAGE, "성별은 필수 입력값입니다.");
             return ResponseEntity.badRequest().body(result);
         }
         if (email == null || email.trim().isEmpty()) {
-            result.put("success", false);
-            result.put("message", "이메일은 필수 입력값입니다.");
+            result.put(KEY_SUCCESS, false);
+            result.put(KEY_MESSAGE, "이메일은 필수 입력값입니다.");
             return ResponseEntity.badRequest().body(result);
         }
         if (phone == null || phone.trim().isEmpty()) {
-            result.put("success", false);
-            result.put("message", "전화번호는 필수 입력값입니다.");
+            result.put(KEY_SUCCESS, false);
+            result.put(KEY_MESSAGE, "전화번호는 필수 입력값입니다.");
             return ResponseEntity.badRequest().body(result);
         }
 
@@ -188,12 +194,12 @@ public class MypageApiController {
         int n = mypageService.updateProfile(dto);
 
         if (n > 0) {
-            result.put("success", true);
-            result.put("message", "프로필이 수정되었습니다.");
+            result.put(KEY_SUCCESS, true);
+            result.put(KEY_MESSAGE, "프로필이 수정되었습니다.");
             return ResponseEntity.ok(result);
         } else {
-            result.put("success", false);
-            result.put("message", "프로필 수정에 실패했습니다.");
+            result.put(KEY_SUCCESS, false);
+            result.put(KEY_MESSAGE, "프로필 수정에 실패했습니다.");
             return ResponseEntity.ok(result);
         }
     }
@@ -202,11 +208,11 @@ public class MypageApiController {
     // 캘린더 이벤트 조회
     @Operation(summary = "캘린더 이벤트 조회", description = "지원일/마감일/제안 응답기한을 FullCalendar 형식으로 반환한다.")
     @GetMapping("/calendar/events")
-    public ResponseEntity<?> getCalendarEvents(Principal principal) {
+    public ResponseEntity<List<Map<String, Object>>> getCalendarEvents(Principal principal) {
         String memberId = principal.getName();
-        java.util.List<Map<String, Object>> rawEvents = mypageService.getCalendarEvents(memberId);
+        List<Map<String, Object>> rawEvents = mypageService.getCalendarEvents(memberId);
 
-        java.util.List<Map<String, Object>> fcEvents = new java.util.ArrayList<>();
+        List<Map<String, Object>> fcEvents = new java.util.ArrayList<>();
         for (Map<String, Object> row : rawEvents) {
             Map<String, Object> ev = new HashMap<>();
             ev.put("title", row.get("title"));
@@ -218,10 +224,10 @@ public class MypageApiController {
             ev.put("offerSubmitId", row.get("offerSubmitId"));
 
             String type = (String) row.get("type");
-            if ("applied".equals(type))       ev.put("className", "ev-applied");
-            else if ("deadline".equals(type))  ev.put("className", "ev-deadline");
-            else if ("offer".equals(type))     ev.put("className", "ev-offer");
-            else                               ev.put("className", "ev-applied");
+            if ("applied".equals(type))       ev.put(KEY_CLASS_NAME, "ev-applied");
+            else if ("deadline".equals(type))  ev.put(KEY_CLASS_NAME, "ev-deadline");
+            else if ("offer".equals(type))     ev.put(KEY_CLASS_NAME, "ev-offer");
+            else                               ev.put(KEY_CLASS_NAME, "ev-applied");
 
             fcEvents.add(ev);
         }

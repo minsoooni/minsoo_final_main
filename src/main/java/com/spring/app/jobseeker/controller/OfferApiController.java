@@ -21,6 +21,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 public class OfferApiController {
 
+    // === 중복 상수화 === //
+    private static final String KEY_RESULT = "result";
+
     private final OfferService offerService;
 
     public OfferApiController(OfferService offerService) {
@@ -40,7 +43,7 @@ public class OfferApiController {
         int n = offerService.markAsViewed(offerSubmitId, memberId);
 
         Map<String, Object> result = new HashMap<>();
-        result.put("result", n >= 0 ? "ok" : "fail");
+        result.put(KEY_RESULT, n >= 0 ? "ok" : "fail");
         return ResponseEntity.ok(result);
     }
 
@@ -57,7 +60,7 @@ public class OfferApiController {
         int n = offerService.acceptOffer(offerSubmitId, memberId);
 
         Map<String, Object> result = new HashMap<>();
-        result.put("result", n == 1 ? "ok" : "fail");
+        result.put(KEY_RESULT, n == 1 ? "ok" : "fail");
         if (n != 1) {
             result.put("message", "이미 응답한 제안이거나 존재하지 않는 제안입니다.");
         }
@@ -77,7 +80,7 @@ public class OfferApiController {
         int n = offerService.rejectOffer(offerSubmitId, memberId);
 
         Map<String, Object> result = new HashMap<>();
-        result.put("result", n == 1 ? "ok" : "fail");
+        result.put(KEY_RESULT, n == 1 ? "ok" : "fail");
         if (n != 1) {
             result.put("message", "이미 응답한 제안이거나 존재하지 않는 제안입니다.");
         }

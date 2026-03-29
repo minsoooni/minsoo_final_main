@@ -17,7 +17,6 @@ import com.spring.app.jobseeker.service.JobPostingService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import jakarta.servlet.http.Cookie;
@@ -27,6 +26,11 @@ import jakarta.servlet.http.HttpServletRequest;
 @RestController
 @RequestMapping("/api/job")
 public class JobPostingApiController {
+
+    // === 중복 상수화 === //
+    private static final String KEY_JOB_ID = "jobId";
+    private static final String KEY_SUCCESS = "success";
+    private static final String KEY_MESSAGE = "message";
 
     private final JobPostingService jobPostingService;
 
@@ -39,9 +43,7 @@ public class JobPostingApiController {
 
     @Operation(summary = "최근본 공고 목록 조회",
                description = "로그인 시 DB에서, 비로그인 시 쿠키에서 최근본 공고 목록을 조회한다.")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "조회 성공")
-    })
+    @ApiResponse(responseCode = "200", description = "조회 성공")
     @GetMapping("/recent-viewed")
     public ResponseEntity<List<Map<String, Object>>> getRecentViewed(
             Authentication authentication,
@@ -64,7 +66,7 @@ public class JobPostingApiController {
         List<Map<String, Object>> result = new ArrayList<>();
         for (JobPostingListDTO dto : recentList) {
             Map<String, Object> map = new HashMap<>();
-            map.put("jobId", dto.getJobId());
+            map.put(KEY_JOB_ID, dto.getJobId());
             map.put("title", dto.getTitle());
             map.put("companyName", dto.getCompanyName());
             map.put("dDay", dto.getDDay());
@@ -112,31 +114,31 @@ public class JobPostingApiController {
         Map<String, Object> result = new HashMap<>();
 
         if (authentication == null || !authentication.isAuthenticated()) {
-            result.put("success", false);
-            result.put("message", "로그인이 필요합니다.");
+            result.put(KEY_SUCCESS, false);
+            result.put(KEY_MESSAGE, "로그인이 필요합니다.");
             return result;
         }
 
         String memberId = authentication.getName();
-        Long jobId = Long.valueOf(params.get("jobId").toString());
+        Long jobId = Long.valueOf(params.get(KEY_JOB_ID).toString());
         Long reasonId = Long.valueOf(params.get("reasonId").toString());
         String reportContent = (String) params.get("reportContent");
 
         // 중복 신고 확인
         if (jobPostingService.hasAlreadyReported(jobId, memberId)) {
-            result.put("success", false);
-            result.put("message", "이미 신고한 공고입니다.");
+            result.put(KEY_SUCCESS, false);
+            result.put(KEY_MESSAGE, "이미 신고한 공고입니다.");
             return result;
         }
 
         try {
             jobPostingService.submitReport(jobId, memberId, reasonId, reportContent);
-            result.put("success", true);
-            result.put("message", "신고가 접수되었습니다.");
+            result.put(KEY_SUCCESS, true);
+            result.put(KEY_MESSAGE, "신고가 접수되었습니다.");
         } catch (Exception e) {
             e.printStackTrace();
-            result.put("success", false);
-            result.put("message", "신고 처리 중 오류가 발생했습니다: " + e.getMessage());
+            result.put(KEY_SUCCESS, false);
+            result.put(KEY_MESSAGE, "신고 처리 중 오류가 발생했습니다: " + e.getMessage());
         }
 
         return result;
@@ -148,24 +150,24 @@ public class JobPostingApiController {
         Map<String, Object> result = new HashMap<>();
 
         if (authentication == null || !authentication.isAuthenticated()) {
-            result.put("success", false);
-            result.put("message", "로그인이 필요합니다.");
+            result.put(KEY_SUCCESS, false);
+            result.put(KEY_MESSAGE, "로그인이 필요합니다.");
             return result;
         }
 
         String memberId = authentication.getName();
-        Long jobId = Long.valueOf(params.get("jobId").toString());
+        Long jobId = Long.valueOf(params.get(KEY_JOB_ID).toString());
         boolean scrap = Boolean.parseBoolean(params.get("scrap").toString());
 
         try {
             jobPostingService.toggleScrap(jobId, memberId, scrap);
-            result.put("success", true);
+            result.put(KEY_SUCCESS, true);
             result.put("scrapped", scrap);
-            result.put("message", scrap ? "스크랩 되었습니다." : "스크랩이 해제되었습니다.");
+            result.put(KEY_MESSAGE, scrap ? "스크랩 되었습니다." : "스크랩이 해제되었습니다.");
         } catch (Exception e) {
             e.printStackTrace();
-            result.put("success", false);
-            result.put("message", "처리 중 오류가 발생했습니다.");
+            result.put(KEY_SUCCESS, false);
+            result.put(KEY_MESSAGE, "처리 중 오류가 발생했습니다.");
         }
 
         return result;

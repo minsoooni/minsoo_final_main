@@ -23,7 +23,7 @@ import com.spring.app.jobseeker.service.ResumeService;
 @RequestMapping("/jobseeker")
 public class ApplyController {
 
-  
+    // === 중복 상수화 === //
     private static final String REDIRECT_LOGIN = "redirect:/member/login";
     private static final String KEY_COMPANY_NAME = "companyName";
     private static final String KEY_REGION = "region";
@@ -73,7 +73,7 @@ public class ApplyController {
             return mav;
         }
 
-        // 공고 정보 Map 구성 (private 메서드로 분리)
+        // 공고 정보 Map 구성 (private 메서드로 분리하여 Cognitive Complexity 감소)
         mav.addObject("post", buildPostMap(post));
 
         // 이력서 목록 필터링 (private 메서드로 분리)
@@ -197,9 +197,15 @@ public class ApplyController {
             }
             app.put("viewedDate", statusDates.getOrDefault(1, dto.getViewedAt()));
             app.put("interviewDate", statusDates.get(3));
-            app.put("resultDate", statusDates.containsKey(4) ? statusDates.get(4)
-                                : statusDates.containsKey(5) ? statusDates.get(5)
-                                : statusDates.get(2));
+            String resultDate;
+            if (statusDates.containsKey(4)) {
+                resultDate = statusDates.get(4);
+            } else if (statusDates.containsKey(5)) {
+                resultDate = statusDates.get(5);
+            } else {
+                resultDate = statusDates.get(2);
+            }
+            app.put("resultDate", resultDate);
 
             // 면접 단계를 거쳤는지 판별
             boolean hasInterview = statusDates.containsKey(3);

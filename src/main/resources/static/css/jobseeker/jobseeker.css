@@ -1,11 +1,8 @@
 @charset "UTF-8";
 
-/* ╔═══════════════════════════════════════════════════════════════╗
-   ║  JobFinder — 구직자 디자인 시스템 (jobseeker.css)            ║
-   ║  Bootstrap 4.6 위에서 동작 · Font Awesome 6 아이콘 사용      ║
-   ╚═══════════════════════════════════════════════════════════════╝ */
 
-/* ===== 1. 디자인 토큰 (CSS 변수) ===== */
+
+/* ===== 1. CSS 변수 ===== */
 :root {
   --jp-primary: #2563EB;
   --jp-primary-hover: #1D4ED8;
@@ -41,7 +38,7 @@
   --jp-transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ===== 2. 전체 레이아웃 ===== */
+/* ===== 2. 전체 레이아웃(추후 수정) ===== max-width: 1800px; margin: 0 auto; width: 100%; */
 .jobseeker-wrapper { min-height: 100vh; display: flex; flex-direction: column; }
 .jobseeker-body { display: flex; flex: 1; overflow: hidden; }
 
@@ -782,3 +779,4 @@
   .js-search-bar .form-control { font-size: 0.85rem; }
   .js-tabs .nav-link, .app-tabs .nav-link, .of-tabs .nav-link { font-size: 0.82rem; padding: 8px 10px; }
 }
+
