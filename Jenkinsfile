@@ -7,10 +7,6 @@ pipeline {
         APP_DIR = "/home/ubuntu/jobfinder"
     }
 
-    tools {
-        jdk 'jdk17'
-    }
-
     stages {
 
         stage('Checkout') {
