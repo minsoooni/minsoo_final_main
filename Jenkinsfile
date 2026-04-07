@@ -49,7 +49,7 @@ pipeline {
 
         stage('Deploy Main Service') {
             steps {
-                sshagent(['jenkins_server_key']) {
+                sshagent(['server_ssh_key']) {
                     sh """
                         ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP '
                             cd $APP_DIR
