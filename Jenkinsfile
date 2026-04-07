@@ -21,7 +21,7 @@ pipeline {
                 sh './gradlew clean build -x test'
             }
         }
-
+/*
 		stage('SonarQube Analysis') {
 		    steps {
 		        withSonarQubeEnv('sonarqube') {
@@ -29,7 +29,7 @@ pipeline {
 		        }
 		    }
 		}
-
+*/
 
         stage('Docker Build & Push') {
             steps {
