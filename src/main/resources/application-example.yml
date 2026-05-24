@@ -1,0 +1,93 @@
+# MSA 버전 - 공개용 예시 설정 파일
+# 실제 실행 시 이 파일을 application.yml로 복사한 뒤,
+# 본인 로컬/운영 환경에 맞는 값으로 변경해서 사용해야 함.
+
+jwt:
+  secret: "your-very-long-random-jwt-secret-key"
+  access-token-expiration-ms: 60000
+  refresh-token-expiration-ms: 1209600000
+
+solapi:
+  enabled: false
+  api-key: "your-solapi-api-key"
+  api-secret: "your-solapi-api-secret"
+  from-phone: "01000000000"
+  base-url: "https://api.solapi.com"
+
+spring:
+  application:
+    name: user-service
+
+  profiles:
+    active: local
+
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+
+  datasource-myspringbootuser:
+    driver-class-name: oracle.jdbc.OracleDriver
+    jdbcUrl: jdbc:oracle:thin:@localhost:1521:xe
+    username: your-db-username
+    password: your-db-password
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 10
+      idle-timeout: 30000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+
+  messages:
+    basename: messages.validation
+    encoding: UTF-8
+
+  devtools:
+    livereload:
+      enabled: true
+    restart:
+      enabled: true
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 12MB
+
+mybatis:
+  mapper-locations: classpath:mybatis/mapper/**/*.xml
+
+logging:
+  level:
+    '[com.spring.app]': debug
+
+server:
+  port: 8001
+  forward-headers-strategy: framework
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+  tomcat:
+    max-part-count: 30
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+file:
+  upload-dir: ./data/file_upload
+  photoupload-dir: ./data/file_photoupload
+  emailattachfile-dir: ./data/file_emailattachfile
+  images-dir: ./data/file_images
+
+portone:
+  impCode: "your-portone-imp-code"
+  apiKey: "your-portone-api-key"
+  apiSecret: "your-portone-api-secret"
