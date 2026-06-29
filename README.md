@@ -14,7 +14,7 @@ Spring Boot / MSA / Eureka / API Gateway / MyBatis / Oracle / Jenkins / Kubernet
 - 배너 관리
 - 커뮤니티 관리
 - 공지사항 관리
-- 공지사항 일
+- 공지사항 일반
 
 ## 프로젝트 구조
 - final_main : 메인 서비스 (회원, 관리자)
